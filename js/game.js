@@ -13,6 +13,7 @@
   var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
   var aspect = canvas.width / canvas.height;
   var ROOT_TWO_OVER_TWO = Utils.ROOT_TWO_OVER_TWO;
+  var point = {"x": 0, "y": 0, "z": 0};
   var zProjection = 1;
   // var identityMatrix = new Float32Array([
   //   1, 0, 0, 0,
@@ -821,7 +822,10 @@
           var playerPos = Game.player.position;
           for (let iK = 0; iK < playerPos.length; iK += 1) {
             let vert = playerPos[iK];
-            let directHit = enemy.containsPoint({x: vert[0], y: vert[1]});
+            point.x = vert[0];
+            point.y = vert[1];
+            point.z = vert[2];
+            let directHit = enemy.containsPoint(point);
             if (directHit ) {
               enemy.takeHit(enemy.hitPoints);
               let hp = Game.player.takeHit(enemy.points);
