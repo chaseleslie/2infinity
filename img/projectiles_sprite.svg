@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+
+	<defs>
+		<radialGradient id="gradient">
+			<stop offset="15%" stop-color="#DDF" />
+			<stop offset="25%" stop-color="#CCF" />
+			<stop offset="40%" stop-color="#AAF" />
+			<stop offset="60%" stop-color="#99F" />
+			<stop offset="100%" stop-color="#88F" />
+		</radialGradient>
+	</defs>
+
+	<!-- <rect x="0" y="0" width="128" height="128" rx="8" ry="8" fill="url(#gradient)" stroke="#DDF" /> -->
+	<rect x="0" y="0" width="512" height="512" rx="8" ry="8" fill="url(#gradient)" stroke="#DDF" />
+</svg>

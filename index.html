@@ -1,0 +1,75 @@
+<!doctype html>
+  <head>
+    <meta charset="utf-8">
+    <title>Game</title>
+    <link rel="icon" href="img/ship.png" type="image/png">
+    <link rel="shortcut icon" href="img/game.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/game.css" type="text/css">
+
+    <script type="text/javascript">
+      window.addEventListener("load", function(e) {
+        var scriptSources = [
+          "js/util.js",
+          "lib/matrices.js",
+          "js/physics.js",
+          "js/types.js",
+          "js/game.js"
+        ];
+        for (let k = 0; k < scriptSources.length; k += 1) {
+          let script = document.createElement("script");
+          script.async = false;
+          script.type = "text/javascript";
+          script.src = scriptSources[k];
+          document.body.appendChild(script);
+        }
+      }, false);
+    </script>
+
+    <script type="x-shader/x-fragment" id="gl_shader_frag">
+      precision highp float;
+
+      uniform vec4 uColor;
+      varying highp vec2 vTextureCoord;
+      uniform sampler2D uSampler;
+
+      void main(void) {
+        gl_FragColor = texture2D(uSampler, vTextureCoord);
+      }
+    </script>
+    <script type="x-shader/x-vertex" id="gl_shader_vert">
+      attribute vec3 aVertexPosition;
+      attribute vec2 aTextureCoord;
+
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+
+      varying highp vec2 vTextureCoord;
+
+      void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vTextureCoord = aTextureCoord;
+      }
+    </script>
+  </head>
+  <body>
+    <div id="wrapper">
+      <canvas id="glcanvas" width="1080" height="720"></canvas>
+      <canvas id="glcanvas_overlay" width="1080" height="720" class=""></canvas>
+      <menu id="menu" class="hidden">
+        <menuitem id="menu_resume" class="selectable selected">Resume</menuitem>
+        <menuitem id="menu_restart" class="selectable">Restart</menuitem>
+        <menuitem id="menu_display_fps" class="selectable unchecked">Display FPS</menuitem>
+        <menuitem id="menu_name" class="unselectable"><strong>&lt; <sub>2</sub>Infinity &gt;</strong></menuitem>
+      </menu>
+    </div>
+    <audio id="game_audio" class="hidden" src="sound/blaster.mp3"></audio>
+    <img id="img_ship" src="img/ship.svg" width="512" height="512" class="hidden">
+    <img id="img_enemy_ship" src="img/enemy_ship.svg" width="512" height="512" class="hidden">
+    <img id="img_explosion" src="img/explosion.svg" width="512" height="512" class="hidden">
+    <img id="img_projectiles_sprite" src="img/projectiles_sprite.svg" width="512" height="512" class="hidden">
+    <img id="img_star" src="img/star.svg" width="512" height="512" class="hidden">
+
+    <img id="img_checked" src="img/checked.svg" width="16" height="16" class="hidden">
+    <img id="img_unchecked" src="img/unchecked.svg" width="16" height="16" class="hidden">
+  </body>
+</html>
