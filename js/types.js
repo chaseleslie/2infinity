@@ -481,7 +481,7 @@ function Enemy(game, type, isActive) {
 
   function getPosition() {
     //  <|
-    var tri = game.verticesTriangle;
+    var tri = game.verticesTriangleSub;
     var vert1 = tri[0];
     var vert2 = tri[1];
     var vert3 = tri[2];
