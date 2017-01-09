@@ -73,8 +73,6 @@ function Star(game) {
     mvUniformMatrix[15] = 1;
   };
   this.draw = function(gl) {
-    // gl.useProgram(game.shaderProg);
-
     gl.activeTexture(game.textures.star.texId);
     gl.bindTexture(gl.TEXTURE_2D, game.textures.star.tex);
     gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.star.buffer);
@@ -235,8 +233,6 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     prune = 0;
   };
   this.draw = function(gl) {
-    // gl.useProgram(game.shaderProg);
-
     gl.uniformMatrix4fv(game.mvUniform, false, mvUniformMatrix);
     if (prune) {
       gl.activeTexture(game.textures.explosion.texId);
@@ -351,6 +347,11 @@ function Enemy(game, type, isActive) {
   verticalPos = ((global.performance.now()|0) % 2) ? -verticalPos : verticalPos;
   var horizontalPos = 1.10;
   var depthPos = 0.0;
+  var vertices = [
+    new Float32Array(3),
+    new Float32Array(3),
+    new Float32Array(3)
+  ];
   var state = new Physics.State(
     [horizontalPos, verticalPos, depthPos],
     [-speed, 0, 0]
@@ -399,8 +400,6 @@ function Enemy(game, type, isActive) {
     mvUniformMatrix[13] = verticalPos;
   };
   this.draw = function(gl) {
-    // gl.useProgram(game.shaderProg);
-
     var numTri = 0;
     gl.uniformMatrix4fv(game.mvUniform, false, mvUniformMatrix);
     if (prune) {
@@ -487,17 +486,25 @@ function Enemy(game, type, isActive) {
     var vert2 = [tri[3], tri[4], tri[5], 1];
     var vert3 = [tri[6], tri[7], tri[8], 1];
 
-    return [
-      MDN.multiplyPoint(
-        game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert1)
-      ),
-      MDN.multiplyPoint(
-        game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert2)
-      ),
-      MDN.multiplyPoint(
-        game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert3)
-      )
-    ];
+    var p1 = MDN.multiplyPoint(
+      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert1)
+    );
+    var p2 = MDN.multiplyPoint(
+      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert2)
+    );
+    var p3 = MDN.multiplyPoint(
+      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert3)
+    );
+    vertices[0][0] = p1[0];
+    vertices[0][1] = p1[1];
+    vertices[0][2] = p1[2];
+    vertices[1][0] = p2[0];
+    vertices[1][1] = p2[1];
+    vertices[1][2] = p2[2];
+    vertices[2][0] = p3[0];
+    vertices[2][1] = p3[1];
+    vertices[2][2] = p3[2];
+    return vertices;
   }
   function getPositionLeft() {
     var tri = game.verticesTriangle;
@@ -571,6 +578,11 @@ function Player(game, aspect) {
   var weaponLastTs = 0;
   var projCount = 50;
   var startPos = {x: -0.5, y: 0.0, z: 0.0};
+  var vertices = [
+    new Float32Array(3),
+    new Float32Array(3),
+    new Float32Array(3)
+  ];
 
   for (let k = 0; k < game.weaponTypes.length; k += 1) {
     weapons.push(new Weapon(game, k, projCount, 1, null));
@@ -597,12 +609,6 @@ function Player(game, aspect) {
   this.reset = function(translate, rotate) {
     var trans = translateVec;
     var rot = rotations;
-    // trans.x = startPos.x;
-    // trans.y = startPos.y;
-    // trans.z = startPos.z;
-    // rot.x = 0;
-    // rot.y = 0;
-    // rot.z = 0;
 
     if (translate && typeof translate === "object") {
       if ("x" in translate && typeof translate.x === "number") {
@@ -648,29 +654,6 @@ function Player(game, aspect) {
       rot.z = 0;
     }
 
-
-    // if (rotate && typeof rotate === "number") {
-    //   mvUniformMatrix[0] = scales.x;
-    //   mvUniformMatrix[5] = scales.y * Math.cos(rotate);
-    //   mvUniformMatrix[6] = -scales.y * Math.sin(rotate);
-    //   mvUniformMatrix[9] = scales.z * Math.sin(rotate);
-    //   mvUniformMatrix[10] = scales.z * Math.cos(rotate);
-    //   mvUniformMatrix[12] = trans.x;
-    //   mvUniformMatrix[13] = trans.y;
-    //   mvUniformMatrix[14] = trans.z;
-    //   mvUniformMatrix[15] = 1;
-    // } else {
-    //   mvUniformMatrix[0] = scales.x;
-    //   mvUniformMatrix[5] = scales.y;
-    //   mvUniformMatrix[6] = 0;
-    //   mvUniformMatrix[9] = 0;
-    //   mvUniformMatrix[10] = scales.z;
-    //   mvUniformMatrix[12] = trans.x;
-    //   mvUniformMatrix[13] = trans.y;
-    //   mvUniformMatrix[14] = trans.z;
-    //   mvUniformMatrix[15] = 1;
-    // }
-
     Utils.modelViewMatrix(mvUniformMatrix, trans, rot, scales);
   };
   this.resetGame = function() {
@@ -678,8 +661,6 @@ function Player(game, aspect) {
     this.reset(startPos, false);
   };
   this.draw = function(gl) {
-    // gl.useProgram(game.shaderProg);
-
     gl.activeTexture(game.textures.ship.texId);
     gl.bindTexture(gl.TEXTURE_2D, game.textures.ship.tex);
     gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.ship.buffer);
@@ -878,17 +859,25 @@ function Player(game, aspect) {
     var vert2 = [tri[3], tri[4], tri[5], 1];
     var vert3 = [tri[6], tri[7], tri[8], 1];
 
-    return [
-      MDN.multiplyPoint(
-        game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert1)
-      ),
-      MDN.multiplyPoint(
-        game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert2)
-      ),
-      MDN.multiplyPoint(
-        game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert3)
-      )
-    ];
+    var p1 = MDN.multiplyPoint(
+      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert1)
+    );
+    var p2 = MDN.multiplyPoint(
+      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert2)
+    );
+    var p3 = MDN.multiplyPoint(
+      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert3)
+    );
+    vertices[0][0] = p1[0];
+    vertices[0][1] = p1[1];
+    vertices[0][2] = p1[2];
+    vertices[1][0] = p2[0];
+    vertices[1][1] = p2[1];
+    vertices[1][2] = p2[2];
+    vertices[2][0] = p3[0];
+    vertices[2][1] = p3[1];
+    vertices[2][2] = p3[2];
+    return vertices;
   }
   function getPositionLeft() {
     var tri = game.verticesTriangle;
