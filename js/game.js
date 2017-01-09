@@ -165,6 +165,11 @@
       0.5, 0.0, 0.0,
       -1.0, -1.0, 0.0
     ]),
+    "verticesTriangleSub": [
+      new Float32Array([-1.0, 1.0, 0.0]),
+      new Float32Array([0.5, 0.0, 0.0]),
+      new Float32Array([-1.0, -1.0, 0.0])
+    ],
 
     "vertexCircleBufferObject": gl.createBuffer(),
     "verticesCircle": null,
@@ -180,6 +185,15 @@
       1.0, -1.0, 0.0,
       -1.0, -1.0, 0.0
     ]),
+    "verticesRectangleSub": [
+      new Float32Array([-1.0, 1.0, 0.0]),
+      new Float32Array([1.0, 1.0, 0.0]),
+      new Float32Array([1.0, -1.0, 0.0]),
+
+      new Float32Array([-1.0, 1.0, 0.0]),
+      new Float32Array([1.0, -1.0, 0.0]),
+      new Float32Array([-1.0, -1.0, 0.0])
+    ],
 
     "colorUniform": null,
     "pUniform": null,

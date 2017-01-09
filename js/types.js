@@ -482,18 +482,24 @@ function Enemy(game, type, isActive) {
   function getPosition() {
     //  <|
     var tri = game.verticesTriangle;
-    var vert1 = [tri[0], tri[1], tri[2], 1];
-    var vert2 = [tri[3], tri[4], tri[5], 1];
-    var vert3 = [tri[6], tri[7], tri[8], 1];
+    var vert1 = tri[0];
+    var vert2 = tri[1];
+    var vert3 = tri[2];
 
-    var p1 = MDN.multiplyPoint(
-      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert1)
+    var p1 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert1, vertices[0]),
+      vertices[0]
     );
-    var p2 = MDN.multiplyPoint(
-      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert2)
+    var p2 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert2, vertices[1]),
+      vertices[1]
     );
-    var p3 = MDN.multiplyPoint(
-      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert3)
+    var p3 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert3, vertices[2]),
+      vertices[2]
     );
     vertices[0][0] = p1[0];
     vertices[0][1] = p1[1];
@@ -854,19 +860,25 @@ function Player(game, aspect) {
 
   function getPosition() {
     //  |>
-    var tri = game.verticesTriangle;
-    var vert1 = [tri[0], tri[1], tri[2], 1];
-    var vert2 = [tri[3], tri[4], tri[5], 1];
-    var vert3 = [tri[6], tri[7], tri[8], 1];
+    var tri = game.verticesTriangleSub;
+    var vert1 = tri[0];
+    var vert2 = tri[1];
+    var vert3 = tri[2];
 
-    var p1 = MDN.multiplyPoint(
-      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert1)
+    var p1 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert1, vertices[0]),
+      vertices[0]
     );
-    var p2 = MDN.multiplyPoint(
-      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert2)
+    var p2 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert2, vertices[1]),
+      vertices[1]
     );
-    var p3 = MDN.multiplyPoint(
-      game.pUniformMatrix, MDN.multiplyPoint(mvUniformMatrix, vert3)
+    var p3 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert3, vertices[2]),
+      vertices[2]
     );
     vertices[0][0] = p1[0];
     vertices[0][1] = p1[1];
