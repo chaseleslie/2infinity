@@ -56,13 +56,13 @@ body {
 }
 
 .unchecked {
-  background-image: url("img/unchecked.svg");
+  background-image: url("../img/unchecked.svg");
   background-repeat: no-repeat;
   background-size: 16px 16px;
   background-position: right;
 }
 .checked {
-  background-image: url("img/checked.svg");
+  background-image: url("../img/checked.svg");
   background-repeat: no-repeat;
   background-size: 16px 16px;
   background-position: right;
