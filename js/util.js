@@ -1,4 +1,6 @@
-var Utils = (function(glob) {//eslint-disable-line no-unused-vars
+/* exported Utils */
+
+var Utils = (function(glob) {
 
   var global = glob;
 
@@ -187,6 +189,21 @@ function modelViewMatrix(mvMatrix, trans, rotate, scale) {
   mvMatrix[15] = 1;
 }
 
+function matrixMultiplyPoint(matrix, point, outPoint) {
+  var x = point[0], y = point[1], z = point[2], w = point[3] || 1;
+
+  var c1r1 = matrix[ 0], c2r1 = matrix[ 1], c3r1 = matrix[ 2], c4r1 = matrix[ 3],
+      c1r2 = matrix[ 4], c2r2 = matrix[ 5], c3r2 = matrix[ 6], c4r2 = matrix[ 7],
+      c1r3 = matrix[ 8], c2r3 = matrix[ 9], c3r3 = matrix[10], c4r3 = matrix[11],
+      c1r4 = matrix[12], c2r4 = matrix[13], c3r4 = matrix[14], c4r4 = matrix[15];
+
+  outPoint[0] = x*c1r1 + y*c1r2 + z*c1r3 + w*c1r4;
+  outPoint[1] = x*c2r1 + y*c2r2 + z*c2r3 + w*c2r4;
+  outPoint[2] = x*c3r1 + y*c3r2 + z*c3r3 + w*c3r4;
+  outPoint[3] = x*c4r1 + y*c4r2 + z*c4r3 + w*c4r4;
+  return outPoint;
+}
+
 var DEG2RAD = Math.PI / 180;
 var RAD2DEG = 180 / Math.PI;
 var ROOT_TWO_OVER_TWO = Math.sqrt(2) / 2;
@@ -199,6 +216,7 @@ return {
   "fetchURL": fetchURL,
   "isArrayLike": isArrayLike,
   "modelViewMatrix": modelViewMatrix,
+  "matrixMultiplyPoint": matrixMultiplyPoint,
   "DEG2RAD": DEG2RAD,
   "RAD2DEG": RAD2DEG,
   "ROOT_TWO_OVER_TWO": ROOT_TWO_OVER_TWO
