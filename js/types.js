@@ -579,6 +579,7 @@ function Player(game, aspect) {
   var pitching = 0;
   var pitchingMax = 96;
   var pitchingDepth = 0.6;
+  var pitchAngleMax = Math.PI/5;
   var weapons = [];
   var weaponSelected = 2;
   var weaponLastTs = 0;
@@ -761,18 +762,21 @@ function Player(game, aspect) {
         rollingDown -= 1;
         iter = rollingDown;
       }
+
       angleX = (iter / rollingMax) * rollingAngle * (Utils.DEG2RAD);
+
       if (pitching) {
         pitching -= 1;
         iter = pitching / pitchingMax;
-        let z = pitchingDepth * Math.sin(Math.PI * iter);
+        let PI = Math.PI;
+        let z = pitchingDepth * Math.sin(PI * iter);
 
         pos.z = Utils.mapValue(z, 0, 1, 0, pitchingDepth);
-        if (iter >= 0.5) {
-          angleY = Utils.mapValue(Math.sin(Math.PI * iter), 0, 1, 0, Math.PI/6);
-        } else {
-          angleY = Utils.mapValue(-Math.sin(Math.PI * iter), 0, 1, 0, Math.PI/6);
-        }
+
+        angleY = Utils.mapValue(
+          -PI * Math.cos(PI*2*iter + 3/2*PI),
+          -PI, PI, -pitchAngleMax, pitchAngleMax
+        );
 
       } else {
         pos.z = 0;
