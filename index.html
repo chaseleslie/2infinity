@@ -34,6 +34,9 @@
 
       void main(void) {
         gl_FragColor = texture2D(uSampler, vTextureCoord);
+        if (gl_FragColor.a < 0.1) {
+          discard;
+        }
       }
     </script>
     <script type="x-shader/x-vertex" id="gl_shader_vert">
@@ -53,8 +56,8 @@
   </head>
   <body>
     <div id="wrapper">
-      <canvas id="glcanvas" width="1080" height="720"></canvas>
-      <canvas id="glcanvas_overlay" width="1080" height="720" class=""></canvas>
+      <canvas id="glcanvas" width="1350" height="900"></canvas>
+      <canvas id="glcanvas_overlay" width="1350" height="900"></canvas>
       <menu id="menu" class="hidden">
         <menuitem id="menu_resume" class="selectable selected">Resume</menuitem>
         <menuitem id="menu_restart" class="selectable">Restart</menuitem>
