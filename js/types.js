@@ -1,4 +1,4 @@
-/* global Physics MDN Utils */
+/* global Physics Utils */
 /* exported StarMap Star Weapon Projectile Enemy Player */
 
 var global = window;
@@ -49,11 +49,11 @@ function Star(game) {
     [-speed, 0, 0]
   );
 
-  var mvUniformMatrix = new Float32Array(
-    MDN.multiplyArrayOfMatrices([
-      MDN.translateMatrix(horizontalPos, verticalPos, depthPos),
-      MDN.scaleMatrix(xScale, yScale, zScale)
-    ])
+  var mvUniformMatrix = Utils.modelViewMatrix(
+    new Float32Array(16),
+    {"x": horizontalPos, "y": verticalPos, "z": depthPos},
+    {"x": 0, "y": 0, "z": 0},
+    {"x": xScale, "y": yScale, "z": zScale}
   );
 
   this.reset = function() {
@@ -195,11 +195,12 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     [x, y, depthPos],
     [dir ? speed : -speed, 0, 0]
   );
-  var mvUniformMatrix = new Float32Array(
-    MDN.multiplyArrayOfMatrices([
-      MDN.translateMatrix(x, y, 0.0),
-      MDN.scaleMatrix(xScale, yScale, zScale)
-    ])
+
+  var mvUniformMatrix = Utils.modelViewMatrix(
+    new Float32Array(16),
+    {"x": x, "y": y, "z": 0.0},
+    {"x": 0, "y": 0, "z": 0},
+    {"x": xScale, "y": yScale, "z": zScale}
   );
   var hitbox = {
     "left": 0,
@@ -356,12 +357,12 @@ function Enemy(game, type, isActive) {
     [horizontalPos, verticalPos, depthPos],
     [-speed, 0, 0]
   );
-  var mvUniformMatrix = new Float32Array(
-    MDN.multiplyArrayOfMatrices([
-      MDN.translateMatrix(horizontalPos, verticalPos, depthPos),
-      MDN.rotateYMatrix(Math.PI),
-      MDN.scaleMatrix(xScale, yScale, zScale)
-    ])
+
+  var mvUniformMatrix = Utils.modelViewMatrix(
+    new Float32Array(16),
+    {"x": horizontalPos, "y": verticalPos, "z": depthPos},
+    {"x": 0, "y": Math.PI, "z": 0},
+    {"x": xScale, "y": yScale, "z": zScale}
   );
   var hitbox = {
     "left": 0,
@@ -595,12 +596,13 @@ function Player(game, aspect) {
     weapons.push(new Weapon(game, k, projCount, 1, null));
   }
 
-  var mvUniformMatrix = new Float32Array(
-    MDN.multiplyArrayOfMatrices([
-      MDN.translateMatrix(startPos.x, startPos.y, startPos.z),
-      MDN.scaleMatrix(xScale, yScale, zScale)
-    ])
+  var mvUniformMatrix = Utils.modelViewMatrix(
+    new Float32Array(16),
+    {"x": startPos.x, "y": startPos.y, "z": startPos.z},
+    {"x": 0, "y": 0, "z": 0},
+    {"x": xScale, "y": yScale, "z": zScale}
   );
+
   var hitbox = {
     "left": 0,
     "right": 0,
@@ -763,7 +765,7 @@ function Player(game, aspect) {
         iter = rollingDown;
       }
 
-      angleX = (iter / rollingMax) * rollingAngle * (Utils.DEG2RAD);
+      angleX = (iter / rollingMax) * (rollingAngle * Utils.DEG2RAD);
 
       if (pitching) {
         pitching -= 1;
@@ -777,7 +779,6 @@ function Player(game, aspect) {
           -PI * Math.cos(PI*2*iter + 3/2*PI),
           -PI, PI, -pitchAngleMax, pitchAngleMax
         );
-
       } else {
         pos.z = 0;
       }

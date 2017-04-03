@@ -3,6 +3,8 @@
 var Utils = (function(glob) {
 
   var global = glob;
+  var cos = Math.cos;
+  var sin = Math.sin;
 
   function ExponentialAverage(alpha, initVal) {
     alpha = alpha || 0.5;
@@ -86,8 +88,8 @@ function createCircleVertices(centerVertex, numPoints, radius) {
     tex.push(Utils.mapValue(x1, xmin, xmax, 0, 1));
     tex.push(Utils.mapValue(y1, ymin, ymax, 0, 1));
 
-    x1 = x0 + Math.cos(k * pi) * radius;
-    y1 = y0 + Math.sin(k * pi) * radius;
+    x1 = x0 + cos(k * pi) * radius;
+    y1 = y0 + sin(k * pi) * radius;
     vertices.push(x1);
     vertices.push(y1);
     vertices.push(z0);
@@ -159,8 +161,6 @@ function isArrayLike(arr) {
 }
 
 function modelViewMatrix(mvMatrix, trans, rotate, scale) {
-  var cos = Math.cos;
-  var sin = Math.sin;
   var x = trans.x;
   var y = trans.y;
   var z = trans.z;
@@ -187,6 +187,8 @@ function modelViewMatrix(mvMatrix, trans, rotate, scale) {
   mvMatrix[13] = y;
   mvMatrix[14] = z;
   mvMatrix[15] = 1;
+
+  return mvMatrix;
 }
 
 function matrixMultiplyPoint(matrix, point, outPoint) {
@@ -204,9 +206,95 @@ function matrixMultiplyPoint(matrix, point, outPoint) {
   return outPoint;
 }
 
+function multiplyArrayOfMatrices(matrices) {
+  // Multiply array of matrices, store result in first matrix
+  var result = matrices[0];
+
+  for (let k = 1, n = matrices.length; k < n; k += 1) {
+    result = multiplyMatrices(result, matrices[k]);
+  }
+
+  return result;
+}
+
+function multiplyMatrices(a, b) {
+  // Multiply a*b, store result in a
+  var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
+      a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
+      a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
+      a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+
+  var b0  = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+  a[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+  a[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+  a[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+  a[3] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+  b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7];
+  a[4] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+  a[5] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+  a[6] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+  a[7] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+  b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11];
+  a[8] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+  a[9] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+  a[10] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+  a[11] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+  b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15];
+  a[12] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+  a[13] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+  a[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+  a[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+  return a;
+}
+
+function rotateXMatrix(matrix, a) {
+  matrix[0] = 1; matrix[1] = 0; matrix[2] = 0; matrix[3] = 0;
+  matrix[4] = 0; matrix[5] = cos(a); matrix[6] = -sin(a); matrix[7] = 0;
+  matrix[8] = 0; matrix[9] = sin(a); matrix[10] = cos(a); matrix[11] = 0;
+  matrix[12] = 0; matrix[13] = 0; matrix[14] = 0; matrix[15] = 1;
+  return matrix;
+}
+
+function rotateYMatrix(matrix, a) {
+  matrix[0] = cos(a); matrix[1] = 0; matrix[2] = sin(a); matrix[3] = 0;
+  matrix[4] = 0; matrix[5] = 1; matrix[6] = 0; matrix[7] = 0;
+  matrix[8] = -sin(a); matrix[9] = 0; matrix[10] = cos(a); matrix[11] = 0;
+  matrix[12] = 0; matrix[13] = 0; matrix[14] = 0; matrix[15] = 1;
+  return matrix;
+}
+
+function rotateZMatrix(matrix, a) {
+  matrix[0] = cos(a); matrix[1] = -sin(a); matrix[2] = 0; matrix[3] = 0;
+  matrix[4] = sin(a); matrix[5] = cos(a); matrix[6] = 0; matrix[7] = 0;
+  matrix[8] = 0; matrix[9] = 0; matrix[10] = 1; matrix[11] = 0;
+  matrix[12] = 0; matrix[13] = 0; matrix[14] = 0; matrix[15] = 1;
+  return matrix;
+}
+
+function scaleMatrix(matrix, w, h, d) {
+  matrix[0] = w; matrix[1] = 0; matrix[2] = 0; matrix[3] = 0;
+  matrix[4] = 0; matrix[5] = h; matrix[6] = 0; matrix[7] = 0;
+  matrix[8] = 0; matrix[9] = 0; matrix[10] = d; matrix[11] = 0;
+  matrix[12] = 0; matrix[13] = 0; matrix[14] = 0; matrix[15] = 1;
+  return matrix;
+}
+
+function translateMatrix(matrix, x, y, z) {
+  matrix[0] = 1; matrix[1] = 0; matrix[2] = 0; matrix[3] = 0;
+  matrix[4] = 0; matrix[5] = 1; matrix[6] = 0; matrix[7] = 0;
+  matrix[8] = 0; matrix[9] = 0; matrix[10] = 1; matrix[11] = 0;
+  matrix[12] = x; matrix[13] = y; matrix[14] = z; matrix[15] = 1;
+  return matrix;
+}
+
 var DEG2RAD = Math.PI / 180;
 var RAD2DEG = 180 / Math.PI;
 var ROOT_TWO_OVER_TWO = Math.sqrt(2) / 2;
+var TWOPI = Math.PI * 2;
 
 return {
   "ExponentialAverage": ExponentialAverage,
@@ -217,9 +305,17 @@ return {
   "isArrayLike": isArrayLike,
   "modelViewMatrix": modelViewMatrix,
   "matrixMultiplyPoint": matrixMultiplyPoint,
+  "multiplyArrayOfMatrices": multiplyArrayOfMatrices,
+  "multiplyMatrices": multiplyMatrices,
+  "rotateXMatrix": rotateXMatrix,
+  "rotateYMatrix": rotateYMatrix,
+  "rotateZMatrix": rotateZMatrix,
+  "scaleMatrix": scaleMatrix,
+  "translateMatrix": translateMatrix,
   "DEG2RAD": DEG2RAD,
   "RAD2DEG": RAD2DEG,
-  "ROOT_TWO_OVER_TWO": ROOT_TWO_OVER_TWO
+  "ROOT_TWO_OVER_TWO": ROOT_TWO_OVER_TWO,
+  "TWOPI": TWOPI
 };
 
 })(window);
