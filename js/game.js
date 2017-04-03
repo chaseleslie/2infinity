@@ -365,33 +365,35 @@
 
   function handleKeyDown(e) {
     var ret;
+    var now = win.performance.now();
+    var keydownMap = Game.keydownMap;
     switch (e.key) {
       case "ArrowLeft":
       case "a":
-        Game.keydownMap["ArrowLeft"] = true;
+        keydownMap["ArrowLeft"] = keydownMap["ArrowLeft"] || now;
         e.preventDefault();
       break;
       case "ArrowUp":
       case "w":
-        Game.keydownMap["ArrowUp"] = true;
+        keydownMap["ArrowUp"] = keydownMap["ArrowUp"] || now;
         e.preventDefault();
       break;
       case "ArrowRight":
       case "d":
-        Game.keydownMap["ArrowRight"] = true;
+        keydownMap["ArrowRight"] = keydownMap["ArrowRight"] || now;
         e.preventDefault();
       break;
       case "ArrowDown":
       case "s":
-        Game.keydownMap["ArrowDown"] = true;
+        keydownMap["ArrowDown"] = keydownMap["ArrowDown"] || now;
         e.preventDefault();
       break;
       case " ":
-        Game.keydownMap["Shoot"] = true;
+        keydownMap["Shoot"] = keydownMap["Shoot"] || now;
         e.preventDefault();
       break;
       case "c":
-        Game.keydownMap["Dive"] = true;
+        keydownMap["Dive"] = keydownMap["Dive"] || now;
         e.preventDefault();
       break;
       case "Escape":
@@ -419,25 +421,25 @@
     switch (e.key) {
       case "ArrowLeft":
       case "a":
-        Game.keydownMap["ArrowLeft"] = false;
+        Game.keydownMap["ArrowLeft"] = 0;
       break;
       case "ArrowUp":
       case "w":
-        Game.keydownMap["ArrowUp"] = false;
+        Game.keydownMap["ArrowUp"] = 0;
       break;
       case "ArrowRight":
       case "d":
-        Game.keydownMap["ArrowRight"] = false;
+        Game.keydownMap["ArrowRight"] = 0;
       break;
       case "ArrowDown":
       case "s":
-        Game.keydownMap["ArrowDown"] = false;
+        Game.keydownMap["ArrowDown"] = 0;
       break;
       case " ":
-        Game.keydownMap["Shoot"] = false;
+        Game.keydownMap["Shoot"] = 0;
       break;
       case "c":
-        Game.keydownMap["Dive"] = false;
+        Game.keydownMap["Dive"] = 0;
         e.preventDefault();
       break;
     }
