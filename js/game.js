@@ -15,18 +15,7 @@
   var ROOT_TWO_OVER_TWO = Utils.ROOT_TWO_OVER_TWO;
   var point = {"x": 0, "y": 0, "z": 0};
   var zProjection = 1;
-  // var identityMatrix = new Float32Array([
-  //   1, 0, 0, 0,
-  //   0, 1, 0, 0,
-  //   0, 0, 1, 0,
-  //   0, 0, 0, 1
-  // ]);
-  // var aspectMatrix = new Float32Array([
-  //   1 / aspect, 0, 0, 0,
-  //   0, 1, 0, 0,
-  //   0, 0, 1, 0,
-  //   0, 0, 0, 1
-  // ]);
+
   var difficultyMap = {
     "labels": {
       "easy": 1,

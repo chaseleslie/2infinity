@@ -5,6 +5,12 @@ var Utils = (function(glob) {
   var global = glob;
   var cos = Math.cos;
   var sin = Math.sin;
+  var identityMatrix = new Float32Array([
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1
+  ]);
 
   function ExponentialAverage(alpha, initVal) {
     alpha = alpha || 0.5;
@@ -315,7 +321,8 @@ return {
   "DEG2RAD": DEG2RAD,
   "RAD2DEG": RAD2DEG,
   "ROOT_TWO_OVER_TWO": ROOT_TWO_OVER_TWO,
-  "TWOPI": TWOPI
+  "TWOPI": TWOPI,
+  "identityMatrix": identityMatrix
 };
 
 })(window);
