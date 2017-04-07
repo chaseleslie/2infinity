@@ -184,7 +184,6 @@
       new Float32Array([-1.0, -1.0, 0.0])
     ],
 
-    "colorUniform": null,
     "pUniform": null,
     "mvUniform": null,
 
@@ -847,7 +846,6 @@
       return;
     }
 
-    Game.colorUniform = gl.getUniformLocation(Game.shaderProg, "uColor");
     Game.player = new Player(Game, aspect);
     gl.useProgram(Game.shaderProg);
 
