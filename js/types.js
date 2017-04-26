@@ -191,6 +191,14 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
   var prune = 0;
   var showDestroyedFrames = 4;
   var depthPos = 0.0;
+  var vertices = [
+    new Float32Array(3),
+    new Float32Array(3),
+    new Float32Array(3),
+    new Float32Array(3),
+    new Float32Array(3),
+    new Float32Array(3)
+  ];
   var state = new Physics.State(
     [x, y, depthPos],
     [dir ? speed : -speed, 0, 0]
@@ -280,6 +288,70 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     mvUniformMatrix[15] = 1;
   };
 
+  function getPosition() {
+    //   <|
+    //  |>
+    var tri = game.verticesRectangleSub;
+    var vert1 = tri[0];
+    var vert2 = tri[1];
+    var vert3 = tri[2];
+    var vert4 = tri[3];
+    var vert5 = tri[4];
+    var vert6 = tri[5];
+
+    var p1 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert1, vertices[0]),
+      vertices[0]
+    );
+    var p2 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert2, vertices[1]),
+      vertices[1]
+    );
+    var p3 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert3, vertices[2]),
+      vertices[2]
+    );
+    var p4 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert4, vertices[3]),
+      vertices[3]
+    );
+    var p5 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert5, vertices[4]),
+      vertices[4]
+    );
+    var p6 = Utils.matrixMultiplyPoint(
+      game.pUniformMatrix,
+      Utils.matrixMultiplyPoint(mvUniformMatrix, vert6, vertices[5]),
+      vertices[5]
+    );
+
+    vertices[0][0] = p1[0];
+    vertices[0][1] = p1[1];
+    vertices[0][2] = p1[2];
+    vertices[1][0] = p2[0];
+    vertices[1][1] = p2[1];
+    vertices[1][2] = p2[2];
+    vertices[2][0] = p3[0];
+    vertices[2][1] = p3[1];
+    vertices[2][2] = p3[2];
+
+    vertices[3][0] = p4[0];
+    vertices[3][1] = p4[1];
+    vertices[3][2] = p4[2];
+    vertices[4][0] = p5[0];
+    vertices[4][1] = p5[1];
+    vertices[4][2] = p5[2];
+    vertices[5][0] = p6[0];
+    vertices[5][1] = p6[1];
+    vertices[5][2] = p6[2];
+
+    return vertices;
+  }
   function getPositionLeft() {
     var tri = game.verticesTriangle;
     var x = tri[0], y = tri[1], z = tri[2], w = 1;
@@ -321,6 +393,7 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     return hitbox;
   }
 
+  Object.defineProperty(this, "position", {get: getPosition});
   Object.defineProperty(this, "positionLeft", {get: getPositionLeft});
   Object.defineProperty(this, "positionRight", {get: getPositionRight});
   Object.defineProperty(this, "positionTop", {get: getPositionTop});
@@ -778,9 +851,9 @@ function Player(game, aspect) {
         for (let n = 0; n < game.enemies.length; n += 1) {
           let enemy = game.enemies[n];
           if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(hitbox)) {
-            let enemyPos = enemy.position;
-            for (let m = 0; m < enemyPos.length; m += 1) {
-              let vert = enemyPos[m];
+            let projPos = proj.position;
+            for (let m = 0; m < projPos.length; m += 1) {
+              let vert = projPos[m];
               point.x = vert[0];
               point.y = vert[1];
               point.z = vert[2];
