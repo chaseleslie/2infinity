@@ -688,7 +688,7 @@
         let keepLooping = true;
         let enemy = Game.enemies[k];
         if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(playerHitbox)) {
-          var playerPos = Game.player.position;
+          let playerPos = Game.player.position;
           for (let iK = 0; iK < playerPos.length; iK += 1) {
             let vert = playerPos[iK];
             point.x = vert[0];
