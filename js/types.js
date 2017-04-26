@@ -812,7 +812,8 @@ function Player(game, aspect) {
         let hitbox = getHitbox();
         state.position[0] = -1.0 + (hitbox.right - hitbox.left) / 2;
       }
-    } else if (arrowUp) {
+    }
+    if (arrowUp) {
       let top = getPositionTop();
       if (top > 1.0) {
         let hitbox = getHitbox();
@@ -821,12 +822,14 @@ function Player(game, aspect) {
 
       rollingUp = rollingMax;
       rollingDown = 0;
-    } else if (arrowRight) {
+    }
+    if (arrowRight) {
       let right = getPositionRight();
       if (right > 1.0) {
         state.position[0] = 1.0 - (hitbox.right - hitbox.left) / 2;
       }
-    } else if (arrowDown) {
+    }
+    if (arrowDown) {
       let bottom = getPositionBottom();
       if (bottom < -1.0) {
         let hitbox = getHitbox();
