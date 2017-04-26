@@ -591,6 +591,10 @@ function Player(game, aspect) {
     new Float32Array(3),
     new Float32Array(3)
   ];
+  var state = new Physics.State(
+    [startPos.x, startPos.y, startPos.z],
+    [0, 0, 0]
+  );
 
   for (let k = 0; k < game.weaponTypes.length; k += 1) {
     weapons.push(new Weapon(game, k, projCount, 1, null));
@@ -611,63 +615,38 @@ function Player(game, aspect) {
     "depth": 0
   };
   var translateVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
-  var positionVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
   var rotations = {"x": 0, "y": 0, "z": 0};
   var scales = {"x": xScale, "y": yScale, "z": zScale};
+  var point = {"x": 0, "y": 0, "z": 0};
 
-  this.reset = function(translate, rotate) {
+  this.reset = function(dt) {
+    Physics.integrateState(state, game.time, dt);
+    state.velocity[0] = 0;
+    state.velocity[1] = 0;
+    state.velocity[2] = 0;
+
     var trans = translateVec;
-    var rot = rotations;
 
-    if (translate && typeof translate === "object") {
-      if ("x" in translate && typeof translate.x === "number") {
-        trans.x = translate.x;
-      } else {
-        trans.x = startPos.x;
-      }
-      if ("y" in translate && typeof translate.y === "number") {
-        trans.y = translate.y;
-      } else {
-        trans.y = startPos.y;
-      }
-      if ("z" in translate && typeof translate.z === "number") {
-        trans.z = translate.z;
-      } else {
-        trans.z = startPos.z;
-      }
-    } else {
-      trans.x = startPos.x;
-      trans.y = startPos.y;
-      trans.z = startPos.z;
-    }
+    trans.x = state.position[0];
+    trans.y = state.position[1];
+    trans.z = state.position[2];
 
-    if (rotate && typeof rotate === "object") {
-      if ("x" in rotate && typeof rotate.x === "number") {
-        rot.x = rotate.x;
-      } else {
-        rot.x = 0;
-      }
-      if ("y" in rotate && typeof rotate.y === "number") {
-        rot.y = rotate.y;
-      } else {
-        rot.y = 0;
-      }
-      if ("z" in rotate && typeof rotate.z === "number") {
-        rot.z = rotate.z;
-      } else {
-        rot.z = 0;
-      }
-    } else {
-      rot.x = 0;
-      rot.y = 0;
-      rot.z = 0;
-    }
-
-    Utils.modelViewMatrix(mvUniformMatrix, trans, rot, scales);
+    Utils.modelViewMatrix(mvUniformMatrix, trans, rotations, scales);
   };
   this.resetGame = function() {
     hp = maxHp;
-    this.reset(startPos, false);
+
+    state.position[0] = startPos.x;
+    state.position[1] = startPos.y;
+    state.position[2] = startPos.z;
+    state.velocity[0] = 0;
+    state.velocity[1] = 0;
+    state.velocity[2] = 0;
+    rotations.x = 0;
+    rotations.y = 0;
+    rotations.z = 0;
+
+    Utils.modelViewMatrix(mvUniformMatrix, startPos, rotations, scales);
   };
   this.draw = function(gl) {
     gl.activeTexture(game.textures.ship.texId);
@@ -689,56 +668,22 @@ function Player(game, aspect) {
     }
   };
   this.update = function(dt) {
-    var incr = 0.01;
-
+    let step = 0.001;
     let arrowLeft = game.keydownMap["ArrowLeft"];
-    if (arrowLeft) {
-      let left = getPositionLeft();
-      if (Math.abs(-1.0 - left) < incr) {
-        let hitbox = getHitbox();
-        mvUniformMatrix[12] = -1.0 + (hitbox.right - hitbox.left) / 2;
-      } else if (left - incr >= -1) {
-        mvUniformMatrix[12] -= incr;
-      }
-    }
-
     let arrowUp = game.keydownMap["ArrowUp"];
-    if (arrowUp) {
-      let top = getPositionTop();
-      if (Math.abs(1.0 - top) < incr) {
-        let hitbox = getHitbox();
-        mvUniformMatrix[13] = 1.0 - (hitbox.top - hitbox.bottom) / 2;
-      } else if (top - incr >= -1) {
-        mvUniformMatrix[13] += incr;
-      }
-
-      rollingUp = rollingMax;
-      rollingDown = 0;
-    }
-
     let arrowRight = game.keydownMap["ArrowRight"];
-    if (arrowRight) {
-      let right = getPositionRight();
-      if (Math.abs(1.0 - right) < incr) {
-        let hitbox = getHitbox();
-        mvUniformMatrix[12] = 1.0 - (hitbox.right - hitbox.left) / 2;
-      } else if (right - incr >= -1) {
-        mvUniformMatrix[12] += incr;
-      }
+    let arrowDown = game.keydownMap["ArrowDown"];
+
+    if (arrowLeft && !arrowRight) {
+      state.velocity[0] = -step;
+    } else if (arrowRight && !arrowLeft) {
+      state.velocity[0] = step;
     }
 
-    let arrowDown = game.keydownMap["ArrowDown"];
-    if (arrowDown) {
-      let bottom = getPositionBottom();
-      if (Math.abs(-1.0 - bottom) < incr) {
-        let hitbox = getHitbox();
-        mvUniformMatrix[13] = -1.0 + (hitbox.top - hitbox.bottom) / 2;
-      } else if (bottom - incr >= -1) {
-        mvUniformMatrix[13] -= incr;
-      }
-
-      rollingDown = rollingMax;
-      rollingUp = 0;
+    if (arrowUp && !arrowDown) {
+      state.velocity[1] = step;
+    } else if (arrowDown && !arrowUp) {
+      state.velocity[1] = -step;
     }
 
     let dive = game.keydownMap["Dive"];
@@ -750,12 +695,8 @@ function Player(game, aspect) {
       let angleX = 0;
       let angleY = 0;
       let angleZ = 0;
-      let pos = positionVec;
+      let rot = rotations;
       let iter = 0;
-
-      pos.x = mvUniformMatrix[12];
-      pos.y = mvUniformMatrix[13];
-      pos.z = mvUniformMatrix[14];
 
       if (rollingUp) {
         rollingUp -= 1;
@@ -773,20 +714,54 @@ function Player(game, aspect) {
         let PI = Math.PI;
         let z = pitchingDepth * Math.sin(PI * iter);
 
-        pos.z = Utils.mapValue(z, 0, 1, 0, pitchingDepth);
+        state.position[2] = Utils.mapValue(z, 0, 1, 0, pitchingDepth);
 
         angleY = Utils.mapValue(
           -PI * Math.cos(PI*2*iter + 3/2*PI),
           -PI, PI, -pitchAngleMax, pitchAngleMax
         );
       } else {
-        pos.z = 0;
+        state.position[2] = 0;
       }
 
-      rotations.x = angleX;
-      rotations.y = angleY;
-      rotations.z = angleZ;
-      this.reset(pos, rotations);
+      rot.x = angleX;
+      rot.y = angleY;
+      rot.z = angleZ;
+      this.reset(dt);
+    } else if (arrowLeft || arrowUp || arrowRight || arrowDown) {
+      this.reset(dt);
+    }
+
+    //Clamp player to viewport
+    if (arrowLeft) {
+      let left = getPositionLeft();
+      if (left < -1.0) {
+        let hitbox = getHitbox();
+        state.position[0] = -1.0 + (hitbox.right - hitbox.left) / 2;
+      }
+    } else if (arrowUp) {
+      let top = getPositionTop();
+      if (top > 1.0) {
+        let hitbox = getHitbox();
+        state.position[1] = 1.0 - (hitbox.top - hitbox.bottom) / 2;
+      }
+
+      rollingUp = rollingMax;
+      rollingDown = 0;
+    } else if (arrowRight) {
+      let right = getPositionRight();
+      if (right > 1.0) {
+        state.position[0] = 1.0 - (hitbox.right - hitbox.left) / 2;
+      }
+    } else if (arrowDown) {
+      let bottom = getPositionBottom();
+      if (bottom < -1.0) {
+        let hitbox = getHitbox();
+        state.position[1] = -1.0 + (hitbox.top - hitbox.bottom) / 2;
+      }
+
+      rollingDown = rollingMax;
+      rollingUp = 0;
     }
 
     let score = 0;
@@ -803,12 +778,22 @@ function Player(game, aspect) {
         for (let n = 0; n < game.enemies.length; n += 1) {
           let enemy = game.enemies[n];
           if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(hitbox)) {
-            enemy.takeHit(proj.damage);
-            if (enemy.hitPoints <= 0) {
-              score += enemy.points;
+            let enemyPos = enemy.position;
+            for (let m = 0; m < enemyPos.length; m += 1) {
+              let vert = enemyPos[m];
+              point.x = vert[0];
+              point.y = vert[1];
+              point.z = vert[2];
+              let directHit = enemy.containsPoint(point);
+              if (directHit) {
+                enemy.takeHit(proj.damage);
+                if (enemy.hitPoints <= 0) {
+                  score += enemy.points;
+                }
+                proj.setExploded();
+                break;
+              }
             }
-            proj.setExploded();
-            break;
           }
         }
       }
@@ -946,5 +931,5 @@ function Player(game, aspect) {
   Object.defineProperty(this, "positionBottom", {get: getPositionBottom});
   Object.defineProperty(this, "hitbox", {get: getHitbox});
 
-  this.reset(positionVec, rotations);
+  this.resetGame();
 }
