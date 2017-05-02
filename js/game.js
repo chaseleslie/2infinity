@@ -521,11 +521,30 @@
       break;
     }
   }
+  function onMenuScrollWheel(e) {
+    var now = win.performance.now();
+    var lastTs = parseFloat(onMenuScrollWheel.lastTs) || 0;
+
+    if (now < lastTs + 200) {
+      e.preventDefault();
+      return;
+    }
+    onMenuScrollWheel.lastTs = now;
+
+    if (e.deltaY > 0) {
+      e.key = "ArrowDown";
+      onMenuScroll(e);
+    } else {
+      e.key = "ArrowUp";
+      onMenuScroll(e);
+    }
+  }
 
   function showMenu() {
     var menuItems = Array.prototype.slice.call(menu.querySelectorAll("menuitem.selectable"));
     menuItems[0].classList.add("selected");
     window.addEventListener("keydown", onMenuScroll, false);
+    window.addEventListener("wheel", onMenuScrollWheel, false);
 
     Game.isMenuShown = true;
     canvasOverlay.classList.add("inactive");
