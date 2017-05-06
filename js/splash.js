@@ -11,7 +11,7 @@ var Splash = (function(glob) {
     "state": 0,
     "animFrame": null,
     "frame": 0,
-    "img": document.getElementById("img_ship"),
+    "img": doc.getElementById("img_ship"),
     "left": 0,
     "top": 0,
     "width": ROOT_TWO_OVER_TWO * 64,
@@ -72,7 +72,7 @@ var Splash = (function(glob) {
 
     splash(ts);
   }
-  
+
   function splash(ts) {
     splashState.animFrame = global.requestAnimationFrame(splash);
     var ctx = splashState.canvasOverlayCtx;
