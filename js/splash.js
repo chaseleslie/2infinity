@@ -28,9 +28,15 @@ var Splash = (function(glob) {
   };
 
   function splashHandleKeyDown(e) {
-    splashState.state = -1;
-    e.preventDefault();
-    return false;
+    switch (e.key || e.keyCode || e.which) {
+      case "F5":
+      case 116:
+      break;
+      default:
+        splashState.state = -1;
+        e.preventDefault();
+        return false;
+    }
   }
 
   function splashEnd(ts) {
