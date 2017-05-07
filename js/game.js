@@ -33,10 +33,15 @@
     }
   };
 
+  var defaultFontSize = 32;
   canvasOverlay.style.top = canvas.offsetTop;
   canvasOverlay.style.left = canvas.offsetLeft;
   canvasOverlayCtx.fillStyle = "#FFF";
-  canvasOverlayCtx.font = "32px sans";
+  canvasOverlayCtx.font = `${defaultFontSize}px sans-serif`;
+
+  const OVERLAY_SCORE_DIRTY = 1;
+  const OVERLAY_HP_DIRTY = 2;
+  const OVERLAY_FPS_DIRTY = 4;
 
   var Game = {
     "difficulty": difficultyMap.labels["easy"],
@@ -50,7 +55,7 @@
     "running": false,
     "isMenuShown": false,
     "animFrame": null,
-    "overlayDirtyFlag": true,
+    "overlayDirtyFlag": OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY,
     "overlayLastTs": 0,
     "displayFPS": false,
     "muted": false,
@@ -577,7 +582,7 @@
     e.target.classList.toggle("checked");
     e.target.classList.toggle("unchecked");
     Game.displayFPS = !Game.displayFPS;
-    Game.overlayDirtyFlag = true;
+    Game.overlayDirtyFlag |= OVERLAY_FPS_DIRTY;
     hideMenu();
     start();
   }
@@ -753,7 +758,9 @@
     ctx.restore();
   }
   function introEnd() {
+    var ctx = canvasOverlayCtx;
     doc.body.removeEventListener("keydown", handleIntroKey, false);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     start();
   }
 
@@ -807,7 +814,7 @@
 
     var overlayNeedsUpdating = Boolean(Game.displayFPS);
     if (overlayNeedsUpdating && (ts > Game.overlayLastTs + 1000)) {
-      Game.overlayDirtyFlag = true;
+      Game.overlayDirtyFlag |= OVERLAY_FPS_DIRTY;
       Game.overlayLastTs = ts;
     }
 
@@ -875,8 +882,10 @@
               if (hp <= 0) {
                 restart();
                 keepLooping = false;
-                Game.overlayDirtyFlag = true;
+                Game.overlayDirtyFlag = OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY | OVERLAY_FPS_DIRTY;
                 break;
+              } else {
+                Game.overlayDirtyFlag |= OVERLAY_HP_DIRTY;
               }
               updateScore(Game, -enemy.points);
             }
@@ -904,51 +913,80 @@
 
   function updateScore(Game, score) {
     Game.score += score;
-    Game.overlayDirtyFlag = true;
+    Game.overlayDirtyFlag |= OVERLAY_SCORE_DIRTY;
   }
 
   function updateOverlay(Game) {
     var ctx = canvasOverlayCtx;
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.fillText(`Score: ${Game.score}`, 0, 32);
-    if (Game.displayFPS) {
-      let fps = Math.round(1000 / Game.averageFrameInterval.average);
-      fps = isFinite(fps) ? fps : 0;
-      ctx.fillText(`fps: ${fps}`, ctx.canvas.width - 128, ctx.canvas.height - 16);
+    var width = ctx.canvas.width;
+    var height = ctx.canvas.height;
+
+    if (Game.overlayDirtyFlag & OVERLAY_SCORE_DIRTY) {
+      ctx.save();
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      let scoreStr = `Score: ${Game.score}`;
+      let scoreStrProps = ctx.measureText(scoreStr);
+      ctx.clearRect(0, 0, scoreStrProps.width, defaultFontSize);
+      ctx.fillText(scoreStr, 0, 0);
+      ctx.restore();
     }
 
-    Game.overlayDirtyFlag = false;
+    if (Game.displayFPS && Game.overlayDirtyFlag & OVERLAY_FPS_DIRTY) {
+      ctx.save();
+      ctx.textAlign = "right";
+      ctx.textBaseline = "bottom";
+      let fps = Math.round(1000 / Game.averageFrameInterval.average);
+      fps = isFinite(fps) ? fps : 0;
+      let fpsStr = `fps: ${fps}`;
+      let fpsStrProps = ctx.measureText(fpsStr);
+      ctx.clearRect(
+        width - fpsStrProps.width, height - defaultFontSize,
+        width, height
+      );
+      ctx.fillText(fpsStr, width, height);
+      ctx.restore();
+    }
 
-    //  Draw hitpoints indicator
-    var player = Game.player;
-    var percentage = Math.max(0, player.hitPoints / player.maxHitPoints);
-    var x = 10;
-    var y = 50;
-    var w = 100;
-    var h = 20;
-    var d = 10;
-    var d2 = d / 2;
-    var red = parseInt((1 - percentage) * 0xFF, 10).toString(16);
-    var green = parseInt(percentage * 0xFF, 10).toString(16);
-    var color = `#${("0" + red).substr(-2)}${("0" + green).substr(-2)}88`;
+    if (Game.overlayDirtyFlag & OVERLAY_HP_DIRTY) {
+      //  Draw hitpoints indicator
+      let player = Game.player;
+      let percentage = Math.max(0, player.hitPoints / player.maxHitPoints);
+      let x = 10;
+      let y = 1.5 * defaultFontSize;
+      // w = width / 14
+      let w = 0.071428571428 * width;
+      w = (w % 8) ? w + 8 - w % 8 : w;
+      // h = height / 45
+      let h = 0.022222222222 * height;
+      h = (h % 8) ? h + 8 - h % 8 : h;
+      let d = 10;
+      let d2 = 0.5 * d;
+      let red = parseInt((1 - percentage) * 0xFF, 10).toString(16);
+      let green = parseInt(percentage * 0xFF, 10).toString(16);
+      let color = `#${("0" + red).substr(-2)}${("0" + green).substr(-2)}88`;
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = "#FFF";
-    ctx.fillStyle = color;
-    ctx.lineWidth = 2;
-    ctx.fillRect(x + d2, y + d2, percentage * (w - d), h - d);
-    ctx.moveTo(x + d, y);
-    ctx.lineTo(x + w - d, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + d);
-    ctx.lineTo(x + w, y + h - d);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - d, y + h);
-    ctx.lineTo(x + d, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - d);
-    ctx.lineTo(x, y + d);
-    ctx.quadraticCurveTo(x, y, x + d, y);
-    ctx.stroke();
-    ctx.restore();
+      ctx.clearRect(x, y, w, h);
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = "#FFF";
+      ctx.fillStyle = color;
+      ctx.lineWidth = 2;
+      ctx.fillRect(x + d2, y + d2, percentage * (w - d), h - d);
+      ctx.moveTo(x + d, y);
+      ctx.lineTo(x + w - d, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + d);
+      ctx.lineTo(x + w, y + h - d);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - d, y + h);
+      ctx.lineTo(x + d, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - d);
+      ctx.lineTo(x, y + d);
+      ctx.quadraticCurveTo(x, y, x + d, y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    Game.overlayDirtyFlag = 0;
   }
 
   function updateWeapon(Game) {

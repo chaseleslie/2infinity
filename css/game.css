@@ -23,6 +23,7 @@ body {
   margin: 0px auto;
   padding: 0px;
   border: 2px solid #000;
+  border-radius: 10px;
   width: 200px;
   position: absolute;
   z-index: 200;
@@ -35,6 +36,7 @@ body {
   margin: 0px;
   padding: 5px;
   border: 2px solid rgba(1,1,1,0);
+  border-radius: 10px;
   cursor:default;
 }
 #menu menuitem.selectable:hover {
