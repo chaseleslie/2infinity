@@ -691,14 +691,22 @@ function Player(game, aspect) {
   var maxHp = 1000;
   var hp = maxHp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
+
+  // Rolling animation props
   var rollingUp = 0;
   var rollingDown = 0;
-  var rollingMax = 10;
+  const rollingMax = 10;
   var rollingAngle = 15;
+  // Pitching animation props
   var pitching = 0;
-  var pitchingMax = 96;
+  const pitchingMax = 96;
   var pitchingDepth = 0.6;
   var pitchAngleMax = Math.PI/5;
+  // Movement animation props
+  var texCoordsBufferIndex = game.textures.ship.SHIP_IDLE;
+  const animMovementMax = rollingMax;
+  var animMovementCount = 0;
+
   var weapons = [];
   var weaponSelected = 2;
   var weaponLastTs = 0;
@@ -713,9 +721,6 @@ function Player(game, aspect) {
     [startPos.x, startPos.y, startPos.z],
     [0, 0, 0]
   );
-  var texCoordsBufferIndex = game.textures.ship.SHIP_IDLE;
-  const animMovementMax = 5;
-  var animMovementCount = 0;
 
   for (let k = 0; k < game.weaponTypes.length; k += 1) {
     weapons.push(new Weapon(game, k, projCount, 1, null));
