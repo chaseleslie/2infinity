@@ -90,40 +90,53 @@
         "texId": 0,
         "texIdIndex": 0,
         "img": null,
-        "coords": new Float32Array([
-          0.0, 1.0,
-          0.75, 0.5,
-          0.0, 0.0
-        ]),
-        "buffer": null
+        "coords": [
+          new Float32Array([
+            0.0, 1.0,
+            0.375, 0.5,
+            0.0, 0.0
+          ]),
+          new Float32Array([
+            0.5, 1.0,
+            0.875, 0.5,
+            0.5, 0.0
+          ])
+        ],
+        "coordBuffers": [],
+        "SHIP_IDLE": 0,
+        "SHIP_ACTIVE": 1
       },
       "enemyShip": {
         "tex": null,
         "texId": 0,
         "texIdIndex": 0,
         "img": null,
-        "coords": new Float32Array([
-          0.0, 1.0,
-          0.75, 0.5,
-          0.0, 0.0
-        ]),
-        "buffer": null
+        "coords": [
+          new Float32Array([
+            0.0, 1.0,
+            0.75, 0.5,
+            0.0, 0.0
+          ])
+        ],
+        "coordBuffers": []
       },
       "explosion": {
         "tex": null,
         "texId": 0,
         "texIdIndex": 0,
         "img": null,
-        "coords": new Float32Array([
-          0.0, 1.0,
-          1.0, 1.0,
-          1.0, 0.0,
+        "coords": [
+          new Float32Array([
+            0.0, 1.0,
+            1.0, 1.0,
+            1.0, 0.0,
 
-          0.0, 1.0,
-          1.0, 0.0,
-          0.0, 0.0
-        ]),
-        "buffer": null
+            0.0, 1.0,
+            1.0, 0.0,
+            0.0, 0.0
+          ])
+        ],
+        "coordBuffers": []
       },
       "projectile": {
         "tex": null,
@@ -131,23 +144,25 @@
         "texIdIndex": 0,
         "img": null,
         "coords": null,
-        "buffer": null
+        "coordBuffers": []
       },
       "star": {
         "tex": null,
         "texId": 0,
         "texIdIndex": 0,
         "img": null,
-        "coords": new Float32Array([
-          0.0, 1.0,
-          1.0, 1.0,
-          1.0, 0.0,
+        "coords": [
+          new Float32Array([
+            0.0, 1.0,
+            1.0, 1.0,
+            1.0, 0.0,
 
-          0.0, 1.0,
-          1.0, 0.0,
-          0.0, 0.0
-        ]),
-        "buffer": null
+            0.0, 1.0,
+            1.0, 0.0,
+            0.0, 0.0
+          ])
+        ],
+        "coordBuffers": []
       },
       "circle": {
         "tex": null,
@@ -155,7 +170,7 @@
         "texIdIndex": 0,
         "img": null,
         "coords": null,
-        "buffer": null
+        "coordBuffers": []
       },
       "texCoordAttrib": null,
       "numTextures": 0
@@ -298,7 +313,7 @@
       "xScale": Game.modelScale / 3 / aspect,
       "yScale": Game.modelScale / 16,
       "zScale": Game.modelScale,
-      "texCoords": null
+      "texCoords": []
     },
     {
       "speed": 0.0008,
@@ -308,7 +323,7 @@
       "xScale": Game.modelScale  / 2 / aspect,
       "yScale": Game.modelScale / 16,
       "zScale": Game.modelScale,
-      "texCoords": null
+      "texCoords": []
     },
     {
       "speed": 0.0008,
@@ -318,7 +333,7 @@
       "xScale": Game.modelScale  / 2 / aspect,
       "yScale": Game.modelScale / 16,
       "zScale": Game.modelScale,
-      "texCoords": null
+      "texCoords": []
     }
   ];
 
@@ -348,13 +363,13 @@
     // 0.0, 0.5
 
   ]);
-  Game.projectilesTypes[0].texCoords = projTexCoords;
-  Game.projectilesTypes[1].texCoords = projTexCoords;
-  Game.projectilesTypes[2].texCoords = projTexCoords;
+  Game.projectilesTypes[0].texCoords.push(projTexCoords);
+  Game.projectilesTypes[1].texCoords.push(projTexCoords);
+  Game.projectilesTypes[2].texCoords.push(projTexCoords);
 
   var circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
   Game.verticesCircle = circleCoords.vertices;
-  Game.textures.circle.coords = circleCoords.tex;
+  Game.textures.circle.coords = [circleCoords.tex];
 
   Game.gameData = null;
   Utils.fetchURL({
@@ -1136,9 +1151,12 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
       gl.generateMipmap(gl.TEXTURE_2D);
 
-      texObj.buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, texObj.buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
+      for (let k = 0, n = texCoords.length; k < n; k += 1) {
+        let buff = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buff);
+        gl.bufferData(gl.ARRAY_BUFFER, texCoords[k], gl.STATIC_DRAW);
+        texObj.coordBuffers.push(buff);
+      }
 
       texObj.texId = gl.TEXTURE0 + texIdIndex;
       texObj.texIdIndex = texIdIndex;

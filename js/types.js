@@ -48,6 +48,7 @@ function Star(game) {
     [horizontalPos, verticalPos, depthPos],
     [-speed, 0, 0]
   );
+  var texCoordsBufferIndex = 0;
 
   var mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
@@ -75,7 +76,7 @@ function Star(game) {
   this.draw = function(gl) {
     gl.activeTexture(game.textures.star.texId);
     gl.bindTexture(gl.TEXTURE_2D, game.textures.star.tex);
-    gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.star.buffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.star.coordBuffers[texCoordsBufferIndex]);
     gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
     gl.uniform1i(game.textureUniform, game.textures.star.texIdIndex);
 
@@ -203,6 +204,7 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     [x, y, depthPos],
     [dir ? speed : -speed, 0, 0]
   );
+  var texCoordsBufferIndex = 0;
 
   var mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
@@ -246,13 +248,13 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     if (prune) {
       gl.activeTexture(game.textures.explosion.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.explosion.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.buffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.coordBuffers[texCoordsBufferIndex]);
       gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
       gl.uniform1i(game.textureUniform, game.textures.explosion.texIdIndex);
     } else {
       gl.activeTexture(game.textures.projectile.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.projectile.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.projectile.buffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.projectile.coordBuffers[texCoordsBufferIndex]);
       gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
       gl.uniform1i(game.textureUniform, game.textures.projectile.texIdIndex);
     }
@@ -430,6 +432,7 @@ function Enemy(game, type, isActive) {
     [horizontalPos, verticalPos, depthPos],
     [-speed, 0, 0]
   );
+  var texCoordsBufferIndex = 0;
 
   var mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
@@ -479,7 +482,7 @@ function Enemy(game, type, isActive) {
     if (prune) {
       gl.activeTexture(game.textures.explosion.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.explosion.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.buffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.coordBuffers[texCoordsBufferIndex]);
       gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
       gl.uniform1i(game.textureUniform, game.textures.explosion.texIdIndex);
 
@@ -488,7 +491,7 @@ function Enemy(game, type, isActive) {
     } else {
       gl.activeTexture(game.textures.enemyShip.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.enemyShip.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.enemyShip.buffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.enemyShip.coordBuffers[texCoordsBufferIndex]);
       gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
       gl.uniform1i(game.textureUniform, game.textures.enemyShip.texIdIndex);
 
@@ -668,6 +671,9 @@ function Player(game, aspect) {
     [startPos.x, startPos.y, startPos.z],
     [0, 0, 0]
   );
+  var texCoordsBufferIndex = game.textures.ship.SHIP_IDLE;
+  const animMovementMax = 5;
+  var animMovementCount = 0;
 
   for (let k = 0; k < game.weaponTypes.length; k += 1) {
     weapons.push(new Weapon(game, k, projCount, 1, null));
@@ -724,7 +730,7 @@ function Player(game, aspect) {
   this.draw = function(gl) {
     gl.activeTexture(game.textures.ship.texId);
     gl.bindTexture(gl.TEXTURE_2D, game.textures.ship.tex);
-    gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.ship.buffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.ship.coordBuffers[texCoordsBufferIndex]);
     gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
     gl.uniform1i(game.textureUniform, game.textures.ship.texIdIndex);
 
@@ -741,25 +747,30 @@ function Player(game, aspect) {
     }
   };
   this.update = function(dt) {
-    let step = 0.001;
-    let arrowLeft = game.keydownMap["ArrowLeft"];
-    let arrowUp = game.keydownMap["ArrowUp"];
-    let arrowRight = game.keydownMap["ArrowRight"];
-    let arrowDown = game.keydownMap["ArrowDown"];
+    var step = 0.001;
+    var arrowLeft = game.keydownMap["ArrowLeft"];
+    var arrowUp = game.keydownMap["ArrowUp"];
+    var arrowRight = game.keydownMap["ArrowRight"];
+    var arrowDown = game.keydownMap["ArrowDown"];
+    var dive = game.keydownMap["Dive"];
+    var isMoving = false;
 
     if (arrowLeft && !arrowRight) {
       state.velocity[0] = -step;
+      isMoving = true;
     } else if (arrowRight && !arrowLeft) {
       state.velocity[0] = step;
+      isMoving = true;
     }
 
     if (arrowUp && !arrowDown) {
       state.velocity[1] = step;
+      isMoving = true;
     } else if (arrowDown && !arrowUp) {
       state.velocity[1] = -step;
+      isMoving = true;
     }
 
-    let dive = game.keydownMap["Dive"];
     if (dive && !pitching) {
       pitching = pitchingMax;
     }
@@ -782,6 +793,7 @@ function Player(game, aspect) {
       angleX = (iter / rollingMax) * (rollingAngle * Utils.DEG2RAD);
 
       if (pitching) {
+        isMoving = true;
         pitching -= 1;
         iter = pitching / pitchingMax;
         let PI = Math.PI;
@@ -805,7 +817,7 @@ function Player(game, aspect) {
       this.reset(dt);
     }
 
-    //Clamp player to viewport
+    /* Clamp player to viewport */
     if (arrowLeft) {
       let left = getPositionLeft();
       if (left < -1.0) {
@@ -838,6 +850,20 @@ function Player(game, aspect) {
 
       rollingDown = rollingMax;
       rollingUp = 0;
+    }
+
+    /* Set movement animation counter */
+    if (isMoving) {
+      animMovementCount = animMovementMax;
+    } else if (animMovementCount) {
+      animMovementCount -= 1;
+    }
+
+    /* Set ship texture based on movement animation state */
+    if (animMovementCount) {
+      texCoordsBufferIndex = game.textures.ship.SHIP_ACTIVE;
+    } else {
+      texCoordsBufferIndex = game.textures.ship.SHIP_IDLE;
     }
 
     let score = 0;
