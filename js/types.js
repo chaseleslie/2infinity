@@ -137,7 +137,18 @@ function Weapon(game, type, numProj, projDir, coolDown) {
     for (let k = 0; k < projectiles.length; k += 1) {
       let proj = projectiles[k];
       if (proj.active) {
-        if (proj.hitbox.left > 1.0) {
+        let offScreen = false;
+        if (proj.dir > 0) {
+          if (proj.hitbox.left > 1.0) {
+            offScreen = true;
+          }
+        } else if (proj.dir < 0) {
+          if (proj.hitbox.right < -1.0) {
+            offScreen = true;
+          }
+        }
+
+        if (offScreen) {
           proj.reset(projType, 0, 0, false, projDir);
         }
         proj.update(dt);
@@ -405,6 +416,7 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
   Object.defineProperty(this, "prune", {get: function() {return prune >= showDestroyedFrames;}});
   Object.defineProperty(this, "exploded", {get: function() {return prune > 0;}});
   Object.defineProperty(this, "active", {get: function() {return active;}});
+  Object.defineProperty(this, "direction", {get: function() {return dir;}});
 }
 
 function Enemy(game, type, isActive) {
