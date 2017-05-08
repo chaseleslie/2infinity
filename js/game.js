@@ -38,6 +38,22 @@
   canvasOverlay.style.left = canvas.offsetLeft;
   canvasOverlayCtx.fillStyle = "#FFF";
   canvasOverlayCtx.font = `${defaultFontSize}px sans-serif`;
+  var canvasOverlayProps = {
+    "canvasOverlayFont": `${defaultFontSize}px monospace`,
+    "scoreTemplateStr": "Score: 000000",
+    "scoreTemplateStrProps": null,
+    "scoreTemplateNumDigits": 6,
+    "fpsTemplateStr": "fps: 0000",
+    "fpsTemplateStrProps": null,
+    "fpsTemplateNumDigits": 4,
+    "hpWidthScale": 0.125, // 1 / 8
+    "hpHeightScale": 0.022222222222 // 1 / 45
+  };
+  canvasOverlayCtx.save();
+  canvasOverlayCtx.font = canvasOverlayProps.canvasOverlayFont;
+  canvasOverlayProps.scoreTemplateStrProps = canvasOverlayCtx.measureText(canvasOverlayProps.scoreTemplateStr);
+  canvasOverlayProps.fpsTemplateStrProps = canvasOverlayCtx.measureText(canvasOverlayProps.fpsTemplateStr);
+  canvasOverlayCtx.restore();
 
   const OVERLAY_SCORE_DIRTY = 1;
   const OVERLAY_HP_DIRTY = 2;
@@ -906,7 +922,6 @@
     Game.starMap.update(dt);
 
     if (Game.overlayDirtyFlag) {
-      updateOverlay(Game);
       updateWeapon(Game);
     }
   }
@@ -916,49 +931,68 @@
     Game.overlayDirtyFlag |= OVERLAY_SCORE_DIRTY;
   }
 
-  function updateOverlay(Game) {
+  function drawOverlay(Game) {
     var ctx = canvasOverlayCtx;
     var width = ctx.canvas.width;
     var height = ctx.canvas.height;
+    var hpWidth = canvasOverlayProps.hpWidthScale * width;
+    var hpHeight = canvasOverlayProps.hpHeightScale * height;
+    var canvasOverlayFont = canvasOverlayProps.canvasOverlayFont;
 
+    ctx.save();
+    ctx.font = canvasOverlayFont;
+
+    /* Update score display */
     if (Game.overlayDirtyFlag & OVERLAY_SCORE_DIRTY) {
+      let scoreTemplateStrProps = canvasOverlayProps.scoreTemplateStrProps;
+      let scoreTemplateNumDigits = canvasOverlayProps.scoreTemplateNumDigits;
       ctx.save();
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      let scoreStr = `Score: ${Game.score}`;
-      let scoreStrProps = ctx.measureText(scoreStr);
-      ctx.clearRect(0, 0, scoreStrProps.width, defaultFontSize);
-      ctx.fillText(scoreStr, 0, 0);
+      let scoreNumStr = Game.score.toString();
+      while (scoreNumStr.length < scoreTemplateNumDigits) {
+        scoreNumStr = " " + scoreNumStr;
+      }
+      let scoreStr = `Score: ${scoreNumStr}`;
+      let x = 1.25 * hpWidth + ctx.lineWidth;
+      let y = 0;
+      ctx.clearRect(x, y, scoreTemplateStrProps.width, defaultFontSize);
+      ctx.fillText(scoreStr, x, y);
       ctx.restore();
     }
 
+    /* Update fps display */
     if (Game.displayFPS && Game.overlayDirtyFlag & OVERLAY_FPS_DIRTY) {
+      let fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
+      let fpsTemplateNumDigits = canvasOverlayProps.fpsTemplateNumDigits;
       ctx.save();
       ctx.textAlign = "right";
       ctx.textBaseline = "bottom";
       let fps = Math.round(1000 / Game.averageFrameInterval.average);
       fps = isFinite(fps) ? fps : 0;
-      let fpsStr = `fps: ${fps}`;
-      let fpsStrProps = ctx.measureText(fpsStr);
+      fps = (fps <= 9999) ? fps : 9999;
+      let fpsNumStr = fps.toString();
+      while (fpsNumStr.length < fpsTemplateNumDigits) {
+        fpsNumStr = " " + fpsNumStr;
+      }
+      let fpsStr = `fps: ${fpsNumStr}`;
       ctx.clearRect(
-        width - fpsStrProps.width, height - defaultFontSize,
+        width - fpsTemplateStrProps.width, height - defaultFontSize,
         width, height
       );
       ctx.fillText(fpsStr, width, height);
       ctx.restore();
     }
 
+    /* Update hitpoints indicator */
     if (Game.overlayDirtyFlag & OVERLAY_HP_DIRTY) {
-      //  Draw hitpoints indicator
       let player = Game.player;
       let percentage = Math.max(0, player.hitPoints / player.maxHitPoints);
-      let x = 10;
-      let y = 1.5 * defaultFontSize;
-      // w = width / 14
-      let w = 0.071428571428 * width;
+      let x = ctx.lineWidth;
+      let y = ctx.lineWidth;
+      let w = hpWidth;
       w = (w % 8) ? w + 8 - w % 8 : w;
-      // h = height / 45
-      let h = 0.022222222222 * height;
+      let h = hpHeight;
       h = (h % 8) ? h + 8 - h % 8 : h;
       let d = 10;
       let d2 = 0.5 * d;
@@ -986,6 +1020,7 @@
       ctx.restore();
     }
 
+    ctx.restore();
     Game.overlayDirtyFlag = 0;
   }
 
@@ -1039,6 +1074,10 @@
     }
 
     Game.starMap.draw(gl);
+
+    if (Game.overlayDirtyFlag) {
+      drawOverlay(Game);
+    }
   }
 
   function setup(Game, gl) {
