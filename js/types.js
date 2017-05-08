@@ -120,6 +120,7 @@ function Weapon(game, type, numProj, projDir, coolDown) {
   var projType = weapon.projectileType;
   var projCount = weapon.projectileCount;
   var projCoolDown = coolDown || game.projectilesTypes[game.projectileTypesMap[projType]].coolDown;
+  var point = {"x": 0, "y": 0, "z": 0};
 
   for (let k = 0; k < numProj; k += 1) {
     projectiles.push(new Projectile(game, projType, 0, 0, 0, false, projDir));
@@ -134,6 +135,7 @@ function Weapon(game, type, numProj, projDir, coolDown) {
     }
   };
   this.update = function(dt) {
+    let score = 0;
     for (let k = 0; k < projectiles.length; k += 1) {
       let proj = projectiles[k];
       if (proj.active) {
@@ -152,8 +154,36 @@ function Weapon(game, type, numProj, projDir, coolDown) {
           proj.reset(projType, 0, 0, false, projDir);
         }
         proj.update(dt);
+
+        if (proj.exploded) {
+          continue;
+        }
+
+        let hitbox = proj.hitbox;
+        for (let n = 0; n < game.enemies.length; n += 1) {
+          let enemy = game.enemies[n];
+          if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(hitbox)) {
+            let projPos = proj.position;
+            for (let m = 0; m < projPos.length; m += 1) {
+              let vert = projPos[m];
+              point.x = vert[0];
+              point.y = vert[1];
+              point.z = vert[2];
+              let directHit = enemy.containsPoint(point);
+              if (directHit) {
+                enemy.takeHit(proj.damage);
+                if (enemy.hitPoints <= 0) {
+                  score += enemy.points;
+                }
+                proj.setExploded();
+                break;
+              }
+            }
+          }
+        }
       }
     }
+    return score;
   };
   this.fireWeapon = function(ts, dt, lastTs, hitbox) {
     var numFoundProj = 0;
@@ -708,7 +738,7 @@ function Player(game, aspect) {
   var translateVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
   var rotations = {"x": 0, "y": 0, "z": 0};
   var scales = {"x": xScale, "y": yScale, "z": zScale};
-  var point = {"x": 0, "y": 0, "z": 0};
+  // var point = {"x": 0, "y": 0, "z": 0};
 
   this.reset = function(dt) {
     Physics.integrateState(state, game.time, dt);
@@ -881,36 +911,7 @@ function Player(game, aspect) {
     let score = 0;
     for (let k = 0; k < weapons.length; k += 1) {
       let weapon = weapons[k];
-      weapon.update(dt);
-      let projectiles = weapon.projectiles;
-      for (let iK = 0; iK < projectiles.length; iK += 1) {
-        let proj = projectiles[iK];
-        if (!proj.active || proj.exploded) {
-          continue;
-        }
-        let hitbox = proj.hitbox;
-        for (let n = 0; n < game.enemies.length; n += 1) {
-          let enemy = game.enemies[n];
-          if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(hitbox)) {
-            let projPos = proj.position;
-            for (let m = 0; m < projPos.length; m += 1) {
-              let vert = projPos[m];
-              point.x = vert[0];
-              point.y = vert[1];
-              point.z = vert[2];
-              let directHit = enemy.containsPoint(point);
-              if (directHit) {
-                enemy.takeHit(proj.damage);
-                if (enemy.hitPoints <= 0) {
-                  score += enemy.points;
-                }
-                proj.setExploded();
-                break;
-              }
-            }
-          }
-        }
-      }
+      score = weapon.update(dt);
     }
     return score;
   };
