@@ -33,6 +33,29 @@
     }
   };
 
+  const KEY_MAP = {
+    "ArrowLeft": 37,
+    "Left": 37,
+    "a": 37,
+    "ArrowUp": 38,
+    "Up": 38,
+    "w": 38,
+    "ArrowRight": 39,
+    "Right": 39,
+    "d": 39,
+    "ArrowDown": 40,
+    "Down": 40,
+    "s": 40,
+
+    "c": 99,
+    "m": 109,
+    "Escape": 27,
+    "Tab": 9,
+    "Alt": 18,
+    "F5": 116,
+    " ": 32
+  };
+
   var defaultFontSize = 32;
   canvasOverlay.style.top = canvas.offsetTop;
   canvasOverlay.style.left = canvas.offsetLeft;
@@ -390,36 +413,45 @@
     var ret;
     var now = win.performance.now();
     var keydownMap = Game.keydownMap;
-    switch (e.key) {
-      case "ArrowLeft":
-      case "a":
+    var key = KEY_MAP[e.key];
+
+    switch (key || e.which || e.keyCode) {
+      // ArrowLeft / a
+      case 37:
+      case 97:
         keydownMap["ArrowLeft"] = keydownMap["ArrowLeft"] || now;
         e.preventDefault();
       break;
-      case "ArrowUp":
-      case "w":
+      // ArrowUp / w
+      case 38:
+      case 119:
         keydownMap["ArrowUp"] = keydownMap["ArrowUp"] || now;
         e.preventDefault();
       break;
-      case "ArrowRight":
-      case "d":
+      // ArrowRight / d
+      case 39:
+      case 100:
         keydownMap["ArrowRight"] = keydownMap["ArrowRight"] || now;
         e.preventDefault();
       break;
-      case "ArrowDown":
-      case "s":
+      // ArrowDown / s
+      case 40:
+      case 115:
         keydownMap["ArrowDown"] = keydownMap["ArrowDown"] || now;
         e.preventDefault();
       break;
-      case " ":
+      // Space
+      case 32:
         keydownMap["Shoot"] = keydownMap["Shoot"] || now;
         e.preventDefault();
       break;
-      case "c":
+      // c
+      case 99:
         keydownMap["Dive"] = keydownMap["Dive"] || now;
         e.preventDefault();
       break;
-      case "Escape":
+      // Escape
+      case 27:
         if (Game.running) {
           stop();
         } else {
@@ -433,7 +465,8 @@
         e.preventDefault();
         ret = false;
       break;
-      case "m":
+      // m
+      case 109:
         Game.muted = !Game.muted;
         e.preventDefault();
       break;
@@ -441,27 +474,34 @@
     return ret;
   }
   function handleKeyUp(e) {
-    switch (e.key) {
-      case "ArrowLeft":
-      case "a":
+    var key = KEY_MAP[e.key];
+    switch (key || e.which || e.keyCode) {
+      // ArrowLeft / a
+      case 37:
+      case 97:
         Game.keydownMap["ArrowLeft"] = 0;
       break;
-      case "ArrowUp":
-      case "w":
+      // ArowUp / w
+      case 38:
+      case 119:
         Game.keydownMap["ArrowUp"] = 0;
       break;
-      case "ArrowRight":
-      case "d":
+      // ArrowRight / d
+      case 39:
+      case 100:
         Game.keydownMap["ArrowRight"] = 0;
       break;
-      case "ArrowDown":
-      case "s":
+      // ArrowDown / s
+      case 40:
+      case 115:
         Game.keydownMap["ArrowDown"] = 0;
       break;
-      case " ":
+      // Space
+      case 32:
         Game.keydownMap["Shoot"] = 0;
       break;
-      case "c":
+      // c
+      case 99:
         Game.keydownMap["Dive"] = 0;
         e.preventDefault();
       break;
@@ -510,11 +550,13 @@
   function onMenuScroll(e) {
     var menuItems = Array.prototype.slice.call(menu.querySelectorAll("menuitem.selectable"));
     var selectedIndex = -1;
+    var key = KEY_MAP[e.key];
 
-    switch (e.key) {
-      case "ArrowUp":
-      case "ArrowDown":
-      case "Enter":
+    switch (key || e.which || e.keyCode) {
+      // ArrowUp / ArrowDown / Enter
+      case 38:
+      case 40:
+      case 13:
         e.preventDefault();
       break;
 
@@ -535,8 +577,9 @@
       menuItems[k].classList.remove("selected");
     }
 
-    switch (e.key) {
-      case "ArrowUp":
+    switch (key || e.which || e.keyCode) {
+      // ArrowUp
+      case 38:
         if (selectedIndex > 0) {
           selectedIndex -= 1;
         } else {
@@ -544,7 +587,8 @@
         }
         menuItems[selectedIndex].classList.add("selected");
       break;
-      case "ArrowDown":
+      // ArrowDown
+      case 40:
         if (selectedIndex < (menuItems.length - 1)) {
           selectedIndex += 1;
         } else {
@@ -552,7 +596,8 @@
         }
         menuItems[selectedIndex].classList.add("selected");
       break;
-      case "Enter":
+      // Enter
+      case 13:
         menuItems[selectedIndex].click();
       break;
     }
@@ -569,9 +614,11 @@
 
     if (e.deltaY > 0) {
       e.key = "ArrowDown";
+      e.keyCode = 40;
       onMenuScroll(e);
     } else {
       e.key = "ArrowUp";
+      e.keyCode = 38;
       onMenuScroll(e);
     }
   }
@@ -598,6 +645,7 @@
     canvas.classList.remove("inactive");
 
     window.removeEventListener("keydown", onMenuScroll, false);
+    window.removeEventListener("wheel", onMenuScrollWheel, false);
   }
   function onMenuResume() {
     hideMenu();
@@ -642,14 +690,14 @@
 
   function handleIntroKey(e) {
     var keyHandled = true;
-    switch (e.key || e.keyCode || e.which) {
-      case "F5":
+    var key = KEY_MAP[e.key];
+    switch (key || e.which || e.keyCode) {
+      // F5 / Alt
       case 116:
-      case "Alt":
       case "18":
         keyHandled = false;
       break;
-      case "Tab":
+      // Tab
       case "0x09":
         if (e.altKey) {
           keyHandled = false;
