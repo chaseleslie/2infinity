@@ -3,15 +3,48 @@
 <svg version="1.1" width="512" height="512" xmlns="http://www.w3.org/2000/svg">
 
 	<defs>
-		<radialGradient id="gradient">
+		<radialGradient id="gradient_blue">
 			<stop offset="15%" stop-color="#DDF" />
 			<stop offset="25%" stop-color="#CCF" />
 			<stop offset="40%" stop-color="#AAF" />
 			<stop offset="60%" stop-color="#99F" />
 			<stop offset="100%" stop-color="#88F" />
 		</radialGradient>
+
+		<radialGradient id="gradient_red">
+			<stop offset="15%" stop-color="#FAA" />
+			<stop offset="25%" stop-color="#FBB" />
+			<stop offset="40%" stop-color="#F77" />
+			<stop offset="60%" stop-color="#F66" />
+			<stop offset="100%" stop-color="#F55" />
+		</radialGradient>
+
+		<radialGradient id="gradient_green">
+			<stop offset="15%" stop-color="#DFD" />
+			<stop offset="25%" stop-color="#CFC" />
+			<stop offset="40%" stop-color="#AFA" />
+			<stop offset="60%" stop-color="#9F9" />
+			<stop offset="100%" stop-color="#8F8" />
+		</radialGradient>
+
+		<radialGradient id="gradient_gray">
+			<stop offset="15%" stop-color="#DDD" />
+			<stop offset="25%" stop-color="#CCC" />
+			<stop offset="40%" stop-color="#AAA" />
+			<stop offset="60%" stop-color="#999" />
+			<stop offset="100%" stop-color="#888" />
+		</radialGradient>
 	</defs>
 
-	<!-- <rect x="0" y="0" width="128" height="128" rx="8" ry="8" fill="url(#gradient)" stroke="#DDF" /> -->
-	<rect x="0" y="0" width="512" height="512" rx="8" ry="8" fill="url(#gradient)" stroke="#DDF" />
+	<!-- PROJ BASIC BLUE -->
+	<rect x="0" y="0" width="128" height="128" rx="8" ry="8" fill="url(#gradient_blue)" stroke="#DDF" />
+
+	<!-- PROJ BASIC RED -->
+	<rect x="128" y="0" width="128" height="128" rx="8" ry="8" fill="url(#gradient_red)" stroke="#DDF" />
+
+	<!-- PROJ BASIC GREEN -->
+	<rect x="256" y="0" width="128" height="128" rx="8" ry="8" fill="url(#gradient_green)" stroke="#DDF" />
+
+	<!-- PROJ BASIC GRAY -->
+	<rect x="384" y="0" width="128" height="128" rx="8" ry="8" fill="url(#gradient_gray)" stroke="#DDF" />
 </svg>

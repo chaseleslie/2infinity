@@ -167,7 +167,11 @@
         "texIdIndex": 0,
         "img": null,
         "coords": null,
-        "coordBuffers": []
+        "coordBuffers": [],
+        "PROJ_BASIC_BLUE": 0,
+        "PROJ_BASIC_RED": 1,
+        "PROJ_BASIC_GREEN": 2,
+        "PROJ_BASIC_GRAY": 3
       },
       "star": {
         "tex": null,
@@ -307,7 +311,6 @@
       "speed": 0.00015,
       "coolDown": 1000,
       "weaponType": null,
-      // "xScale": Game.modelScale  / 2,
       "xScale": Game.modelScale  / aspect,
       "yScale": Game.modelScale,
       "zScale": Game.modelScale,
@@ -319,7 +322,6 @@
       "speed": 0.0001,
       "coolDown": 2000,
       "weaponType": null,
-      // "xScale": Game.modelScale,
       "xScale": Game.modelScale * 2 / aspect,
       "yScale": Game.modelScale * 2,
       "zScale": Game.modelScale * 2,
@@ -327,68 +329,78 @@
       "spawnIntervalMult": 2.25
     }
   ];
-  Game.projectilesTypes = [
+  Game.projectileTypes = [
     {
       "speed": 0.0005,
       "coolDown": 384,
       "damage": 100,
-      // "xScale": Game.modelScale  / 4,
       "xScale": Game.modelScale / 3 / aspect,
       "yScale": Game.modelScale / 16,
       "zScale": Game.modelScale,
-      "texCoords": []
+      "texType": Game.textures.projectile.PROJ_BASIC_RED
     },
     {
       "speed": 0.0008,
       "coolDown": 320,
       "damage": 100,
-      // "xScale": Game.modelScale  / 4,
       "xScale": Game.modelScale  / 2 / aspect,
       "yScale": Game.modelScale / 16,
       "zScale": Game.modelScale,
-      "texCoords": []
+      "texType": Game.textures.projectile.PROJ_BASIC_RED
     },
     {
       "speed": 0.0008,
       "coolDown": 304,
       "damage": 50,
-      // "xScale": Game.modelScale  / 4,
       "xScale": Game.modelScale  / 2 / aspect,
       "yScale": Game.modelScale / 16,
       "zScale": Game.modelScale,
-      "texCoords": []
+      "texType": Game.textures.projectile.PROJ_BASIC_BLUE
     }
   ];
 
-  var projTexCoords = new Float32Array([
-    // 0.0, 1.0,
-    // 0.25, 1.0,
-    // 0.25, 0.75,
-    //
-    // 0.0, 1.0,
-    // 0.25, 0.75,
-    // 0.0, 0.75
+  Game.projectileTexCoords = [
+    // PROJ_BASIC_BLUE (0, 0)
+    new Float32Array([
+      0.0, 0.25,
+      0.25, 0.25,
+      0.25, 0.0,
 
-    0.0, 1.0,
-    1.0, 1.0,
-    1.0, 0.0,
+      0.0, 0.25,
+      0.25, 0.0,
+      0.0, 0.0
+    ]),
+    // PROJ_BASIC_RED (1, 0)
+    new Float32Array([
+      0.25, 0.25,
+      0.5, 0.25,
+      0.5, 0.0,
 
-    0.0, 1.0,
-    1.0, 0.0,
-    0.0, 0.0
+      0.25, 0.25,
+      0.5, 0.0,
+      0.25, 0.0
+    ]),
+    // PROJ_BASIC_GREEN (2, 0)
+    new Float32Array([
+      0.5, 0.25,
+      0.75, 0.25,
+      0.75, 0.0,
 
-    // 0.0, 1.0,
-    // 0.5, 1.0,
-    // 0.5, 0.5,
-    //
-    // 0.0, 1.0,
-    // 0.5, 0.5,
-    // 0.0, 0.5
+      0.5, 0.25,
+      0.75, 0.0,
+      0.5, 0.0
+    ]),
+    // PROJ_BASIC_GRAY (3, 0)
+    new Float32Array([
+      0.75, 0.25,
+      1.0, 0.25,
+      1.0, 0.0,
 
-  ]);
-  Game.projectilesTypes[0].texCoords.push(projTexCoords);
-  Game.projectilesTypes[1].texCoords.push(projTexCoords);
-  Game.projectilesTypes[2].texCoords.push(projTexCoords);
+      0.75, 0.25,
+      1.0, 0.0,
+      0.75, 0.0
+    ])
+  ];
 
   var circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
   Game.verticesCircle = circleCoords.vertices;
@@ -1219,7 +1231,7 @@
     loadTexture(Game.textures.explosion, "img_explosion", Game.textures.explosion.coords, Game.textures.numTextures);
     Game.textures.numTextures += 1;
 
-    loadTexture(Game.textures.projectile, "img_projectiles_sprite", Game.projectilesTypes[0].texCoords, Game.textures.numTextures);
+    loadTexture(Game.textures.projectile, "img_projectiles_sprite", Game.projectileTexCoords, Game.textures.numTextures);
     Game.textures.numTextures += 1;
 
     loadTexture(Game.textures.star, "img_star", Game.textures.star.coords, Game.textures.numTextures);

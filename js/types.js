@@ -109,17 +109,14 @@ function Star(game) {
 }
 
 function Weapon(game, type, numProj, projDir, coolDown) {
-  // type = type || "basic";
   type = type || 0;
   numProj = numProj || 50;
   projDir = projDir || 1;
   var projectiles = [];
-  // var weaponType = game.weaponTypesMap[type];
-  // var weapon = game.weaponTypes[weaponType];
   var weapon = game.weaponTypes[type];
   var projType = weapon.projectileType;
   var projCount = weapon.projectileCount;
-  var projCoolDown = coolDown || game.projectilesTypes[game.projectileTypesMap[projType]].coolDown;
+  var projCoolDown = coolDown || game.projectileTypes[game.projectileTypesMap[projType]].coolDown;
   var point = {"x": 0, "y": 0, "z": 0};
 
   for (let k = 0; k < numProj; k += 1) {
@@ -223,11 +220,12 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
   pType = pType || game.projectileTypesMap["default"] || 0;
   var type = pType;
   var projType = game.projectileTypesMap[type];
-  var speed = game.projectilesTypes[projType].speed;
-  var xScale = game.projectilesTypes[projType].xScale;
-  var yScale = game.projectilesTypes[projType].yScale;
-  var zScale = game.projectilesTypes[projType].zScale;
-  var dmg = game.projectilesTypes[projType].damage;
+  var speed = game.projectileTypes[projType].speed;
+  var xScale = game.projectileTypes[projType].xScale;
+  var yScale = game.projectileTypes[projType].yScale;
+  var zScale = game.projectileTypes[projType].zScale;
+  var texType = game.projectileTypes[projType].texType;
+  var dmg = game.projectileTypes[projType].damage;
   var active = isActive || false;
   dir = dir || 1;
   var prune = 0;
@@ -245,7 +243,8 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     [x, y, depthPos],
     [dir ? speed : -speed, 0, 0]
   );
-  var texCoordsBufferIndex = 0;
+  var texCoordsBufferIndexProj = texType;
+  var texCoordsBufferIndexExpl = 0;
 
   var mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
@@ -264,11 +263,11 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
   this.reset = function(pType, x1, y1, isActive, direc) {
     type = pType;
     projType = game.projectileTypesMap[type];
-    speed = game.projectilesTypes[projType].speed;
-    xScale = game.projectilesTypes[projType].xScale;
-    yScale = game.projectilesTypes[projType].yScale;
-    zScale = game.projectilesTypes[projType].zScale;
-    dmg = game.projectilesTypes[projType].damage;
+    speed = game.projectileTypes[projType].speed;
+    xScale = game.projectileTypes[projType].xScale;
+    yScale = game.projectileTypes[projType].yScale;
+    zScale = game.projectileTypes[projType].zScale;
+    dmg = game.projectileTypes[projType].damage;
 
     active = isActive || false;
     dir = direc || 1;
@@ -289,13 +288,13 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     if (prune) {
       gl.activeTexture(game.textures.explosion.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.explosion.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.coordBuffers[texCoordsBufferIndex]);
+      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.coordBuffers[texCoordsBufferIndexExpl]);
       gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
       gl.uniform1i(game.textureUniform, game.textures.explosion.texIdIndex);
     } else {
       gl.activeTexture(game.textures.projectile.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.projectile.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.projectile.coordBuffers[texCoordsBufferIndex]);
+      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.projectile.coordBuffers[texCoordsBufferIndexProj]);
       gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
       gl.uniform1i(game.textureUniform, game.textures.projectile.texIdIndex);
     }
