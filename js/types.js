@@ -814,10 +814,10 @@ function Player(game, aspect) {
     }
 
     if (arrowUp && !arrowDown) {
-      state.velocity[1] = velocity;
+      state.velocity[1] = velocity * aspect;
       isMoving = true;
     } else if (arrowDown && !arrowUp) {
-      state.velocity[1] = -velocity;
+      state.velocity[1] = -velocity * aspect;
       isMoving = true;
     }
 
