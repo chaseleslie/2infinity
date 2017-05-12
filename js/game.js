@@ -11,9 +11,13 @@
   var menuRestart = doc.getElementById("menu_restart");
   var menuDisplayFPS = doc.getElementById("menu_display_fps");
   var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-  var aspect = canvas.width / canvas.height;
   var point = {"x": 0, "y": 0, "z": 0};
   var zProjection = 1;
+  var aspect = canvas.width / canvas.height;
+  canvas.style.width = `${window.innerWidth}px`;
+  canvas.style.height = `${window.innerHeight}px`;
+  canvasOverlay.style.width = `${window.innerWidth}px`;
+  canvasOverlay.style.height = `${window.innerHeight}px`;
 
   var difficultyMap = {
     "labels": {
