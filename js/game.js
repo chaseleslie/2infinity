@@ -637,6 +637,7 @@
 
   function showMenu() {
     var menuItems = Array.prototype.slice.call(menu.querySelectorAll("menuitem.selectable"));
+    menuItems.forEach((el) => {el.classList.remove("selected");});
     menuItems[0].classList.add("selected");
     window.addEventListener("keydown", onMenuScroll, false);
     window.addEventListener("wheel", onMenuScrollWheel, false);
