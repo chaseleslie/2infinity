@@ -15,6 +15,13 @@
           "js/types.js",
           "js/game.js"
         ];
+
+        if (window.location.hash === "#dev") {
+          scriptSources = scriptSources.map((el) => {
+            return `${el}?ts=${Date.now()}`;
+          });
+        }
+
         for (let k = 0; k < scriptSources.length; k += 1) {
           let script = document.createElement("script");
           script.async = false;
