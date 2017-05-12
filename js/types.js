@@ -799,7 +799,10 @@ function Player(game, aspect) {
     var arrowRight = game.keydownMap["ArrowRight"];
     var arrowDown = game.keydownMap["ArrowDown"];
     var dive = game.keydownMap["Dive"];
+    var rot = rotations;
     var isMoving = false;
+    var cos = Math.cos;
+    var sin = Math.sin;
 
     if (arrowLeft && !arrowRight) {
       state.velocity[0] = -step;
@@ -825,7 +828,6 @@ function Player(game, aspect) {
       let angleX = 0;
       let angleY = 0;
       let angleZ = 0;
-      let rot = rotations;
       let iter = 0;
 
       if (rollingUp) {
@@ -843,12 +845,12 @@ function Player(game, aspect) {
         pitching -= 1;
         iter = pitching / pitchingMax;
         let PI = Math.PI;
-        let z = pitchingDepth * Math.sin(PI * iter);
+        let z = pitchingDepth * sin(PI * iter);
 
         state.position[2] = Utils.mapValue(z, 0, 1, 0, pitchingDepth);
 
         angleY = Utils.mapValue(
-          -PI * Math.cos(PI*2*iter + 3/2*PI),
+          -PI * cos(PI*2*iter + 3/2*PI),
           -PI, PI, -pitchAngleMax, pitchAngleMax
         );
       } else {
@@ -867,35 +869,52 @@ function Player(game, aspect) {
     if (arrowLeft) {
       let left = getPositionLeft();
       if (left < -1.0) {
-        let hitbox = getHitbox();
-        state.position[0] = -1.0 + (hitbox.right - hitbox.left) / 2;
+        let vertTri = game.verticesTriangle;
+        let p1 = -vertTri[0] * scales.x * cos(rot.y) * cos(rot.z);
+        let p2 = -vertTri[1] * scales.y * (cos(rot.x) * sin(rot.z) + sin(rot.x) * sin(rot.z));
+        let p3 = vertTri[2] * scales.z * (cos(rot.x) * cos(rot.z) * sin(rot.y) - sin(rot.x) * sin(rot.z));
+        state.position[0] = p1 + p2 + p3 - 1;
       }
     }
     if (arrowUp) {
       let top = getPositionTop();
       if (top > 1.0) {
-        let hitbox = getHitbox();
-        state.position[1] = 1.0 - (hitbox.top - hitbox.bottom) / 2;
+        let vertTri = game.verticesTriangle;
+        let p1 = vertTri[0] * scales.x * cos(rot.y) * sin(rot.z);
+        let p2 = vertTri[1] * scales.y * (sin(rot.x) * sin(rot.y) * sin(rot.z) - cos(rot.x) * cos(rot.z));
+        let p3 = -vertTri[2] * scales.z * (cos(rot.x) * sin(rot.y) * sin(rot.z) + cos(rot.z) * sin(rot.x));
+        state.position[1] = p1 + p2 + p3 + 1;
       }
 
-      rollingUp = rollingMax;
-      rollingDown = 0;
+      if (!arrowDown) {
+        rollingUp = rollingMax;
+        rollingDown = 0;
+      }
     }
     if (arrowRight) {
       let right = getPositionRight();
       if (right > 1.0) {
-        state.position[0] = 1.0 - (hitbox.right - hitbox.left) / 2;
+        let vertTri = game.verticesTriangle;
+        let p1 = -vertTri[3] * scales.x * cos(rot.y) * cos(rot.z);
+        let p2 = -vertTri[4] * scales.y * (cos(rot.x) * sin(rot.z) + sin(rot.x) * sin(rot.z));
+        let p3 = vertTri[5] * scales.z * (cos(rot.x) * cos(rot.z) * sin(rot.y) - sin(rot.x) * sin(rot.z));
+        state.position[0] = p1 + p2 + p3 + 1;
       }
     }
     if (arrowDown) {
       let bottom = getPositionBottom();
       if (bottom < -1.0) {
-        let hitbox = getHitbox();
-        state.position[1] = -1.0 + (hitbox.top - hitbox.bottom) / 2;
+        let vertTri = game.verticesTriangle;
+        let p1 = vertTri[6] * scales.x * cos(rot.y) * sin(rot.z);
+        let p2 = vertTri[7] * scales.y * (sin(rot.x) * sin(rot.y) * sin(rot.z) - cos(rot.x) * cos(rot.z));
+        let p3 = -vertTri[8] * scales.z * (cos(rot.x) * sin(rot.y) * sin(rot.z) + cos(rot.z) * sin(rot.x));
+        state.position[1] = p1 + p2 + p3 - 1;
       }
 
-      rollingDown = rollingMax;
-      rollingUp = 0;
+      if (!arrowUp) {
+        rollingDown = rollingMax;
+        rollingUp = 0;
+      }
     }
 
     /* Set movement animation counter */
@@ -915,7 +934,7 @@ function Player(game, aspect) {
     let score = 0;
     for (let k = 0; k < weapons.length; k += 1) {
       let weapon = weapons[k];
-      score = weapon.update(dt);
+      score += weapon.update(dt);
     }
     return score;
   };
