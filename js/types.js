@@ -690,6 +690,8 @@ function Player(game, aspect) {
   var maxHp = 1000;
   var hp = maxHp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
+  const velocityDefault = 0.0006;
+  var velocity = velocityDefault;
 
   // Rolling animation props
   var rollingUp = 0;
@@ -793,7 +795,6 @@ function Player(game, aspect) {
     }
   };
   this.update = function(dt) {
-    var step = 0.001;
     var arrowLeft = game.keydownMap["ArrowLeft"];
     var arrowUp = game.keydownMap["ArrowUp"];
     var arrowRight = game.keydownMap["ArrowRight"];
@@ -805,18 +806,18 @@ function Player(game, aspect) {
     var sin = Math.sin;
 
     if (arrowLeft && !arrowRight) {
-      state.velocity[0] = -step;
+      state.velocity[0] = -velocity;
       isMoving = true;
     } else if (arrowRight && !arrowLeft) {
-      state.velocity[0] = step;
+      state.velocity[0] = velocity;
       isMoving = true;
     }
 
     if (arrowUp && !arrowDown) {
-      state.velocity[1] = step;
+      state.velocity[1] = velocity;
       isMoving = true;
     } else if (arrowDown && !arrowUp) {
-      state.velocity[1] = -step;
+      state.velocity[1] = -velocity;
       isMoving = true;
     }
 
@@ -824,6 +825,7 @@ function Player(game, aspect) {
       pitching = pitchingMax;
     }
 
+    /* Apply rotations if rolling or pitching */
     if (rollingUp || rollingDown || pitching) {
       let angleX = 0;
       let angleY = 0;
