@@ -108,19 +108,20 @@ function Star(game) {
   Object.defineProperty(this, "offScreen", {get: offScreen});
 }
 
-function Weapon(game, type, numProj, projDir, coolDown) {
+function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
   type = type || 0;
   numProj = numProj || 50;
   projDir = projDir || 1;
   var projectiles = [];
-  var weapon = game.weaponTypes[type];
+  var weapon = game.gameData.weapons[type];
   var projType = weapon.projectileType;
   var projCount = weapon.projectileCount;
-  var projCoolDown = coolDown || game.projectileTypes[game.projectileTypesMap[projType]].coolDown;
+  var projCoolDown = coolDown || game.gameData.projectiles[projType].coolDown;
+  var projTexType = pTexType;
   var point = {"x": 0, "y": 0, "z": 0};
 
   for (let k = 0; k < numProj; k += 1) {
-    projectiles.push(new Projectile(game, projType, 0, 0, 0, false, projDir));
+    projectiles.push(new Projectile(game, projType, 0, 0, 0, false, projDir, projTexType));
   }
 
   this.draw = function(gl) {
@@ -196,7 +197,7 @@ function Weapon(game, type, numProj, projDir, coolDown) {
       if (!proj.active) {
         numFoundProj += 1;
         let yVal = hitbox.top - numFoundProj * projSpacing;
-        proj.reset(projType, x, yVal, true, projDir);
+        proj.reset(projType, x, yVal, true, projDir, projTexType);
         if (numFoundProj >= projCount) {
           break;
         }
@@ -206,7 +207,7 @@ function Weapon(game, type, numProj, projDir, coolDown) {
     if (numFoundProj < projCount) {
       for (let k = 0, n = projCount - numFoundProj; k < n; k += 1) {
         let yVal = hitbox.top - (numFoundProj + 1) * projSpacing;
-        projectiles.push(new Projectile(game, projType, x, yVal, ts, true, projDir));
+        projectiles.push(new Projectile(game, projType, x, yVal, ts, true, projDir, projTexType));
         numFoundProj += 1;
       }
     }
@@ -216,20 +217,17 @@ function Weapon(game, type, numProj, projDir, coolDown) {
   Object.defineProperty(this, "projectiles", {get: function() {return projectiles;}});
 }
 
-function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
-  pType = pType || game.projectileTypesMap["default"] || 0;
-  var type = pType;
-  var projType = game.projectileTypesMap[type];
-  var speed = game.projectileTypes[projType].speed;
-  var xScale = game.projectileTypes[projType].xScale;
-  var yScale = game.projectileTypes[projType].yScale;
-  var zScale = game.projectileTypes[projType].zScale;
-  var texType = game.projectileTypes[projType].texType;
-  var dmg = game.projectileTypes[projType].damage;
+function Projectile(game, type, x, y, spawnTs, isActive, dir, pTexType) {
+  var projType = game.gameData.projectiles[type];
+  var velocity = projType.velocity;
+  var xScale = game.modelScale / projType.modelScales[0];
+  var yScale = game.modelScale / projType.modelScales[1];
+  var zScale = game.modelScale / projType.modelScales[2];
+  var dmg = projType.damage;
   var active = isActive || false;
   dir = dir || 1;
   var prune = 0;
-  var showDestroyedFrames = 4;
+  const showDestroyedFrames = 4;
   var depthPos = 0.0;
   var vertices = [
     new Float32Array(3),
@@ -241,9 +239,9 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
   ];
   var state = new Physics.State(
     [x, y, depthPos],
-    [dir ? speed : -speed, 0, 0]
+    [dir ? velocity : -velocity, 0, 0]
   );
-  var texCoordsBufferIndexProj = texType;
+  var texCoordsBufferIndexProj = pTexType;
   var texCoordsBufferIndexExpl = 0;
 
   var mvUniformMatrix = Utils.modelViewMatrix(
@@ -260,21 +258,21 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
     "depth": 0
   };
 
-  this.reset = function(pType, x1, y1, isActive, direc) {
-    type = pType;
-    projType = game.projectileTypesMap[type];
-    speed = game.projectileTypes[projType].speed;
-    xScale = game.projectileTypes[projType].xScale;
-    yScale = game.projectileTypes[projType].yScale;
-    zScale = game.projectileTypes[projType].zScale;
-    dmg = game.projectileTypes[projType].damage;
-
+  this.reset = function(pType, x1, y1, isActive, direc, texType) {
+    projType = game.gameData.projectiles[pType];
+    velocity = projType.velocity;
+    xScale = game.modelScale / projType.modelScales[0];
+    yScale = game.modelScale / projType.modelScales[1];
+    zScale = game.modelScale / projType.modelScales[2];
+    pTexType = texType;
+    texCoordsBufferIndexProj = texType;
+    dmg = projType.damage;
     active = isActive || false;
     dir = direc || 1;
 
     state.position[0] = x1;
     state.position[1] = y1;
-    state.velocity[0] = dir ? speed : -speed;
+    state.velocity[0] = dir ? velocity : -velocity;
 
     mvUniformMatrix[5] = yScale;
     mvUniformMatrix[12] = x1 || 0;
@@ -448,21 +446,33 @@ function Projectile(game, pType, x, y, spawnTs, isActive, dir) {
   Object.defineProperty(this, "direction", {get: function() {return dir;}});
 }
 
-function Enemy(game, type, isActive) {
-  var enemyType = game.enemyTypesMap[type];
-  var speed = game.enemyTypes[enemyType].speed;
-  var xScale = game.enemyTypes[enemyType].xScale;
-  var yScale = game.enemyTypes[enemyType].yScale;
-  var zScale = game.enemyTypes[enemyType].zScale;
-  var hp = game.enemyTypes[enemyType].hitPoints;
-  var points = game.enemyTypes[enemyType].hitPoints;
+function Enemy(game, aspect, type, isBoss, isActive) {
+  var enemyData = null;
+  if (isBoss) {
+    enemyData = game.gameData.bosses[type];
+  } else {
+    enemyData = game.gameData.enemies[type];
+  }
+  var velocity = enemyData.velocity;
+  var xScale = enemyData.modelScales[0] * game.modelScale / aspect;
+  var yScale = enemyData.modelScales[1] * game.modelScale;
+  var zScale = enemyData.modelScales[2] * game.modelScale;
+  var hp = enemyData.hitPoints;
+  var points = hp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
   var prune = 0;
-  var showDestroyedFrames = 8;
+  const showDestroyedFrames = 8;
   var active = isActive || false;
-  var verticalPos = Math.random() * (1 - game.modelScale);
-  verticalPos = ((global.performance.now()|0) % 2) ? -verticalPos : verticalPos;
-  var horizontalPos = 1.10;
+  var verticalPos = 0;
+  var horizontalPos = 0;
+  if (isBoss) {
+    verticalPos = 0;
+    horizontalPos = 0.75;
+  } else {
+    verticalPos = Math.random() * (1 - game.modelScale);
+    verticalPos = ((global.performance.now()|0) % 2) ? -verticalPos : verticalPos;
+    horizontalPos = 1.10;
+  }
   var depthPos = 0.0;
   var vertices = [
     new Float32Array(3),
@@ -471,7 +481,7 @@ function Enemy(game, type, isActive) {
   ];
   var state = new Physics.State(
     [horizontalPos, verticalPos, depthPos],
-    [-speed, 0, 0]
+    [-velocity, 0, 0]
   );
   var texCoordsBufferIndex = 0;
 
@@ -489,26 +499,30 @@ function Enemy(game, type, isActive) {
     "depth": 0
   };
 
-  this.reset = function(eType, isActive) {
+  this.reset = function(eType, isBoss, isActive) {
     var now = global.performance.now();
-    type = eType;
-    enemyType = game.enemyTypesMap[type];
-    speed = game.enemyTypes[enemyType].speed;
-    xScale = game.enemyTypes[enemyType].xScale;
-    yScale = game.enemyTypes[enemyType].yScale;
-    zScale = game.enemyTypes[enemyType].zScale;
-    hp = game.enemyTypes[enemyType].hitPoints;
-    points = game.enemyTypes[enemyType].hitPoints;
+    velocity = enemyData.velocity;
+    xScale = enemyData.modelScales[0] * game.modelScale / aspect;
+    yScale = enemyData.modelScales[1] * game.modelScale;
+    zScale = enemyData.modelScales[2] * game.modelScale;
+    hp = enemyData.hitPoints;
+    points = hp;
     dmgRate = game.difficultyMap.prediv[game.difficulty];
     prune = 0;
     active = isActive || false;
+    if (isBoss) {
+      verticalPos = 0;
+      this.update = updateBoss;
+    } else {
+      verticalPos = Math.random() * (1 - game.modelScale);
+      verticalPos = ((now|0) % 2) ? -verticalPos : verticalPos;
+      this.update = updateEnemy;
+    }
 
     state.position[0] = horizontalPos;
     state.position[1] = verticalPos;
-    state.velocity[0] = -speed;
+    state.velocity[0] = -velocity;
 
-    verticalPos = Math.random() * (1 - game.modelScale);
-    verticalPos = ((now|0) % 2) ? -verticalPos : verticalPos;
     mvUniformMatrix[0] = -xScale;
     mvUniformMatrix[2] = 0;
     mvUniformMatrix[5] = yScale;
@@ -545,7 +559,9 @@ function Enemy(game, type, isActive) {
 
     gl.bindTexture(gl.TEXTURE_2D, null);
   };
-  this.update = function(dt) {
+
+  this.update = (isBoss) ? updateBoss : updateEnemy;
+  function updateEnemy(dt) {
     if (hp <= 0) {
       if (prune > showDestroyedFrames) {
         active = false;
@@ -559,7 +575,23 @@ function Enemy(game, type, isActive) {
     mvUniformMatrix[12] = state.position[0];
 
     return true;
-  };
+  }
+  function updateBoss(dt) {
+    if (hp <= 0) {
+      if (prune > showDestroyedFrames) {
+        active = false;
+        return false;
+      }
+      prune += 1;
+      return false;
+    }
+
+    Physics.integrateState(state, game.time, dt);
+    mvUniformMatrix[12] = state.position[0];
+
+    return true;
+  }
+
   this.takeHit = function(pts) {
     hp -= dmgRate * pts;
     return hp;
@@ -709,7 +741,7 @@ function Player(game, aspect) {
   var animMovementCount = 0;
 
   var weapons = [];
-  var weaponSelected = 2;
+  var weaponSelected = 0;
   var weaponLastTs = 0;
   var projCount = 50;
   var startPos = {x: -0.5, y: 0.0, z: 0.0};
@@ -723,8 +755,9 @@ function Player(game, aspect) {
     [0, 0, 0]
   );
 
-  for (let k = 0; k < game.weaponTypes.length; k += 1) {
-    weapons.push(new Weapon(game, k, projCount, 1, null));
+  for (let k = 0; k < game.gameData.weapons.length; k += 1) {
+    let weapon = game.gameData.weapons[k];
+    weapons.push(new Weapon(game, k, projCount, 1, null, weapon.texType));
   }
 
   var mvUniformMatrix = Utils.modelViewMatrix(
@@ -947,6 +980,9 @@ function Player(game, aspect) {
       }
     }
     return fired;
+  };
+  this.selectWeapon = function(weapon) {
+    weaponSelected = weapon;
   };
   this.containsPointHitbox = function(point) {
     var hitbox = getHitbox();

@@ -11,7 +11,7 @@ var Splash = (function(glob) {
     "state": 0,
     "animFrame": null,
     "frame": 0,
-    "img": doc.getElementById("img_ship"),
+    "img": null,
     "left": 0,
     "top": 0,
     "width": ROOT_TWO_OVER_TWO * 64,
@@ -56,7 +56,9 @@ var Splash = (function(glob) {
     );
     splashState.canvasWidth = splashState.canvasOverlay.width;
     splashState.canvasHeight = splashState.canvasOverlay.height;
+    splashState.img = args.img;
     splashState.callback = args.callback;
+    splashState.state = 0;
 
     doc.body.addEventListener("keydown", splashHandleKeyDown, false);
     splashState.maxWidth = parseInt(ROOT_TWO_OVER_TWO * splashState.img.width, 10);

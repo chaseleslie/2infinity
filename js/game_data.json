@@ -1,8 +1,130 @@
 {
-  "levels": [
+  "enemies": [
     {
-      
+      "velocity": 0.00015,
+      "modelScales": [1, 1, 1],
+      "hitPoints": 100,
+      "spawnIntervalMult": 1,
+      "weapon": null,
+      "coolDownMult": null
+    },
+    {
+      "velocity": 0.0001,
+      "modelScales": [2, 2, 2],
+      "hitPoints": 200,
+      "spawnIntervalMult": 2.25,
+      "weapon": null,
+      "coolDownMult": null
     }
   ],
-  "numLevels": 10
+
+  "bosses": [
+    {
+      "velocity": 0.00015,
+      "modelScales": [1, 1, 1],
+      "hitPoints": 1000,
+      "spawnIntervalMult": 1,
+      "weapon": 2,
+      "coolDownMult": 1
+    }
+  ],
+
+  "weapons": [
+    {
+      "texType": 0,
+      "projectileCount": 1,
+      "projectileType": 0
+    },
+    {
+      "texType": 1,
+      "projectileCount": 1,
+      "projectileType": 1
+    },
+    {
+      "texType": 2,
+      "projectileCount": 2,
+      "projectileType": 2
+    }
+  ],
+
+  "projectiles": [
+    {
+      "velocity": 0.0005,
+      "coolDown": 384,
+      "damage": 100,
+      "modelScales": [4, 16, 1]
+    },
+    {
+      "velocity": 0.0008,
+      "coolDown": 320,
+      "damage": 100,
+      "modelScales": [4, 16, 1]
+    },
+    {
+      "velocity": 0.0008,
+      "coolDown": 384,
+      "damage": 100,
+      "modelScales": [4, 16, 1]
+    }
+  ],
+
+  "projectileTexCoords": [
+    {
+      "coords": [
+        0.0, 0.25,
+        0.25, 0.25,
+        0.25, 0.0,
+
+        0.0, 0.25,
+        0.25, 0.0,
+        0.0, 0.0
+      ],
+      "spritePos": {"x": 0, "y": 0}
+    },
+    {
+      "coords": [
+        0.25, 0.25,
+        0.5, 0.25,
+        0.5, 0.0,
+
+        0.25, 0.25,
+        0.5, 0.0,
+        0.25, 0.0
+      ],
+      "spritePos": {"x": 1, "y": 0}
+    },
+    {
+      "coords": [
+        0.5, 0.25,
+        0.75, 0.25,
+        0.75, 0.0,
+
+        0.5, 0.25,
+        0.75, 0.0,
+        0.5, 0.0
+      ],
+      "spritePos": {"x": 2, "y": 0}
+    },
+    {
+      "coords": [
+        0.75, 0.25,
+        1.0, 0.25,
+        1.0, 0.0,
+
+        0.75, 0.25,
+        1.0, 0.0,
+        0.75, 0.0
+      ],
+      "spritePos": {"x": 3, "y": 0}
+    }
+  ],
+
+  "levels": [
+    {
+      "enemies": [0, 1],
+      "scoreGoal": 6000,
+      "playerWeapons": [0, 1, 2],
+      "playerWeaponsScoreThreshold": [0, 2000, 5000]
+    }
+  ]
 }

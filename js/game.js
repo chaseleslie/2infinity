@@ -19,24 +19,6 @@
   canvasOverlay.style.width = `${window.innerWidth}px`;
   canvasOverlay.style.height = `${window.innerHeight}px`;
 
-  var difficultyMap = {
-    "labels": {
-      "easy": 1,
-      "medium": 2,
-      "hard": 3
-    },
-    "prediv": {
-      1: 1.0,
-      2: 1/2.0,
-      3: 1/3.0
-    },
-    "spawnInterval": {
-      1: 5000,
-      2: 3500,
-      3: 2000
-    }
-  };
-
   const KEY_MAP = {
     "ArrowLeft": 37,
     "Left": 37,
@@ -90,8 +72,23 @@
   const LEVEL_PLAYING = 1;
   const LEVEL_END = 2;
 
+  const DIFFICULTY_EASY = 1;
+  const DIFFICULTY_MEDIUM = 2;
+  const DIFFICULTY_HARD = 3;
+
+  var difficultyMap = {
+    "prediv": {},
+    "spawnInterval": {}
+  };
+  difficultyMap.prediv[DIFFICULTY_EASY] = 1.0;
+  difficultyMap.prediv[DIFFICULTY_MEDIUM] = 1/2.0;
+  difficultyMap.prediv[DIFFICULTY_HARD] = 1/3.0;
+  difficultyMap.spawnInterval[DIFFICULTY_EASY] = 5000;
+  difficultyMap.spawnInterval[DIFFICULTY_MEDIUM] = 3500;
+  difficultyMap.spawnInterval[DIFFICULTY_HARD] = 2000;
+
   var Game = {
-    "difficulty": difficultyMap.labels["easy"],
+    "difficulty": DIFFICULTY_EASY,
     "difficultyMap": difficultyMap,
     "level": 0,
     "score": 0,
@@ -99,6 +96,7 @@
     "levelState": LEVEL_INTRO,
     "time": 0,
     "accumulator": 0,
+    "frame": 0,
     "startTs": 0,
     "lastTs": 0,
     "pauseTs": 0,
@@ -270,147 +268,15 @@
     ]),
 
     "player": null,
-    "lastSpawnTs": [
-      0, 0
-    ],
+    "levelEnemies": [],
     "enemies": [],
-    "enemyTypes": null,
-    "enemyTypesMap": {
-      "wing": 0,
-      "wing2": 1
-    },
+    "bosses": [],
     "stars": [],
     "starMap": null,
     "numStars": 256,
     "projectiles": [],
-    "projectileLastTs": 0,
-    "projectilesTypes": null,
-    "projectileTypesMap": {
-      "basic": 0,
-      "basic_upgrade": 1,
-      "basic_multi": 2
-    },
-    "weaponTypes": [
-      {
-        "projectileType": "basic",
-        "projectileTypeId": 0,
-        "projectileCount": 1
-      },
-      {
-        "projectileType": "basic_upgrade",
-        "projectileTypeId": 1,
-        "projectileCount": 1
-      },
-      {
-        "projectileType": "basic_multi",
-        "projectileTypeId": 2,
-        "projectileCount": 2
-      }
-    ],
-    "weaponTypesMap": {
-      "basic": 0,
-      "basic_upgrade": 1,
-      "basic_multi": 2
-    },
-    "weaponSelected": 2,
-    "frame": 0
+    "projectileLastTs": 0
   };
-  Game.enemyTypes = [
-    {
-      "type": "wing",
-      "speed": 0.00015,
-      "coolDown": 1000,
-      "weaponType": null,
-      "xScale": Game.modelScale  / aspect,
-      "yScale": Game.modelScale,
-      "zScale": Game.modelScale,
-      "hitPoints": 100,
-      "spawnIntervalMult": 1
-    },
-    {
-      "type": "wing2",
-      "speed": 0.0001,
-      "coolDown": 2000,
-      "weaponType": null,
-      "xScale": Game.modelScale * 2 / aspect,
-      "yScale": Game.modelScale * 2,
-      "zScale": Game.modelScale * 2,
-      "hitPoints": 200,
-      "spawnIntervalMult": 2.25
-    }
-  ];
-  Game.projectileTypes = [
-    {
-      "speed": 0.0005,
-      "coolDown": 384,
-      "damage": 100,
-      "xScale": Game.modelScale / 3 / aspect,
-      "yScale": Game.modelScale / 16,
-      "zScale": Game.modelScale,
-      "texType": Game.textures.projectile.PROJ_BASIC_RED
-    },
-    {
-      "speed": 0.0008,
-      "coolDown": 320,
-      "damage": 100,
-      "xScale": Game.modelScale  / 2 / aspect,
-      "yScale": Game.modelScale / 16,
-      "zScale": Game.modelScale,
-      "texType": Game.textures.projectile.PROJ_BASIC_RED
-    },
-    {
-      "speed": 0.0008,
-      "coolDown": 304,
-      "damage": 50,
-      "xScale": Game.modelScale  / 2 / aspect,
-      "yScale": Game.modelScale / 16,
-      "zScale": Game.modelScale,
-      "texType": Game.textures.projectile.PROJ_BASIC_BLUE
-    }
-  ];
-
-  // Game.projectileTexCoords = [
-  //   // PROJ_BASIC_BLUE (0, 0)
-  //   new Float32Array([
-  //     0.0, 0.25,
-  //     0.25, 0.25,
-  //     0.25, 0.0,
-  //
-  //     0.0, 0.25,
-  //     0.25, 0.0,
-  //     0.0, 0.0
-  //   ]),
-  //   // PROJ_BASIC_RED (1, 0)
-  //   new Float32Array([
-  //     0.25, 0.25,
-  //     0.5, 0.25,
-  //     0.5, 0.0,
-  //
-  //     0.25, 0.25,
-  //     0.5, 0.0,
-  //     0.25, 0.0
-  //   ]),
-  //   // PROJ_BASIC_GREEN (2, 0)
-  //   new Float32Array([
-  //     0.5, 0.25,
-  //     0.75, 0.25,
-  //     0.75, 0.0,
-  //
-  //     0.5, 0.25,
-  //     0.75, 0.0,
-  //     0.5, 0.0
-  //   ]),
-  //   // PROJ_BASIC_GRAY (3, 0)
-  //   new Float32Array([
-  //     0.75, 0.25,
-  //     1.0, 0.25,
-  //     1.0, 0.0,
-  //
-  //     0.75, 0.25,
-  //     1.0, 0.0,
-  //     0.75, 0.0
-  //   ])
-  // ];
 
   var circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
   Game.verticesCircle = circleCoords.vertices;
@@ -476,17 +342,10 @@
       break;
       // Escape
       case 27:
-        if (Game.running) {
-          stop();
-        } else {
-          start();
-        }
-        if (Game.isMenuShown) {
-          hideMenu();
-        } else {
-          showMenu();
-        }
+        stop();
+        showMenu();
         e.preventDefault();
+        e.stopPropagation();
         ret = false;
       break;
       // m
@@ -583,6 +442,12 @@
       case 13:
         e.preventDefault();
       break;
+      // Escape
+      case 27:
+        e.preventDefault();
+        e.stopPropagation();
+        onMenuResume();
+        return;
 
       default:
         return;
@@ -865,6 +730,7 @@
     var ctx = canvasOverlayCtx;
     doc.body.removeEventListener("keydown", handleIntroKey, false);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    // debugger;
     start();
   }
 
@@ -881,18 +747,20 @@
 
   function preStart(Game, ts) {
     Game.lastTs = ts;
-    var lastSpawnTs = Game.lastSpawnTs;
+    var levelEnemies = Game.levelEnemies[Game.level];
     var pauseTs = Game.pauseTs;
-    for (let k = 0; k < lastSpawnTs.length; k += 1) {
+    for (let k = 0; k < levelEnemies.lastTs.length; k += 1) {
       if (pauseTs) {
-        lastSpawnTs[k] = ts - (pauseTs - lastSpawnTs[k]);
+        levelEnemies.lastTs[k] = ts - (pauseTs - levelEnemies.lastTs[k]);
       } else {
-        lastSpawnTs[k] = ts;
+        levelEnemies.lastTs[k] = ts;
       }
     }
   }
 
   function stop() {
+    doc.body.removeEventListener("keydown", handleKeyDown, false);
+    doc.body.removeEventListener("keyup", handleKeyUp, false);
     Game.pauseTs = global.performance.now();
     Game.running = false;
     global.cancelAnimationFrame(Game.animFrame);
@@ -908,6 +776,20 @@
   }
 
   function main(ts) {
+    if (Game.levelState === LEVEL_INTRO) {
+      Game.levelState = LEVEL_PLAYING;
+      stop();
+      Splash.start(
+        global.performance.now(), {
+          "canvasOverlay": canvasOverlay,
+          "canvasOverlayCtx": canvasOverlayCtx,
+          "callback": start,
+          "img": doc.getElementById("img_ship")
+        }
+      );
+      return;
+    }
+
     Game.animFrame = global.requestAnimationFrame(main);
 
     var dt = ts - Game.lastTs;
@@ -942,19 +824,26 @@
   }
 
   function update(Game, ts, dt) {
+    var enemies = null;
+    if (Game.levelState === LEVEL_PLAYING) {
+      enemies = Game.enemies;
+    } else if (Game.levelState === LEVEL_END) {
+      enemies = Game.bosses;
+    }
+
     Game.player.update(dt);
     var score = 0;
     var playerWeapons = Game.player.weapons;
     for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
-      score += playerWeapons[k].update(dt, Game.enemies);
+      score += playerWeapons[k].update(dt, enemies);
     }
     if (score) {
       updateScore(Game, score);
     }
     var playerHitbox = Game.player.hitbox;
 
-    for (let k = Game.enemies.length - 1; k >= 0; k -= 1) {
-      let enemy = Game.enemies[k];
+    for (let k = enemies.length - 1; k >= 0; k -= 1) {
+      let enemy = enemies[k];
       if (!enemy.active) {
         continue;
       }
@@ -968,15 +857,16 @@
           updateScore(Game, -points);
         }
 
-        enemy.reset(enemy.enemyType, false);
+        let enemyType = 0;
+        enemy.reset(enemyType, false, false);
       }
     }
 
     //Check for player collisions with enemies
-    if (!playerHitbox.depth) {
-      for (let k = 0; k < Game.enemies.length; k += 1) {
+    if (!playerHitbox.depth && Game.levelState === LEVEL_PLAYING) {
+      for (let k = 0; k < enemies.length; k += 1) {
         let keepLooping = true;
-        let enemy = Game.enemies[k];
+        let enemy = enemies[k];
         if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(playerHitbox)) {
           let playerPos = Game.player.position;
           for (let iK = 0; iK < playerPos.length; iK += 1) {
@@ -1006,22 +896,87 @@
       }
     }
 
-    spawnEnemies(Game, ts);
+    if (Game.levelState === LEVEL_PLAYING) {
+      spawnEnemies(Game, ts);
+      if (Game.overlayDirtyFlag) {
+        updateWeapon(Game);
+      }
+      // if (Game.score >= Game.gameData.levels[Game.level].scoreGoal) {
+      //   Game.levelState = LEVEL_END;
+      // }
+    } else if (Game.levelState === LEVEL_END) {
+      let bossActive = false;
+      for (let k = 0; k < enemies.length; k += 1) {
+        if (enemies[k].active) {
+          bossActive = true;
+        }
+      }
+      if (!bossActive) {
+        if (Game.level < Game.gameData.levels.length - 1) {
+          Game.level += 1;
+        }
+        Game.levelState = LEVEL_INTRO;
+      }
+    }
 
     if (Game.keydownMap["Shoot"]) {
       fireWeapon(Game, ts, dt);
     }
 
     Game.starMap.update(dt);
-
-    if (Game.overlayDirtyFlag) {
-      updateWeapon(Game);
-    }
   }
 
   function updateScore(Game, score) {
     Game.score += score;
     Game.overlayDirtyFlag |= OVERLAY_SCORE_DIRTY;
+  }
+
+  function updateWeapon(Game) {
+    var level = Game.gameData.levels[Game.level];
+    var weapons = level.playerWeapons;
+    for (let k = weapons.length; k; k -= 1) {
+      if (Game.score >= level.playerWeaponsScoreThreshold[k]) {
+        Game.player.selectWeapon(weapons[k]);
+        break;
+      }
+    }
+  }
+
+  function fireWeapon(Game, ts, dt) {
+    var fired = Game.player.fireWeapon(ts, dt);
+    Game.projectileLastTs = ts;
+    if (!Game.muted && fired) {
+      gameAudio.currentTime = 0;
+      gameAudio.play();
+    }
+  }
+
+  function spawnEnemies(Game, ts, dt) {
+    let gameData = Game.gameData;
+    let level = gameData.levels[Game.level];
+    let levelEnemies = Game.levelEnemies[Game.level];
+    let enemyTypes = level.enemies;
+    for (let k = 0, n = enemyTypes.length; k < n; k += 1) {
+      let type = enemyTypes[k];
+      let enemyType = gameData.enemies[type];
+      let timeInterval = enemyType.spawnIntervalMult * difficultyMap.spawnInterval[Game.difficulty];
+
+      if (ts - levelEnemies.lastTs[k] > timeInterval) {
+        let foundEnemy = false;
+        for (let iK = 0; iK < Game.enemies.length; iK += 1) {
+          let enemy = Game.enemies[iK];
+          if (!enemy.active) {
+            foundEnemy = true;
+            enemy.reset(type, false, true);
+            break;
+          }
+        }
+        if (!foundEnemy) {
+          Game.enemies.push(new Enemy(Game, aspect, type, false, true));
+        }
+        levelEnemies.lastTs[k] = ts;
+      }
+    }
   }
 
   function drawOverlay(Game) {
@@ -1115,47 +1070,6 @@
 
     ctx.restore();
     Game.overlayDirtyFlag = 0;
-  }
-
-  function updateWeapon(Game) {
-    if (Game.score < 2000) {
-      Game.weaponSelected = 0;
-    } else if (Game.score < 5000) {
-      Game.weaponSelected = 1;
-    } else if (Game.score < 10000) {
-      Game.weaponSelected = 2;
-    }
-  }
-
-  function fireWeapon(Game, ts, dt) {
-    var fired = Game.player.fireWeapon(ts, dt);
-    Game.projectileLastTs = ts;
-    if (!Game.muted && fired) {
-      gameAudio.currentTime = 0;
-      gameAudio.play();
-    }
-  }
-
-  function spawnEnemies(Game, ts, dt) {
-    for (let k = 0; k < Game.enemyTypes.length; k += 1) {
-      let timeInterval = Game.enemyTypes[k].spawnIntervalMult * difficultyMap.spawnInterval[Game.difficulty];
-      if (ts - Game.lastSpawnTs[k] > timeInterval) {
-        let type = Game.enemyTypes[k].type;
-        let foundEnemy = false;
-        for (let iK = 0; iK < Game.enemies.length; iK += 1) {
-          let enemy = Game.enemies[iK];
-          if (!enemy.active) {
-            foundEnemy = true;
-            enemy.reset(type, true);
-            break;
-          }
-        }
-        if (!foundEnemy) {
-          Game.enemies.push(new Enemy(Game, type, ts, true));
-        }
-        Game.lastSpawnTs[k] = ts;
-      }
-    }
   }
 
   function draw(Game) {
@@ -1261,12 +1175,18 @@
 
     Game.starMap = new StarMap(Game, Game.numStars);
 
-    Splash.start(
-      global.performance.now(), {
-        "canvasOverlay": canvasOverlay,
-        "canvasOverlayCtx": canvasOverlayCtx,
-        "callback": setupIntro
+    /* Create arrays to hold enemy last spawn ts per level */
+    let levels = Game.gameData.levels;
+    let levelEnemies = Game.levelEnemies;
+    for (let k = 0, n = levels.length; k < n; k += 1) {
+      let lastTs = [];
+      let level = levels[k];
+      for (let iK = 0, iN = level.enemies.length; iK < iN; iK += 1) {
+        lastTs.push(0);
       }
-    );
+      levelEnemies.push({"lastTs": lastTs});
+    }
+
+    setupIntro();
   }
 })(window, document);
