@@ -86,9 +86,17 @@
   const OVERLAY_HP_DIRTY = 2;
   const OVERLAY_FPS_DIRTY = 4;
 
+  const LEVEL_INTRO = 0;
+  const LEVEL_PLAYING = 1;
+  const LEVEL_END = 2;
+
   var Game = {
     "difficulty": difficultyMap.labels["easy"],
     "difficultyMap": difficultyMap,
+    "level": 0,
+    "score": 0,
+    "timestep": 10,
+    "levelState": LEVEL_INTRO,
     "time": 0,
     "accumulator": 0,
     "startTs": 0,
@@ -305,9 +313,7 @@
       "basic_multi": 2
     },
     "weaponSelected": 2,
-    "score": 0,
-    "frame": 0,
-    "timing": {}
+    "frame": 0
   };
   Game.enemyTypes = [
     {
@@ -363,48 +369,48 @@
     }
   ];
 
-  Game.projectileTexCoords = [
-    // PROJ_BASIC_BLUE (0, 0)
-    new Float32Array([
-      0.0, 0.25,
-      0.25, 0.25,
-      0.25, 0.0,
-
-      0.0, 0.25,
-      0.25, 0.0,
-      0.0, 0.0
-    ]),
-    // PROJ_BASIC_RED (1, 0)
-    new Float32Array([
-      0.25, 0.25,
-      0.5, 0.25,
-      0.5, 0.0,
-
-      0.25, 0.25,
-      0.5, 0.0,
-      0.25, 0.0
-    ]),
-    // PROJ_BASIC_GREEN (2, 0)
-    new Float32Array([
-      0.5, 0.25,
-      0.75, 0.25,
-      0.75, 0.0,
-
-      0.5, 0.25,
-      0.75, 0.0,
-      0.5, 0.0
-    ]),
-    // PROJ_BASIC_GRAY (3, 0)
-    new Float32Array([
-      0.75, 0.25,
-      1.0, 0.25,
-      1.0, 0.0,
-
-      0.75, 0.25,
-      1.0, 0.0,
-      0.75, 0.0
-    ])
-  ];
+  // Game.projectileTexCoords = [
+  //   // PROJ_BASIC_BLUE (0, 0)
+  //   new Float32Array([
+  //     0.0, 0.25,
+  //     0.25, 0.25,
+  //     0.25, 0.0,
+  //
+  //     0.0, 0.25,
+  //     0.25, 0.0,
+  //     0.0, 0.0
+  //   ]),
+  //   // PROJ_BASIC_RED (1, 0)
+  //   new Float32Array([
+  //     0.25, 0.25,
+  //     0.5, 0.25,
+  //     0.5, 0.0,
+  //
+  //     0.25, 0.25,
+  //     0.5, 0.0,
+  //     0.25, 0.0
+  //   ]),
+  //   // PROJ_BASIC_GREEN (2, 0)
+  //   new Float32Array([
+  //     0.5, 0.25,
+  //     0.75, 0.25,
+  //     0.75, 0.0,
+  //
+  //     0.5, 0.25,
+  //     0.75, 0.0,
+  //     0.5, 0.0
+  //   ]),
+  //   // PROJ_BASIC_GRAY (3, 0)
+  //   new Float32Array([
+  //     0.75, 0.25,
+  //     1.0, 0.25,
+  //     1.0, 0.0,
+  //
+  //     0.75, 0.25,
+  //     1.0, 0.0,
+  //     0.75, 0.0
+  //   ])
+  // ];
 
   var circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
   Game.verticesCircle = circleCoords.vertices;
@@ -906,7 +912,7 @@
 
     var dt = ts - Game.lastTs;
     Game.time += dt;
-    var timestep = 10;
+    var timestep = Game.timestep;
 
     Game.averageFrameInterval.update((ts - Game.lastTs) || 0);
 
@@ -936,7 +942,12 @@
   }
 
   function update(Game, ts, dt) {
-    var score = Game.player.update(dt);
+    Game.player.update(dt);
+    var score = 0;
+    var playerWeapons = Game.player.weapons;
+    for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
+      score += playerWeapons[k].update(dt, Game.enemies);
+    }
     if (score) {
       updateScore(Game, score);
     }
@@ -1207,6 +1218,10 @@
     Game.textures.texCoordAttrib = gl.getAttribLocation(Game.shaderProg, "aTextureCoord");
     gl.enableVertexAttribArray(Game.textures.texCoordAttrib);
     gl.vertexAttribPointer(Game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
+
+    Game.projectileTexCoords = Game.gameData.projectileTexCoords.map((el) => {
+      return new Float32Array(el.coords);
+    });
 
     function loadTexture(texObj, img, texCoords, texIdIndex) {
       texObj.tex = gl.createTexture();

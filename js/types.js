@@ -131,7 +131,7 @@ function Weapon(game, type, numProj, projDir, coolDown) {
       }
     }
   };
-  this.update = function(dt) {
+  this.update = function(dt, enemies) {
     let score = 0;
     for (let k = 0; k < projectiles.length; k += 1) {
       let proj = projectiles[k];
@@ -157,8 +157,8 @@ function Weapon(game, type, numProj, projDir, coolDown) {
         }
 
         let hitbox = proj.hitbox;
-        for (let n = 0; n < game.enemies.length; n += 1) {
-          let enemy = game.enemies[n];
+        for (let n = 0; n < enemies.length; n += 1) {
+          let enemy = enemies[n];
           if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(hitbox)) {
             let projPos = proj.position;
             for (let m = 0; m < projPos.length; m += 1) {
@@ -932,13 +932,6 @@ function Player(game, aspect) {
     } else {
       texCoordsBufferIndex = game.textures.ship.SHIP_IDLE;
     }
-
-    let score = 0;
-    for (let k = 0; k < weapons.length; k += 1) {
-      let weapon = weapons[k];
-      score += weapon.update(dt);
-    }
-    return score;
   };
   this.takeHit = function(points) {
     hp -= dmgRate * points;
@@ -1064,6 +1057,7 @@ function Player(game, aspect) {
 
   Object.defineProperty(this, "hitPoints", {get: function () {return hp;}});
   Object.defineProperty(this, "maxHitPoints", {get: function () {return maxHp;}});
+  Object.defineProperty(this, "weapons", {get: function() {return weapons;}});
   Object.defineProperty(this, "position", {get: getPosition});
   Object.defineProperty(this, "positionLeft", {get: getPositionLeft});
   Object.defineProperty(this, "positionRight", {get: getPositionRight});
