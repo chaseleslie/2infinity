@@ -411,9 +411,11 @@
   Game.textures.circle.coords = [circleCoords.tex];
 
   Game.gameData = null;
+  var gameDataURL = "js/game_data.json";
+  gameDataURL += (win.location.hash === "#dev") ? `?ts=${Date.now()}` : "" ;
   Utils.fetchURL({
     "method": "GET",
-    "url": "js/game_data.json",
+    "url": gameDataURL,
     "responseType": "json",
     "callback": function(xhr) {
       if (xhr.status === 200) {
