@@ -15,6 +15,14 @@
       "spawnIntervalMult": 1.5,
       "weapon": null,
       "coolDownMult": null
+    },
+    {
+      "velocity": 0.000125,
+      "modelScales": [1.5, 1.5, 1.5],
+      "hitPoints": 100,
+      "spawnIntervalMult": 1.25,
+      "weapon": 0,
+      "coolDownMult": 7.5
     }
   ],
 
@@ -124,7 +132,7 @@
 
   "levels": [
     {
-      "enemies": [0, 1],
+      "enemies": [0, 1, 2],
       "scoreGoal": 6000,
       "playerWeapons": [0, 1, 2],
       "playerWeaponsScoreThreshold": [0, 2000, 5000],

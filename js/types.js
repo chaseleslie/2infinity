@@ -108,10 +108,11 @@ function Star(game) {
   Object.defineProperty(this, "offScreen", {get: offScreen});
 }
 
-function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
+function Weapon(game, type, numProj, projDir, coolDown, pTexType, isActive) {
   type = type || 0;
   numProj = numProj || 50;
   projDir = projDir || 0;
+  var active = isActive || false;
   var projectiles = [];
   var weapon = game.gameData.weapons[type];
   var projType = weapon.projectileType;
@@ -126,6 +127,25 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
     projectiles.push(new Projectile(game, projType, 0, 0, false, projDir, projTexType));
   }
 
+  this.reset = function(type, numProj, projDir, coolDown, pTexType, isActive) {
+    type = type || 0;
+    numProj = numProj || 50;
+    projDir = projDir || 0;
+    active = isActive || false;
+    weapon = game.gameData.weapons[type];
+    projType = weapon.projectileType;
+    projCount = weapon.projectileCount;
+    projCoolDown = coolDown || game.gameData.projectiles[projType].coolDown;
+    projTexType = pTexType;
+    projDeltaAngle = weapon.projectileDeltaAngle;
+    weaponLastTs = 0;
+
+    if (projectiles.length < numProj) {
+      for (let k = numProj - projectiles.length; k; k -= 1) {
+        projectiles.push(new Projectile(game, projType, 0, 0, false, projDir, projTexType));
+      }
+    }
+  };
   this.draw = function(gl) {
     for (let k = 0; k < projectiles.length; k += 1) {
       let proj = projectiles[k];
@@ -138,44 +158,48 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
     let score = 0;
     for (let k = 0; k < projectiles.length; k += 1) {
       let proj = projectiles[k];
-      if (proj.active) {
-        let offScreen = false;
-        let projHitbox = proj.hitbox;
-        let centerX = (projHitbox.left + projHitbox.right) / 2;
-        let centerY = (projHitbox.top + projHitbox.bottom) / 2;
-        if (centerX < -1.0 || centerX > 1.0 || centerY < -1.0 || centerY > 1.0) {
-          offScreen = true;
-        }
+      if (!proj.active) {
+        continue;
+      }
 
-        if (offScreen) {
-          proj.reset(projType, 0, 0, false, projDir);
-        }
-        proj.update(dt);
+      let offScreen = false;
+      let projHitbox = proj.hitbox;
+      let centerX = (projHitbox.left + projHitbox.right) / 2;
+      let centerY = (projHitbox.top + projHitbox.bottom) / 2;
+      if (centerX < -1.0 || centerX > 1.0 || centerY < -1.0 || centerY > 1.0) {
+        offScreen = true;
+      }
 
-        if (proj.exploded) {
-          continue;
-        }
+      if (offScreen) {
+        proj.reset(projType, 0, 0, false, projDir);
+        continue;
+      }
+      proj.update(dt);
 
-        let hitbox = proj.hitbox;
-        for (let n = 0; n < enemies.length; n += 1) {
-          let enemy = enemies[n];
-          if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(hitbox)) {
-            let projPos = proj.position;
-            for (let m = 0; m < projPos.length; m += 1) {
-              let vert = projPos[m];
-              point.x = vert[0];
-              point.y = vert[1];
-              point.z = vert[2];
-              let directHit = enemy.containsPoint(point);
-              if (directHit) {
-                score += enemy.takeHit(proj.damage);
-                proj.setExploded();
-                break;
-              }
+      if (proj.exploded) {
+        continue;
+      }
+
+      let hitbox = proj.hitbox;
+      for (let n = 0; n < enemies.length; n += 1) {
+        let enemy = enemies[n];
+        if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(hitbox)) {
+          let projPos = proj.position;
+          for (let m = 0; m < projPos.length; m += 1) {
+            let vert = projPos[m];
+            point.x = vert[0];
+            point.y = vert[1];
+            point.z = vert[2];
+            let directHit = enemy.containsPoint(point);
+            if (directHit) {
+              score += enemy.takeHit(proj.damage);
+              proj.setExploded();
+              break;
             }
           }
         }
       }
+
     }
     return score;
   };
@@ -255,6 +279,7 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
     return true;
   };
   Object.defineProperty(this, "projectiles", {get: function() {return projectiles;}});
+  Object.defineProperty(this, "active", {get: function() {return active;}});
 }
 
 function Projectile(game, type, x, y, isActive, dir, pTexType) {
@@ -500,6 +525,9 @@ function Enemy(game, aspect, type, isBoss, isActive) {
   var velocity = enemyData.velocity;
   var hp = enemyData.hitPoints;
   var points = hp;
+  var weaponType = enemyData.weapon;
+  var coolDownMult = enemyData.coolDownMult;
+  var weapon = (weaponType === null) ? null : game.findEnemyWeapon(game);
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
   var prune = 0;
   const showDestroyedFrames = 8;
@@ -547,15 +575,30 @@ function Enemy(game, aspect, type, isBoss, isActive) {
     "depth": 0
   };
 
+  if (weapon) {
+    let weaponData = game.gameData.weapons[weaponType];
+    let projData = game.gameData.projectiles[weaponData.projectileType];
+    weapon.reset(weaponType, 50, Math.PI, coolDownMult * projData.coolDown, weaponData.texType, true);
+  }
+
   this.reset = function(eType, isBoss, isActive) {
     var now = global.performance.now();
     var modelScale = game.modelScale;
+    type = eType;
+    if (isBoss) {
+      enemyData = game.gameData.bosses[type];
+    } else {
+      enemyData = game.gameData.enemies[type];
+    }
     velocity = enemyData.velocity;
     scales.x = enemyData.modelScales[0] * modelScale / aspect;
     scales.y = enemyData.modelScales[1] * modelScale;
     scales.z = enemyData.modelScales[2] * modelScale;
     hp = enemyData.hitPoints;
     points = hp;
+    weaponType = enemyData.weapon;
+    coolDownMult = enemyData.coolDownMult;
+    weapon = (weaponType === null) ? null : game.findEnemyWeapon(game);
     dmgRate = game.difficultyMap.prediv[game.difficulty];
     prune = 0;
     active = isActive || false;
@@ -566,6 +609,12 @@ function Enemy(game, aspect, type, isBoss, isActive) {
       translateVec.y = Math.random() * (1 - modelScale);
       translateVec.y = ((now|0) % 2) ? -verticalPos : verticalPos;
       this.update = updateEnemy;
+    }
+
+    if (weapon) {
+      let weaponData = game.gameData.weapons[weaponType];
+      let projData = game.gameData.projectiles[weaponData.projectileType];
+      weapon.reset(weaponType, 50, Math.PI, coolDownMult * projData.coolDown, weaponData.texType, true);
     }
 
     state.position[0] = horizontalPos;
@@ -601,23 +650,34 @@ function Enemy(game, aspect, type, isBoss, isActive) {
     gl.drawArrays(gl.TRIANGLES, 0, numTri);
 
     gl.bindTexture(gl.TEXTURE_2D, null);
+
+    if (weapon) {
+      weapon.draw(gl);
+    }
   };
 
   this.update = (isBoss) ? updateBoss : updateEnemy;
   function updateEnemy(dt) {
+    var now = global.performance.now();
     if (hp <= 0) {
       if (prune > showDestroyedFrames) {
         active = false;
-        return false;
+        return 0;
       }
       prune += 1;
-      return false;
+      return 0;
     }
 
     Physics.integrateState(state, game.time, dt);
     mvUniformMatrix[12] = state.position[0];
 
-    return true;
+    let score = 0;
+    if (weapon) {
+      score += weapon.update(dt, game.players);
+      weapon.fireWeapon(now, dt, Math.PI, getHitbox());
+    }
+
+    return score;
   }
   function updateBoss(dt) {
     if (hp <= 0) {
@@ -1014,7 +1074,7 @@ function Player(game, aspect) {
   };
   this.takeHit = function(points) {
     hp -= dmgRate * points;
-    return hp;
+    return points;
   };
   this.fireWeapon = function(ts, dt) {
     var weapon = weapons[weaponSelected];
@@ -1143,6 +1203,7 @@ function Player(game, aspect) {
   Object.defineProperty(this, "positionTop", {get: getPositionTop});
   Object.defineProperty(this, "positionBottom", {get: getPositionBottom});
   Object.defineProperty(this, "hitbox", {get: getHitbox});
+  Object.defineProperty(this, "active", {get: function() {return true;}});
 
   this.resetGame();
 }

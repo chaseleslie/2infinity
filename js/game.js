@@ -1,4 +1,4 @@
-/* global Utils Splash Player Enemy StarMap */
+/* global Utils Splash Weapon Player Enemy StarMap */
 
 (function(win, doc) {
   var global = win;
@@ -268,8 +268,11 @@
     ]),
 
     "player": null,
+    "players": [],
     "levelEnemies": [],
     "enemies": [],
+    "enemyWeapons": [],
+    "findEnemyWeapon": findEnemyWeapon,
     "bosses": [],
     "stars": [],
     "starMap": null,
@@ -842,24 +845,31 @@
     }
     var playerHitbox = Game.player.hitbox;
 
+    score = 0;
     for (let k = enemies.length - 1; k >= 0; k -= 1) {
       let enemy = enemies[k];
       if (!enemy.active) {
         continue;
       }
-      enemy.update(dt);
+      score -= enemy.update(dt);
+      if (score) {
+        Game.overlayDirtyFlag |= OVERLAY_HP_DIRTY;
+      }
       let hitbox = enemy.hitbox;
       let enemyPrune = enemy.prune;
       let enemyOffscreen = hitbox.right < -1.0;
       if (enemyOffscreen || enemyPrune) {
-        let points = enemy.points;
         if (enemyOffscreen) {
-          updateScore(Game, -points);
+          // updateScore(Game, -enemy.points);
+          score -= enemy.points;
         }
 
         let enemyType = 0;
         enemy.reset(enemyType, false, false);
       }
+    }
+    if (score) {
+      updateScore(Game, score);
     }
 
     //Check for player collisions with enemies
@@ -1087,6 +1097,18 @@
     }
   }
 
+  function findEnemyWeapon(Game) {
+    var enemyWeapons = Game.enemyWeapons;
+    for (let k = 0, n = enemyWeapons.length; k < n; k += 1) {
+      let weapon = enemyWeapons[k];
+      if (!weapon.active) {
+        return weapon;
+      }
+    }
+
+    return new Weapon(Game, 0, 50, 0, 0, 0, false);
+  }
+
   function setup(Game, gl) {
     gl.clearColor(0.0, 0.0, 0.3, 1.0);
     gl.enable(gl.DEPTH_TEST);
@@ -1105,6 +1127,7 @@
     }
 
     Game.player = new Player(Game, aspect);
+    Game.players.push(Game.player);
     gl.useProgram(Game.shaderProg);
 
     gl.bindAttribLocation(Game.shaderProg, Game.vertexPositionAttrib, "aVertexPosition");
@@ -1185,6 +1208,11 @@
         lastTs.push(0);
       }
       levelEnemies.push({"lastTs": lastTs});
+    }
+
+    /* Create cache of weapons for enemies to reuse */
+    for (let k = 0; k < 50; k += 1) {
+      Game.enemyWeapons.push(new Weapon(Game, 0, 50, 0, 0, 0, false));
     }
 
     setupIntro();
