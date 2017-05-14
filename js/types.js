@@ -111,17 +111,19 @@ function Star(game) {
 function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
   type = type || 0;
   numProj = numProj || 50;
-  projDir = projDir || 1;
+  projDir = projDir || 0;
   var projectiles = [];
   var weapon = game.gameData.weapons[type];
   var projType = weapon.projectileType;
   var projCount = weapon.projectileCount;
   var projCoolDown = coolDown || game.gameData.projectiles[projType].coolDown;
   var projTexType = pTexType;
+  var projDeltaAngle = weapon.projectileDeltaAngle;
+  var weaponLastTs = 0;
   var point = {"x": 0, "y": 0, "z": 0};
 
   for (let k = 0; k < numProj; k += 1) {
-    projectiles.push(new Projectile(game, projType, 0, 0, 0, false, projDir, projTexType));
+    projectiles.push(new Projectile(game, projType, 0, 0, false, projDir, projTexType));
   }
 
   this.draw = function(gl) {
@@ -138,14 +140,11 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
       let proj = projectiles[k];
       if (proj.active) {
         let offScreen = false;
-        if (proj.dir > 0) {
-          if (proj.hitbox.left > 1.0) {
-            offScreen = true;
-          }
-        } else if (proj.dir < 0) {
-          if (proj.hitbox.right < -1.0) {
-            offScreen = true;
-          }
+        let projHitbox = proj.hitbox;
+        let centerX = (projHitbox.left + projHitbox.right) / 2;
+        let centerY = (projHitbox.top + projHitbox.bottom) / 2;
+        if (centerX < -1.0 || centerX > 1.0 || centerY < -1.0 || centerY > 1.0) {
+          offScreen = true;
         }
 
         if (offScreen) {
@@ -169,10 +168,7 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
               point.z = vert[2];
               let directHit = enemy.containsPoint(point);
               if (directHit) {
-                enemy.takeHit(proj.damage);
-                if (enemy.hitPoints <= 0) {
-                  score += enemy.points;
-                }
+                score += enemy.takeHit(proj.damage);
                 proj.setExploded();
                 break;
               }
@@ -183,32 +179,76 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
     }
     return score;
   };
-  this.fireWeapon = function(ts, dt, lastTs, hitbox) {
+  this.fireWeapon = function(ts, dt, projDir, hitbox) {
     var numFoundProj = 0;
-    var projSpacing = (hitbox.top - hitbox.bottom) / (projCount + 1);
-    var x = (projDir) ? hitbox.right : hitbox.left;
+    var hitboxCenterX = hitbox.left + (hitbox.right - hitbox.left) / 2;
+    var hitboxCenterY = hitbox.bottom + (hitbox.top - hitbox.bottom) / 2;
+    var hitboxRadius = Math.abs(hitbox.right - hitboxCenterX);
+    var oddProjCount = projCount % 2;
+    var medianProjCount = Math.ceil(projCount / 2);
+    var cos = Math.cos;
+    var sin = Math.sin;
 
-    if (ts < (lastTs + projCoolDown)) {
+    if (ts < (weaponLastTs + projCoolDown)) {
       return false;
     }
+    weaponLastTs = ts;
 
+    /* Reuse existing projectile objects */
     for (let k = 0; k < projectiles.length; k += 1) {
       let proj = projectiles[k];
       if (!proj.active) {
         numFoundProj += 1;
-        let yVal = hitbox.top - numFoundProj * projSpacing;
-        proj.reset(projType, x, yVal, true, projDir, projTexType);
+        let pDeltaAngle = 0;
+        if (projCount === 1) {
+          pDeltaAngle = 0;
+        } else if (oddProjCount) {
+          if (numFoundProj === medianProjCount) {
+            pDeltaAngle = 0;
+          } else if (numFoundProj < medianProjCount) {
+            pDeltaAngle = numFoundProj * projDeltaAngle;
+          } else if (numFoundProj > medianProjCount) {
+            pDeltaAngle = -(numFoundProj - medianProjCount) * projDeltaAngle;
+          }
+        } else if (!oddProjCount) {
+          pDeltaAngle = Math.floor((numFoundProj - 1) / 2) * projDeltaAngle + 0.5 * projDeltaAngle;
+          pDeltaAngle = (numFoundProj % 2) ? -pDeltaAngle : pDeltaAngle;
+        }
+
+        let pDir = projDir + pDeltaAngle;
+        let xVal = hitboxCenterX + hitboxRadius * cos(pDir);
+        let yVal = hitboxCenterY + hitboxRadius * sin(pDir);
+        proj.reset(projType, xVal, yVal, true, pDir, projTexType);
         if (numFoundProj >= projCount) {
           break;
         }
       }
     }
 
+    /* Create new Projectile objects as needed */
     if (numFoundProj < projCount) {
       for (let k = 0, n = projCount - numFoundProj; k < n; k += 1) {
-        let yVal = hitbox.top - (numFoundProj + 1) * projSpacing;
-        projectiles.push(new Projectile(game, projType, x, yVal, ts, true, projDir, projTexType));
         numFoundProj += 1;
+        let pDeltaAngle = 0;
+        if (projCount === 1) {
+          pDeltaAngle = 0;
+        } else if (oddProjCount) {
+          if (numFoundProj === medianProjCount) {
+            pDeltaAngle = 0;
+          } else if (numFoundProj < medianProjCount) {
+            pDeltaAngle = numFoundProj * projDeltaAngle;
+          } else if (numFoundProj > medianProjCount) {
+            pDeltaAngle = -(numFoundProj - medianProjCount) * projDeltaAngle;
+          }
+        } else if (!oddProjCount) {
+          pDeltaAngle = Math.floor((numFoundProj - 1) / 2) * projDeltaAngle + 0.5 * projDeltaAngle;
+          pDeltaAngle = (numFoundProj % 2) ? -pDeltaAngle : pDeltaAngle;
+        }
+
+        let pDir = projDir + pDeltaAngle;
+        let xVal = hitboxCenterX + hitboxRadius * cos(pDir);
+        let yVal = hitboxCenterY + hitboxRadius * sin(pDir);
+        projectiles.push(new Projectile(game, projType, xVal, yVal, true, pDir, projTexType));
       }
     }
 
@@ -217,15 +257,12 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType) {
   Object.defineProperty(this, "projectiles", {get: function() {return projectiles;}});
 }
 
-function Projectile(game, type, x, y, spawnTs, isActive, dir, pTexType) {
+function Projectile(game, type, x, y, isActive, dir, pTexType) {
   var projType = game.gameData.projectiles[type];
   var velocity = projType.velocity;
-  var xScale = game.modelScale / projType.modelScales[0];
-  var yScale = game.modelScale / projType.modelScales[1];
-  var zScale = game.modelScale / projType.modelScales[2];
   var dmg = projType.damage;
   var active = isActive || false;
-  dir = dir || 1;
+  dir = dir || 0;
   var prune = 0;
   const showDestroyedFrames = 4;
   var depthPos = 0.0;
@@ -239,16 +276,23 @@ function Projectile(game, type, x, y, spawnTs, isActive, dir, pTexType) {
   ];
   var state = new Physics.State(
     [x, y, depthPos],
-    [dir ? velocity : -velocity, 0, 0]
+    [velocity * Math.cos(dir), velocity * Math.sin(dir), 0]
   );
   var texCoordsBufferIndexProj = pTexType;
   var texCoordsBufferIndexExpl = 0;
 
+  var translateVec = {"x": x, "y": y, "z": 0};
+  var rotations = {"x": 0, "y": 0, "z": -dir};
+  var scales = {
+    "x": game.modelScale / projType.modelScales[0],
+    "y": game.modelScale / projType.modelScales[1],
+    "z": game.modelScale / projType.modelScales[2]
+  };
   var mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
-    {"x": x, "y": y, "z": 0.0},
-    {"x": 0, "y": 0, "z": 0},
-    {"x": xScale, "y": yScale, "z": zScale}
+    translateVec,
+    rotations,
+    scales
   );
   var hitbox = {
     "left": 0,
@@ -261,24 +305,24 @@ function Projectile(game, type, x, y, spawnTs, isActive, dir, pTexType) {
   this.reset = function(pType, x1, y1, isActive, direc, texType) {
     projType = game.gameData.projectiles[pType];
     velocity = projType.velocity;
-    xScale = game.modelScale / projType.modelScales[0];
-    yScale = game.modelScale / projType.modelScales[1];
-    zScale = game.modelScale / projType.modelScales[2];
+    scales.x = game.modelScale / projType.modelScales[0];
+    scales.y = game.modelScale / projType.modelScales[1];
+    scales.z = game.modelScale / projType.modelScales[2];
     pTexType = texType;
     texCoordsBufferIndexProj = texType;
     dmg = projType.damage;
     active = isActive || false;
-    dir = direc || 1;
+    dir = direc || 0;
 
     state.position[0] = x1;
     state.position[1] = y1;
-    state.velocity[0] = dir ? velocity : -velocity;
+    state.velocity[0] = velocity * Math.cos(dir);
+    state.velocity[1] = velocity * Math.sin(dir);
 
-    mvUniformMatrix[5] = yScale;
-    mvUniformMatrix[12] = x1 || 0;
-    mvUniformMatrix[13] = y1 || 0;
-    x = x1;
-    y = y1;
+    translateVec.x = x1;
+    translateVec.y = y1;
+    rotations.z = -direc;
+    Utils.modelViewMatrix(mvUniformMatrix, translateVec, rotations, scales);
     prune = 0;
   };
   this.draw = function(gl) {
@@ -315,15 +359,15 @@ function Projectile(game, type, x, y, spawnTs, isActive, dir, pTexType) {
 
     Physics.integrateState(state, game.time, dt);
     mvUniformMatrix[12] = state.position[0];
+    mvUniformMatrix[13] = state.position[1];
 
     return true;
   };
   this.setExploded = function() {
     prune += 1;
-    mvUniformMatrix[0] = xScale;
-    mvUniformMatrix[5] = yScale * 3;
-    mvUniformMatrix[10] = zScale;
-    mvUniformMatrix[13] = y;
+    mvUniformMatrix[0] = scales.x;
+    mvUniformMatrix[5] = scales.y * 3;
+    mvUniformMatrix[10] = scales.z;
     mvUniformMatrix[14] = 0.0;
     mvUniformMatrix[15] = 1;
   };
@@ -454,9 +498,6 @@ function Enemy(game, aspect, type, isBoss, isActive) {
     enemyData = game.gameData.enemies[type];
   }
   var velocity = enemyData.velocity;
-  var xScale = enemyData.modelScales[0] * game.modelScale / aspect;
-  var yScale = enemyData.modelScales[1] * game.modelScale;
-  var zScale = enemyData.modelScales[2] * game.modelScale;
   var hp = enemyData.hitPoints;
   var points = hp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
@@ -485,11 +526,18 @@ function Enemy(game, aspect, type, isBoss, isActive) {
   );
   var texCoordsBufferIndex = 0;
 
+  var translateVec = {"x": horizontalPos, "y": verticalPos, "z": depthPos};
+  var rotations = {"x": 0, "y": Math.PI, "z": 0};
+  var scales = {
+    "x": enemyData.modelScales[0] * game.modelScale / aspect,
+    "y": enemyData.modelScales[1] * game.modelScale,
+    "z": enemyData.modelScales[2] * game.modelScale
+  };
   var mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
-    {"x": horizontalPos, "y": verticalPos, "z": depthPos},
-    {"x": 0, "y": Math.PI, "z": 0},
-    {"x": xScale, "y": yScale, "z": zScale}
+    translateVec,
+    rotations,
+    scales
   );
   var hitbox = {
     "left": 0,
@@ -501,35 +549,30 @@ function Enemy(game, aspect, type, isBoss, isActive) {
 
   this.reset = function(eType, isBoss, isActive) {
     var now = global.performance.now();
+    var modelScale = game.modelScale;
     velocity = enemyData.velocity;
-    xScale = enemyData.modelScales[0] * game.modelScale / aspect;
-    yScale = enemyData.modelScales[1] * game.modelScale;
-    zScale = enemyData.modelScales[2] * game.modelScale;
+    scales.x = enemyData.modelScales[0] * modelScale / aspect;
+    scales.y = enemyData.modelScales[1] * modelScale;
+    scales.z = enemyData.modelScales[2] * modelScale;
     hp = enemyData.hitPoints;
     points = hp;
     dmgRate = game.difficultyMap.prediv[game.difficulty];
     prune = 0;
     active = isActive || false;
     if (isBoss) {
-      verticalPos = 0;
+      translateVec.y = 0;
       this.update = updateBoss;
     } else {
-      verticalPos = Math.random() * (1 - game.modelScale);
-      verticalPos = ((now|0) % 2) ? -verticalPos : verticalPos;
+      translateVec.y = Math.random() * (1 - modelScale);
+      translateVec.y = ((now|0) % 2) ? -verticalPos : verticalPos;
       this.update = updateEnemy;
     }
 
     state.position[0] = horizontalPos;
-    state.position[1] = verticalPos;
+    state.position[1] = translateVec.y;
     state.velocity[0] = -velocity;
 
-    mvUniformMatrix[0] = -xScale;
-    mvUniformMatrix[2] = 0;
-    mvUniformMatrix[5] = yScale;
-    mvUniformMatrix[8] = 0;
-    mvUniformMatrix[10] = -zScale;
-    mvUniformMatrix[12] = horizontalPos;
-    mvUniformMatrix[13] = verticalPos;
+    Utils.modelViewMatrix(mvUniformMatrix, translateVec, rotations, scales);
   };
   this.draw = function(gl) {
     var numTri = 0;
@@ -594,7 +637,10 @@ function Enemy(game, aspect, type, isBoss, isActive) {
 
   this.takeHit = function(pts) {
     hp -= dmgRate * pts;
-    return hp;
+    if (hp <= 0) {
+      return points;
+    }
+    return 0;
   };
   this.containsPointHitbox = function(point) {
     var hitbox = getHitbox();
@@ -716,34 +762,31 @@ function Enemy(game, aspect, type, isBoss, isActive) {
 }
 
 function Player(game, aspect) {
-  var xScale = game.modelScale / aspect;
-  var yScale = game.modelScale;
-  var zScale = game.modelScale;
   var maxHp = 1000;
   var hp = maxHp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
   const velocityDefault = 0.0006;
   var velocity = velocityDefault;
 
-  // Rolling animation props
+  /* Rolling animation props */
   var rollingUp = 0;
   var rollingDown = 0;
   const rollingMax = 10;
   var rollingAngle = 15;
-  // Pitching animation props
+  /* Pitching animation props */
   var pitching = 0;
   const pitchingMax = 96;
   var pitchingDepth = 0.6;
   var pitchAngleMax = Math.PI/5;
-  // Movement animation props
+  /* Movement animation props */
   var texCoordsBufferIndex = game.textures.ship.SHIP_IDLE;
   const animMovementMax = rollingMax;
   var animMovementCount = 0;
 
   var weapons = [];
   var weaponSelected = 0;
-  var weaponLastTs = 0;
   var projCount = 50;
+  var projDir = 0;
   var startPos = {x: -0.5, y: 0.0, z: 0.0};
   var vertices = [
     new Float32Array(3),
@@ -757,14 +800,21 @@ function Player(game, aspect) {
 
   for (let k = 0; k < game.gameData.weapons.length; k += 1) {
     let weapon = game.gameData.weapons[k];
-    weapons.push(new Weapon(game, k, projCount, 1, null, weapon.texType));
+    weapons.push(new Weapon(game, k, projCount, projDir, null, weapon.texType));
   }
 
+  var translateVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
+  var rotations = {"x": 0, "y": 0, "z": 0};
+  var scales = {
+    "x": game.modelScale / aspect,
+    "y": game.modelScale,
+    "z": game.modelScale / aspect
+  };
   var mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
-    {"x": startPos.x, "y": startPos.y, "z": startPos.z},
-    {"x": 0, "y": 0, "z": 0},
-    {"x": xScale, "y": yScale, "z": zScale}
+    translateVec,
+    rotations,
+    scales
   );
 
   var hitbox = {
@@ -774,10 +824,6 @@ function Player(game, aspect) {
     "bottom": 0,
     "depth": 0
   };
-  var translateVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
-  var rotations = {"x": 0, "y": 0, "z": 0};
-  var scales = {"x": xScale, "y": yScale, "z": zScale};
-  // var point = {"x": 0, "y": 0, "z": 0};
 
   this.reset = function(dt) {
     Physics.integrateState(state, game.time, dt);
@@ -974,10 +1020,7 @@ function Player(game, aspect) {
     var weapon = weapons[weaponSelected];
     var fired = false;
     if (!pitching) {
-      fired = weapon.fireWeapon(ts, dt, weaponLastTs, getHitbox());
-      if (fired) {
-        weaponLastTs = ts;
-      }
+      fired = weapon.fireWeapon(ts, dt, projDir, getHitbox());
     }
     return fired;
   };
