@@ -78,14 +78,14 @@
 
   var difficultyMap = {
     "prediv": {},
-    "spawnInterval": {}
+    "spawnIntervalMult": {}
   };
   difficultyMap.prediv[DIFFICULTY_EASY] = 1.0;
   difficultyMap.prediv[DIFFICULTY_MEDIUM] = 1/2.0;
   difficultyMap.prediv[DIFFICULTY_HARD] = 1/3.0;
-  difficultyMap.spawnInterval[DIFFICULTY_EASY] = 5000;
-  difficultyMap.spawnInterval[DIFFICULTY_MEDIUM] = 3500;
-  difficultyMap.spawnInterval[DIFFICULTY_HARD] = 2000;
+  difficultyMap.spawnIntervalMult[DIFFICULTY_EASY] = 1;
+  difficultyMap.spawnIntervalMult[DIFFICULTY_MEDIUM] = 0.75;
+  difficultyMap.spawnIntervalMult[DIFFICULTY_HARD] = 0.5;
 
   var Game = {
     "difficulty": DIFFICULTY_EASY,
@@ -959,7 +959,7 @@
     for (let k = 0, n = enemyTypes.length; k < n; k += 1) {
       let type = enemyTypes[k];
       let enemyType = gameData.enemies[type];
-      let timeInterval = enemyType.spawnIntervalMult * difficultyMap.spawnInterval[Game.difficulty];
+      let timeInterval = level.baseSpawnInterval * enemyType.spawnIntervalMult * difficultyMap.spawnIntervalMult[Game.difficulty];
 
       if (ts - levelEnemies.lastTs[k] > timeInterval) {
         let foundEnemy = false;

@@ -12,7 +12,7 @@
       "velocity": 0.0001,
       "modelScales": [2, 2, 2],
       "hitPoints": 200,
-      "spawnIntervalMult": 2.25,
+      "spawnIntervalMult": 1.5,
       "weapon": null,
       "coolDownMult": null
     }
@@ -33,17 +33,20 @@
     {
       "texType": 0,
       "projectileCount": 1,
-      "projectileType": 0
+      "projectileType": 0,
+      "projectileDeltaAngle": 0
     },
     {
       "texType": 1,
       "projectileCount": 1,
-      "projectileType": 1
+      "projectileType": 1,
+      "projectileDeltaAngle": 0
     },
     {
       "texType": 2,
       "projectileCount": 2,
-      "projectileType": 2
+      "projectileType": 2,
+      "projectileDeltaAngle": 0.09817477042468103
     }
   ],
 
@@ -124,7 +127,8 @@
       "enemies": [0, 1],
       "scoreGoal": 6000,
       "playerWeapons": [0, 1, 2],
-      "playerWeaponsScoreThreshold": [0, 2000, 5000]
+      "playerWeaponsScoreThreshold": [0, 2000, 5000],
+      "baseSpawnInterval": 10000
     }
   ]
 }
