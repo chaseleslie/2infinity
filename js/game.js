@@ -620,6 +620,11 @@
       typeof callback === "function" ? callback : handleIntroKey,
       false
     );
+    doc.body.addEventListener(
+      "click",
+      typeof callback === "function" ? callback : handleIntroKey,
+      false
+    );
 
     var width = ctx.canvas.width;
     var height = ctx.canvas.height;
@@ -739,6 +744,7 @@
   function introEnd() {
     var ctx = canvasOverlayCtx;
     doc.body.removeEventListener("keydown", handleIntroKey, false);
+    doc.body.removeEventListener("click", handleIntroKey, false);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     // debugger;
     start();
