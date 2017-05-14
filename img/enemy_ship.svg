@@ -13,7 +13,7 @@
 	<path d="M0,512 L60,352 L68,364 Z" stroke="red" fill="red" />
 
 	<!-- Fuselage -->
-	<path d="M100,160 L220,256 L220,256 L100,352 Z" stroke="red" fill="red" />
+	<path d="M100,160 L220,256 L100,352 Z" stroke="red" fill="red" />
 
 	<!-- Nose shape -->
 	<path d="M300,210 C382,230 382,284 300,302" stroke="blue" fill="#2E2E2E" />

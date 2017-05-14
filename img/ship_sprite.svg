@@ -16,7 +16,7 @@
 	<path d="M0,512 L60,352 L68,364 Z" stroke="red" fill="red" />
 
 	<!-- Fuselage -->
-	<path d="M100,160 L220,256 L220,256 L100,352 Z" stroke="blue" fill="blue" />
+	<path d="M100,160 L220,256 L100,352 Z" stroke="blue" fill="blue" />
 
 	<!-- Nose shape -->
 	<path d="M300,210 C382,230 382,284 300,302" stroke="blue" fill="#2E2E2E" />
@@ -37,10 +37,9 @@
 	<path d="M512,512 L572,352 L522,424 Z" stroke="#77BBEE" fill="#77BBEE" />
 
 	<!-- Fuselage -->
-	<path d="M612,160 L732,256 L732,256 L612,352 Z" stroke="blue" fill="blue" />
+	<path d="M612,160 L732,256 L612,352 Z" stroke="blue" fill="blue" />
 
 	<!-- Nose shape -->
 	<path d="M812,210 C894,230 894,284 812,302" stroke="blue" fill="#2E2E2E" />
-
 	<!-- ********************************************************************* -->
 </svg>
