@@ -146,12 +146,19 @@
         "img": null,
         "coords": [
           new Float32Array([
-            0.0, 1.0,
-            0.75, 0.5,
-            0.0, 0.0
+            0.0, 0.0,
+            0.375, 0.25,
+            0.0, 0.5
+          ]),
+          new Float32Array([
+            0.5, 0.0,
+            0.875, 0.25,
+            0.5, 0.5
           ])
         ],
-        "coordBuffers": []
+        "coordBuffers": [],
+        "ENEMY_SHIP_BASIC": 0,
+        "ENEMY_SHIP_FIGHTER": 1
       },
       "explosion": {
         "tex": null,

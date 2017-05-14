@@ -554,7 +554,8 @@ function Enemy(game, aspect, type, isBoss, isActive) {
     [horizontalPos, verticalPos, depthPos],
     [-velocity, 0, 0]
   );
-  var texCoordsBufferIndex = 0;
+  var texCoordsBufferIndexShip = enemyData.texType;
+  var texCoordsBufferIndexExpl = 0;
 
   var translateVec = {"x": horizontalPos, "y": verticalPos, "z": depthPos};
   var rotations = {"x": 0, "y": Math.PI, "z": 0};
@@ -604,6 +605,7 @@ function Enemy(game, aspect, type, isBoss, isActive) {
     dmgRate = game.difficultyMap.prediv[game.difficulty];
     prune = 0;
     active = isActive || false;
+    texCoordsBufferIndexShip = enemyData.texType
     if (isBoss) {
       translateVec.y = 0;
       this.update = updateBoss;
@@ -631,7 +633,7 @@ function Enemy(game, aspect, type, isBoss, isActive) {
     if (prune) {
       gl.activeTexture(game.textures.explosion.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.explosion.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.coordBuffers[texCoordsBufferIndex]);
+      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.coordBuffers[texCoordsBufferIndexExpl]);
       gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
       gl.uniform1i(game.textureUniform, game.textures.explosion.texIdIndex);
 
@@ -640,7 +642,7 @@ function Enemy(game, aspect, type, isBoss, isActive) {
     } else {
       gl.activeTexture(game.textures.enemyShip.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.enemyShip.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.enemyShip.coordBuffers[texCoordsBufferIndex]);
+      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.enemyShip.coordBuffers[texCoordsBufferIndexShip]);
       gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
       gl.uniform1i(game.textureUniform, game.textures.enemyShip.texIdIndex);
 

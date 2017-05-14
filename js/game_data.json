@@ -6,7 +6,8 @@
       "hitPoints": 100,
       "spawnIntervalMult": 1,
       "weapon": null,
-      "coolDownMult": null
+      "coolDownMult": null,
+      "texType": 0
     },
     {
       "velocity": 0.0001,
@@ -14,7 +15,8 @@
       "hitPoints": 200,
       "spawnIntervalMult": 1.5,
       "weapon": null,
-      "coolDownMult": null
+      "coolDownMult": null,
+      "texType": 0
     },
     {
       "velocity": 0.000125,
@@ -22,7 +24,8 @@
       "hitPoints": 100,
       "spawnIntervalMult": 1.25,
       "weapon": 0,
-      "coolDownMult": 7.5
+      "coolDownMult": 7.5,
+      "texType": 1
     }
   ],
 
