@@ -183,7 +183,8 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType, isActive) {
       let hitbox = proj.hitbox;
       for (let n = 0; n < enemies.length; n += 1) {
         let enemy = enemies[n];
-        if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(hitbox)) {
+        let enemyActive = enemy.active && enemy.hitPoints > 0;
+        if (enemyActive && enemy.positionDepth === hitbox.depth && enemy.intersectsWith(hitbox)) {
           let projPos = proj.position;
           for (let m = 0; m < projPos.length; m += 1) {
             let vert = projPos[m];
@@ -507,6 +508,7 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
   Object.defineProperty(this, "positionRight", {get: getPositionRight});
   Object.defineProperty(this, "positionTop", {get: getPositionTop});
   Object.defineProperty(this, "positionBottom", {get: getPositionBottom});
+  Object.defineProperty(this, "positionDepth", {get: function() {return mvUniformMatrix[14];}});
   Object.defineProperty(this, "hitbox", {get: getHitbox});
   Object.defineProperty(this, "damage", {get: function() {return dmg;}});
   Object.defineProperty(this, "prune", {get: function() {return prune >= showDestroyedFrames;}});
@@ -816,6 +818,7 @@ function Enemy(game, aspect, type, isBoss, isActive) {
   Object.defineProperty(this, "positionRight", {get: getPositionRight});
   Object.defineProperty(this, "positionTop", {get: getPositionTop});
   Object.defineProperty(this, "positionBottom", {get: getPositionBottom});
+  Object.defineProperty(this, "positionDepth", {get: function() {return mvUniformMatrix[14];}});
   Object.defineProperty(this, "hitbox", {get: getHitbox});
   Object.defineProperty(this, "active", {get: function() {return active;}});
   Object.defineProperty(this, "enemyType", {get: function() {return type;}});
@@ -1202,6 +1205,7 @@ function Player(game, aspect) {
   Object.defineProperty(this, "positionRight", {get: getPositionRight});
   Object.defineProperty(this, "positionTop", {get: getPositionTop});
   Object.defineProperty(this, "positionBottom", {get: getPositionBottom});
+  Object.defineProperty(this, "positionDepth", {get: function() {return mvUniformMatrix[14];}});
   Object.defineProperty(this, "hitbox", {get: getHitbox});
   Object.defineProperty(this, "active", {get: function() {return true;}});
 
