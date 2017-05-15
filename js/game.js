@@ -746,7 +746,6 @@
     doc.body.removeEventListener("keydown", handleIntroKey, false);
     doc.body.removeEventListener("click", handleIntroKey, false);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    // debugger;
     start();
   }
 
@@ -800,7 +799,8 @@
           "canvasOverlay": canvasOverlay,
           "canvasOverlayCtx": canvasOverlayCtx,
           "callback": start,
-          "img": doc.getElementById("img_ship")
+          "img": doc.getElementById("img_ship"),
+          "text": Game.gameData.levels[Game.level].introText
         }
       );
       return;
