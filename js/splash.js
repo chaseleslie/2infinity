@@ -11,7 +11,6 @@ var Splash = (function(glob) {
   const SPLASH_SHIP_JUMP_HYPERSPACE = 2;
 
   var splashState = {
-    "ts": 0,
     "state": 0,
     "animFrame": null,
     "frame": 0,
@@ -19,6 +18,7 @@ var Splash = (function(glob) {
     "imgImageData": null,
     "imgImageDataOpac": null,
     "materializeFrameCount": 64,
+    "moveEndPos": 0,
     "text": null,
     "isTextDrawn": false,
     "left": 0,
@@ -75,11 +75,12 @@ var Splash = (function(glob) {
     doc.body.addEventListener("keydown", splashHandleKeyDown, false);
     splashState.width = parseInt(ROOT_TWO_OVER_TWO * splashState.img.width, 10);
     splashState.height = splashState.img.height;
-    splashState.srcWidth = parseInt(ROOT_TWO_OVER_TWO * splashState.img.width, 10);
-    splashState.srcHeight = splashState.img.height;
+    splashState.srcWidth = splashState.width;
+    splashState.srcHeight = splashState.height;
     splashState.left = 0;
     splashState.top = 0.5 * splashState.canvasHeight - 0.5 * splashState.height;
     splashState.aspect = splashState.canvasWidth / splashState.canvasHeight;
+    splashState.moveEndPos = splashState.canvasWidth / 3;
 
     /* Prerender hyperspace bars */
     for (let k = 0; k < splashState.canvasOverlay.height; k += 1) {
@@ -184,11 +185,10 @@ var Splash = (function(glob) {
       break;
     }
 
-    let moveEnd = splashState.canvasWidth / 3;
     if (splashState.frame > splashState.materializeFrameCount) {
       splashState.state = SPLASH_SHIP_MOVE;
     }
-    if (splashState.left >= moveEnd) {
+    if (splashState.left >= splashState.moveEndPos) {
       splashState.state = SPLASH_SHIP_JUMP_HYPERSPACE;
     }
     if (splashState.srcWidth <= 1) {
