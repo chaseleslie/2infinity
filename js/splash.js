@@ -23,10 +23,10 @@ var Splash = (function(glob) {
     "isTextDrawn": false,
     "left": 0,
     "top": 0,
-    "width": 512,
-    "height": 512,
-    "srcWidth": 512,
-    "srcHeight": 512,
+    "width": 0,
+    "height": 0,
+    "srcWidth": 0,
+    "srcHeight": 0,
     "canvasWidth": 0,
     "canvasHeight": 0,
     "aspect": 0,
@@ -73,8 +73,8 @@ var Splash = (function(glob) {
     splashState.state = SPLASH_SHIP_MATERIALIZE;
 
     doc.body.addEventListener("keydown", splashHandleKeyDown, false);
-    splashState.width = parseInt(ROOT_TWO_OVER_TWO * splashState.img.width, 10);
-    splashState.height = splashState.img.height;
+    splashState.width = args.imgWidth;
+    splashState.height = args.imgHeight;
     splashState.srcWidth = splashState.width;
     splashState.srcHeight = splashState.height;
     splashState.left = 0;
@@ -101,7 +101,11 @@ var Splash = (function(glob) {
     offscreenCanvas.width = width;
     offscreenCanvas.height = height;
     var ctx = offscreenCanvas.getContext("2d");
-    ctx.drawImage(splashState.img, 0, 0);
+    ctx.drawImage(
+      splashState.img, args.imgX, args.imgY,
+      args.imgWidth, args.imgHeight,
+      0, 0, splashState.width, splashState.height
+    );
     splashState.imgImageData = ctx.getImageData(0, 0, width, height);
     splashState.imgImageDataOpac = new Uint8Array(width * height);
     var imageData = splashState.imgImageData.data;

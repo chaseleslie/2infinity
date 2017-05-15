@@ -32,8 +32,8 @@
   "bosses": [
     {
       "velocity": 0.00015,
-      "modelScales": [1, 1, 1],
-      "hitPoints": 1000,
+      "modelScales": [2, 2, 2],
+      "hitPoints": 2000,
       "spawnIntervalMult": 1,
       "weapon": 2,
       "coolDownMult": 1
@@ -136,10 +136,11 @@
   "levels": [
     {
       "enemies": [0, 1, 2],
-      "scoreGoal": 6000,
+      "scoreGoal": 10000,
       "playerWeapons": [0, 1, 2],
       "playerWeaponsScoreThreshold": [0, 2000, 5000],
-      "baseSpawnInterval": 10000
+      "baseSpawnInterval": 5000,
+      "introText": "Level 1"
     }
   ]
 }

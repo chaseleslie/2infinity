@@ -794,12 +794,17 @@
     if (Game.levelState === LEVEL_INTRO) {
       Game.levelState = LEVEL_PLAYING;
       stop();
+      let img = doc.getElementById("img_ship");
       Splash.start(
         global.performance.now(), {
           "canvasOverlay": canvasOverlay,
           "canvasOverlayCtx": canvasOverlayCtx,
           "callback": start,
-          "img": doc.getElementById("img_ship"),
+          "img": img,
+          "imgX": 0,
+          "imgY": 0,
+          "imgWidth": parseInt(img.dataset.unitSize, 10),
+          "imgHeight": parseInt(img.dataset.unitSize, 10),
           "text": Game.gameData.levels[Game.level].introText
         }
       );
