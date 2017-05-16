@@ -62,6 +62,32 @@ function getShader(gl, id, type) {
   return shader;
 }
 
+var randArr = new Uint8Array(32);
+function getRandomInt(min, max) {
+  max += 1;
+  var range = max - min;
+  if (typeof global.crypto === "object" && typeof global.crypto.getRandomValues === "function") {
+    let numBytes = Math.ceil(Math.log2(range) / 8);
+    let maxNum = Math.pow(256, numBytes);
+    let val = 0;
+    let flag = true;
+
+    while (flag) {
+      global.crypto.getRandomValues(randArr);
+      for (let k = 0; k < numBytes; k += 1) {
+        val = (val << 8) + randArr[k];
+      }
+
+      if (val + range - (val % range) < maxNum) {
+        flag = false;
+      }
+    }
+    return min + (val % range);
+  }
+
+  return min + Math.floor(Math.random() * (range + 1));
+}
+
 function mapValue(val, x1, y1, x2, y2) {
   return (val - x1) * (y2 - x2) / (y1 - x1) + x2;
 }
@@ -73,7 +99,7 @@ function createCircleVertices(centerVertex, numPoints, radius) {
   var x0 = centerVertex.x;
   var y0 = centerVertex.y;
   var z0 = centerVertex.z;
-  var pi = (360 / numPoints) * Utils.DEG2RAD;
+  var pi = (360 / numPoints) * DEG2RAD;
   var x1 = x0 + 1;
   var y1 = y0;
   var xmax = x0 + radius;
@@ -85,22 +111,22 @@ function createCircleVertices(centerVertex, numPoints, radius) {
     vertices.push(x0);
     vertices.push(y0);
     vertices.push(z0);
-    tex.push(Utils.mapValue(x0, xmin, xmax, 0, 1));
-    tex.push(Utils.mapValue(y0, ymin, ymax, 0, 1));
+    tex.push(mapValue(x0, xmin, xmax, 0, 1));
+    tex.push(mapValue(y0, ymin, ymax, 0, 1));
 
     vertices.push(x1);
     vertices.push(y1);
     vertices.push(z0);
-    tex.push(Utils.mapValue(x1, xmin, xmax, 0, 1));
-    tex.push(Utils.mapValue(y1, ymin, ymax, 0, 1));
+    tex.push(mapValue(x1, xmin, xmax, 0, 1));
+    tex.push(mapValue(y1, ymin, ymax, 0, 1));
 
     x1 = x0 + cos(k * pi) * radius;
     y1 = y0 + sin(k * pi) * radius;
     vertices.push(x1);
     vertices.push(y1);
     vertices.push(z0);
-    tex.push(Utils.mapValue(x1, xmin, xmax, 0, 1));
-    tex.push(Utils.mapValue(y1, ymin, ymax, 0, 1));
+    tex.push(mapValue(x1, xmin, xmax, 0, 1));
+    tex.push(mapValue(y1, ymin, ymax, 0, 1));
   }
 
   return {
@@ -305,6 +331,7 @@ var TWOPI = Math.PI * 2;
 return {
   "ExponentialAverage": ExponentialAverage,
   "getShader": getShader,
+  "getRandomInt": getRandomInt,
   "mapValue": mapValue,
   "createCircleVertices": createCircleVertices,
   "fetchURL": fetchURL,

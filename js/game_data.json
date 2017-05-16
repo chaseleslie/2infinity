@@ -36,7 +36,8 @@
       "hitPoints": 2000,
       "spawnIntervalMult": 1,
       "weapon": 2,
-      "coolDownMult": 1
+      "coolDownMult": 1,
+      "texType": 0
     }
   ],
 
@@ -136,7 +137,7 @@
   "levels": [
     {
       "enemies": [0, 1, 2],
-      "scoreGoal": 10000,
+      "scoreGoal": 100,
       "playerWeapons": [0, 1, 2],
       "playerWeaponsScoreThreshold": [0, 2000, 5000],
       "baseSpawnInterval": 5000,

@@ -67,10 +67,13 @@
   const OVERLAY_SCORE_DIRTY = 1;
   const OVERLAY_HP_DIRTY = 2;
   const OVERLAY_FPS_DIRTY = 4;
+  const OVERLAY_BOSS_NAME_DIRTY = 8;
+  const OVERLAY_BOSS_HP_DIRTY = 16;
 
   const LEVEL_INTRO = 0;
   const LEVEL_PLAYING = 1;
   const LEVEL_END = 2;
+  const LEVEL_BOSS = 3;
 
   const DIFFICULTY_EASY = 1;
   const DIFFICULTY_MEDIUM = 2;
@@ -90,6 +93,7 @@
   var Game = {
     "difficulty": DIFFICULTY_EASY,
     "difficultyMap": difficultyMap,
+    "aspect": aspect,
     "level": 0,
     "score": 0,
     "timestep": 10,
@@ -159,6 +163,27 @@
         "coordBuffers": [],
         "ENEMY_SHIP_BASIC": 0,
         "ENEMY_SHIP_FIGHTER": 1
+      },
+      "boss": {
+        "tex": null,
+        "texId": 0,
+        "texIdIndex": 0,
+        "img": null,
+        "coords": [
+          new Float32Array([
+            0.0, 0.0,
+            0.375, 0.25,
+            0.0, 0.5
+          ]),
+          new Float32Array([
+            0.5, 0.0,
+            0.875, 0.25,
+            0.5, 0.5
+          ])
+        ],
+        "coordBuffers": [],
+        "BOSS_SHIP_IDLE": 0,
+        "BOSS_SHIP_ACTIVE": 1
       },
       "explosion": {
         "tex": null,
@@ -751,6 +776,8 @@
 
   function start() {
     if (!Game.running) {
+      // debugger;
+      Game.overlayDirtyFlag |= OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY;
       doc.body.addEventListener("keydown", handleKeyDown, false);
       doc.body.addEventListener("keyup", handleKeyUp, false);
       Game.startTs = global.performance.now();
@@ -793,7 +820,9 @@
   function main(ts) {
     if (Game.levelState === LEVEL_INTRO) {
       Game.levelState = LEVEL_PLAYING;
+      global.cancelAnimationFrame(Game.animFrame);
       stop();
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       let img = doc.getElementById("img_ship");
       Splash.start(
         global.performance.now(), {
@@ -845,23 +874,27 @@
   }
 
   function update(Game, ts, dt) {
+    var player = Game.player;
     var enemies = null;
-    if (Game.levelState === LEVEL_PLAYING) {
+    if (Game.levelState === LEVEL_PLAYING || Game.levelState === LEVEL_END) {
       enemies = Game.enemies;
-    } else if (Game.levelState === LEVEL_END) {
+    } else if (Game.levelState === LEVEL_BOSS) {
       enemies = Game.bosses;
     }
 
-    Game.player.update(dt);
+    player.update(dt);
     var score = 0;
-    var playerWeapons = Game.player.weapons;
+    var playerWeapons = player.weapons;
     for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
       score += playerWeapons[k].update(dt, enemies);
+      if (score && Game.levelState === LEVEL_BOSS) {
+        Game.overlayDirtyFlag |= OVERLAY_BOSS_HP_DIRTY;
+      }
     }
     if (score) {
       updateScore(Game, score);
     }
-    var playerHitbox = Game.player.hitbox;
+    var playerHitbox = player.hitbox;
 
     score = 0;
     for (let k = enemies.length - 1; k >= 0; k -= 1) {
@@ -878,7 +911,6 @@
       let enemyOffscreen = hitbox.right < -1.0;
       if (enemyOffscreen || enemyPrune) {
         if (enemyOffscreen) {
-          // updateScore(Game, -enemy.points);
           score -= enemy.points;
         }
 
@@ -890,13 +922,13 @@
       updateScore(Game, score);
     }
 
-    //Check for player collisions with enemies
+    // Check for player collisions with enemies
     if (!playerHitbox.depth && Game.levelState === LEVEL_PLAYING) {
       for (let k = 0; k < enemies.length; k += 1) {
         let keepLooping = true;
         let enemy = enemies[k];
         if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(playerHitbox)) {
-          let playerPos = Game.player.position;
+          let playerPos = player.position;
           for (let iK = 0; iK < playerPos.length; iK += 1) {
             let vert = playerPos[iK];
             point.x = vert[0];
@@ -905,7 +937,7 @@
             let directHit = enemy.containsPoint(point);
             if (directHit ) {
               enemy.takeHit(enemy.hitPoints);
-              let hp = Game.player.takeHit(enemy.points);
+              let hp = player.takeHit(enemy.points);
               if (hp <= 0) {
                 restart();
                 keepLooping = false;
@@ -929,12 +961,26 @@
       if (Game.overlayDirtyFlag) {
         updateWeapon(Game);
       }
-      // if (Game.score >= Game.gameData.levels[Game.level].scoreGoal) {
-      //   Game.levelState = LEVEL_END;
-      // }
+      if (Game.score >= Game.gameData.levels[Game.level].scoreGoal) {
+        Game.levelState = LEVEL_END;
+      }
     } else if (Game.levelState === LEVEL_END) {
+      let enemiesActive = false;
+      for (let k = 0, n = enemies.length; k < n; k += 1) {
+        if (enemies[k].active) {
+          enemiesActive = true;
+          break;
+        }
+      }
+
+      if (!enemiesActive) {
+        Game.levelState = LEVEL_BOSS;
+        Game.overlayDirtyFlag |= OVERLAY_BOSS_HP_DIRTY;
+        Game.bosses.push(new Enemy(Game, Game.level, true, true));
+      }
+    } else if (Game.levelState === LEVEL_BOSS) {
       let bossActive = false;
-      for (let k = 0; k < enemies.length; k += 1) {
+      for (let k = 0, n = enemies.length; k < n; k += 1) {
         if (enemies[k].active) {
           bossActive = true;
         }
@@ -1000,7 +1046,7 @@
           }
         }
         if (!foundEnemy) {
-          Game.enemies.push(new Enemy(Game, aspect, type, false, true));
+          Game.enemies.push(new Enemy(Game, type, false, true));
         }
         levelEnemies.lastTs[k] = ts;
       }
@@ -1061,10 +1107,21 @@
     }
 
     /* Update hitpoints indicator */
-    if (Game.overlayDirtyFlag & OVERLAY_HP_DIRTY) {
-      let player = Game.player;
+    if (Game.overlayDirtyFlag & OVERLAY_HP_DIRTY || Game.overlayDirtyFlag & OVERLAY_BOSS_HP_DIRTY) {
+      ctx.save();
+      let player = null;
+      let x = 0;
+      if (Game.overlayDirtyFlag & OVERLAY_HP_DIRTY) {
+        x = ctx.lineWidth;
+        player = Game.player;
+        ctx.strokeStyle = "#FFF";
+      } else {
+        x = ctx.canvas.width - 8 - hpWidth;
+        player = Game.bosses[Game.level];
+        ctx.strokeStyle = "#CAA";
+      }
       let percentage = Math.max(0, player.hitPoints / player.maxHitPoints);
-      let x = ctx.lineWidth;
+
       let y = ctx.lineWidth;
       let w = hpWidth;
       w = (w % 8) ? w + 8 - w % 8 : w;
@@ -1077,9 +1134,7 @@
       let color = `#${("0" + red).substr(-2)}${("0" + green).substr(-2)}88`;
 
       ctx.clearRect(x, y, w, h);
-      ctx.save();
       ctx.beginPath();
-      ctx.strokeStyle = "#FFF";
       ctx.fillStyle = color;
       ctx.lineWidth = 2;
       ctx.fillRect(x + d2, y + d2, percentage * (w - d), h - d);
@@ -1096,6 +1151,10 @@
       ctx.restore();
     }
 
+    // if (Game.overlayDirtyFlag & OVERLAY_BOSS_NAME_DIRTY) {
+    //
+    // }
+
     ctx.restore();
     Game.overlayDirtyFlag = 0;
   }
@@ -1104,8 +1163,13 @@
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     Game.player.draw(gl);
-    for (let k = 0; k < Game.enemies.length; k += 1) {
-      Game.enemies[k].draw(gl);
+
+    if (Game.levelState === LEVEL_PLAYING || Game.levelState === LEVEL_END) {
+      for (let k = 0, n = Game.enemies.length; k < n; k += 1) {
+        Game.enemies[k].draw(gl);
+      }
+    } else if (Game.levelState === LEVEL_BOSS) {
+      Game.bosses[Game.level].draw(gl);
     }
 
     Game.starMap.draw(gl);
@@ -1203,6 +1267,9 @@
     Game.textures.numTextures += 1;
 
     loadTexture(Game.textures.enemyShip, "img_enemy_ship", Game.textures.enemyShip.coords, Game.textures.numTextures);
+    Game.textures.numTextures += 1;
+
+    loadTexture(Game.textures.boss, "img_boss", Game.textures.boss.coords, Game.textures.numTextures);
     Game.textures.numTextures += 1;
 
     loadTexture(Game.textures.explosion, "img_explosion", Game.textures.explosion.coords, Game.textures.numTextures);

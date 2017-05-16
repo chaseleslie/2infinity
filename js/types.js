@@ -517,19 +517,21 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
   Object.defineProperty(this, "direction", {get: function() {return dir;}});
 }
 
-function Enemy(game, aspect, type, isBoss, isActive) {
+function Enemy(game, type, isBoss, isActive) {
   var enemyData = null;
   if (isBoss) {
     enemyData = game.gameData.bosses[type];
   } else {
     enemyData = game.gameData.enemies[type];
   }
+  var aspect = game.aspect;
   var velocity = enemyData.velocity;
   var hp = enemyData.hitPoints;
   var points = hp;
   var weaponType = enemyData.weapon;
   var coolDownMult = enemyData.coolDownMult;
   var weapon = (weaponType === null) ? null : game.findEnemyWeapon(game);
+  var projDir = Math.PI;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
   var prune = 0;
   const showDestroyedFrames = 8;
@@ -552,7 +554,7 @@ function Enemy(game, aspect, type, isBoss, isActive) {
   ];
   var state = new Physics.State(
     [horizontalPos, verticalPos, depthPos],
-    [-velocity, 0, 0]
+    [(isBoss) ? 0 : -velocity, 0, 0]
   );
   var texCoordsBufferIndexShip = enemyData.texType;
   var texCoordsBufferIndexExpl = 0;
@@ -581,7 +583,7 @@ function Enemy(game, aspect, type, isBoss, isActive) {
   if (weapon) {
     let weaponData = game.gameData.weapons[weaponType];
     let projData = game.gameData.projectiles[weaponData.projectileType];
-    weapon.reset(weaponType, 50, Math.PI, coolDownMult * projData.coolDown, weaponData.texType, true);
+    weapon.reset(weaponType, 50, projDir, coolDownMult * projData.coolDown, weaponData.texType, true);
   }
 
   this.reset = function(eType, isBoss, isActive) {
@@ -611,19 +613,19 @@ function Enemy(game, aspect, type, isBoss, isActive) {
       this.update = updateBoss;
     } else {
       translateVec.y = Math.random() * (1 - modelScale);
-      translateVec.y = ((now|0) % 2) ? -verticalPos : verticalPos;
+      translateVec.y = ((now|0) % 2) ? -translateVec.y : translateVec.y;
       this.update = updateEnemy;
     }
 
     if (weapon) {
       let weaponData = game.gameData.weapons[weaponType];
       let projData = game.gameData.projectiles[weaponData.projectileType];
-      weapon.reset(weaponType, 50, Math.PI, coolDownMult * projData.coolDown, weaponData.texType, true);
+      weapon.reset(weaponType, 50, projDir, coolDownMult * projData.coolDown, weaponData.texType, true);
     }
 
     state.position[0] = horizontalPos;
     state.position[1] = translateVec.y;
-    state.velocity[0] = -velocity;
+    state.velocity[0] = (isBoss) ? 0 : -velocity;
 
     Utils.modelViewMatrix(mvUniformMatrix, translateVec, rotations, scales);
   };
@@ -640,11 +642,19 @@ function Enemy(game, aspect, type, isBoss, isActive) {
       gl.bindBuffer(gl.ARRAY_BUFFER, game.vertexRectangleBufferObject);
       numTri = game.verticesRectangle.length / 3;
     } else {
-      gl.activeTexture(game.textures.enemyShip.texId);
-      gl.bindTexture(gl.TEXTURE_2D, game.textures.enemyShip.tex);
-      gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.enemyShip.coordBuffers[texCoordsBufferIndexShip]);
-      gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
-      gl.uniform1i(game.textureUniform, game.textures.enemyShip.texIdIndex);
+      if (isBoss) {
+        gl.activeTexture(game.textures.boss.texId);
+        gl.bindTexture(gl.TEXTURE_2D, game.textures.boss.tex);
+        gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.boss.coordBuffers[texCoordsBufferIndexShip]);
+        gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
+        gl.uniform1i(game.textureUniform, game.textures.boss.texIdIndex);
+      } else {
+        gl.activeTexture(game.textures.enemyShip.texId);
+        gl.bindTexture(gl.TEXTURE_2D, game.textures.enemyShip.tex);
+        gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.enemyShip.coordBuffers[texCoordsBufferIndexShip]);
+        gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
+        gl.uniform1i(game.textureUniform, game.textures.enemyShip.texIdIndex);
+      }
 
       gl.bindBuffer(gl.ARRAY_BUFFER, game.vertexTriangleBufferObject);
       numTri = game.verticesTriangle.length / 3;
@@ -683,28 +693,97 @@ function Enemy(game, aspect, type, isBoss, isActive) {
 
     return score;
   }
+  const BOSS_EVADE = 0;
+  const BOSS_TRACK = 1;
+  const BOSS_ATTACK = 2;
+  const BOSS_NUM_STATES = 3;
+  var bossActionState = 0;
+  var bossActionFrameMax = 120;
+  var bossActionFrame = bossActionFrameMax;
   function updateBoss(dt) {
+    var score = 0;
     if (hp <= 0) {
       if (prune > showDestroyedFrames) {
         active = false;
-        return false;
+        return score;
       }
       prune += 1;
-      return false;
+      return score;
+    }
+
+    bossActionFrame -= 1;
+    if (!bossActionFrame) {
+      bossActionFrame = bossActionFrameMax;
+      bossActionState = Utils.getRandomInt(0, BOSS_NUM_STATES - 1);
+    }
+
+    if (bossActionState === BOSS_EVADE) {
+      if (bossActionFrame === bossActionFrameMax) {
+        let playerWeapons = game.player.weapons;
+        let hitbox = getHitbox();
+        let midX = 0.5 * (hitbox.left + hitbox.right);
+        let midY = 0.5 * (hitbox.top + hitbox.bottom);
+        let closestX = -10;
+        let closestY = 0;
+        let closest = 4;
+        for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
+          let projectiles = playerWeapons[k].projectiles;
+          for (let iK = 0, iN = projectiles.length; iK < iN; iK += 1) {
+            let proj = projectiles[iK];
+            if (!proj.active) {
+              continue;
+            }
+            let projHitbox = proj.hitbox;
+            let projMidX = 0.5 * (projHitbox.left + projHitbox.right);
+            let projMidY = 0.5 * (projHitbox.top + projHitbox.bottom);
+            let dist = Math.pow(midX - projMidX, 2) + Math.pow(midY - projMidY, 2);
+            if (projMidX > midX) {
+              continue;
+            } else if (dist < closest) {
+              closest = dist;
+              closestX = projMidX;
+              closestY = projMidY;
+            }
+          }
+        }
+        if (closestY > 0 && midY > -1) {
+          state.velocity[1] = -velocity;
+        } else if (closestY < 0 && midY < 1) {
+          state.velocity[1] = velocity;
+        } else {
+          state.velocity[1] = 0;
+        }
+        state.velocity[0] = 0;
+      }
+    } else if (bossActionState === BOSS_TRACK) {
+      let playerHitbox = game.player.hitbox;
+      let playerMidY = 0.5 * (playerHitbox.top + playerHitbox.bottom);
+      let hitbox = getHitbox();
+      let midY = 0.5 * (hitbox.top + hitbox.bottom);
+      if (midY < playerMidY) {
+        state.velocity[1] = velocity;
+      } else {
+        state.velocity[1] = -velocity;
+      }
+    } else if (bossActionState === BOSS_ATTACK) {
+      if (bossActionFrame === bossActionFrameMax) {
+        state.velocity[0] = 0;
+        state.velocity[1] = 0;
+        weapon.fireWeapon(global.performance.now(), dt, projDir, getHitbox());
+      }
     }
 
     Physics.integrateState(state, game.time, dt);
     mvUniformMatrix[12] = state.position[0];
+    mvUniformMatrix[13] = state.position[1];
+    score += weapon.update(dt, game.players);
 
-    return true;
+    return score;
   }
 
   this.takeHit = function(pts) {
     hp -= dmgRate * pts;
-    if (hp <= 0) {
-      return points;
-    }
-    return 0;
+    return pts;
   };
   this.containsPointHitbox = function(point) {
     var hitbox = getHitbox();
@@ -813,6 +892,7 @@ function Enemy(game, aspect, type, isBoss, isActive) {
   }
 
   Object.defineProperty(this, "hitPoints", {get: function () {return hp;}});
+  Object.defineProperty(this, "maxHitPoints", {get: function () {return enemyData.hitPoints;}});
   Object.defineProperty(this, "points", {get: function () {return points;}});
   Object.defineProperty(this, "prune", {get: function () {return prune >= showDestroyedFrames;}});
   Object.defineProperty(this, "position", {get: getPosition});
