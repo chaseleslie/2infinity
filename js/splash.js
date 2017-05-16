@@ -71,6 +71,7 @@ var Splash = (function(glob) {
     splashState.text = args.text;
     splashState.callback = args.callback;
     splashState.state = SPLASH_SHIP_MATERIALIZE;
+    splashState.frame = 0;
 
     doc.body.addEventListener("keydown", splashHandleKeyDown, false);
     splashState.width = args.imgWidth;
