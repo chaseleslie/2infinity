@@ -11,13 +11,15 @@ var Splash = (function(glob) {
   const SPLASH_SHIP_JUMP_HYPERSPACE = 2;
 
   var splashState = {
+    "canvasOverlay": null,
+    "canvasOverlayCtx": null,
     "state": 0,
     "animFrame": null,
     "frame": 0,
     "img": null,
     "imgImageData": null,
     "imgImageDataOpac": null,
-    "materializeFrameCount": 64,
+    "materializeFrameCount": 62,
     "moveEndPos": 0,
     "text": null,
     "isTextDrawn": false,
@@ -46,7 +48,7 @@ var Splash = (function(glob) {
     }
   }
 
-  function splashEnd(ts) {
+  function splashEnd() {
     delete splashState.canvasImageData;
     splashState.canvasImageData = null;
     splashState.img = null;
@@ -56,10 +58,10 @@ var Splash = (function(glob) {
     ctx.clearRect(0, 0, splashState.canvasWidth, splashState.canvasHeight);
     doc.body.removeEventListener("keydown", splashHandleKeyDown, false);
 
-    splashState.callback(ts);
+    splashState.callback();
   }
 
-  function preSplash(ts, args) {
+  function preSplash(args) {
     splashState.canvasOverlay = args.canvasOverlay;
     splashState.canvasOverlayCtx = args.canvasOverlayCtx;
     splashState.canvasImageData = args.canvasOverlayCtx.createImageData(
@@ -105,7 +107,7 @@ var Splash = (function(glob) {
     ctx.drawImage(
       splashState.img, args.imgX, args.imgY,
       args.imgWidth, args.imgHeight,
-      0, 0, splashState.width, splashState.height
+      0, 0, width, height
     );
     splashState.imgImageData = ctx.getImageData(0, 0, width, height);
     splashState.imgImageDataOpac = new Uint8Array(width * height);
@@ -115,11 +117,13 @@ var Splash = (function(glob) {
       imgImageDataOpac[m] = imageData[k];
       imageData[k] = 0;
     }
+    offscreenCanvas = null;
+    ctx = null;
 
-    splash(ts);
+    splash();
   }
 
-  function splash(ts) {
+  function splash() {
     splashState.animFrame = global.requestAnimationFrame(splash);
     var ctx = splashState.canvasOverlayCtx;
 
@@ -143,7 +147,7 @@ var Splash = (function(glob) {
       case SPLASH_CANCEL:
         // Cancel splash
         global.cancelAnimationFrame(splashState.animFrame);
-        return splashEnd(ts);
+        return splashEnd();
       case SPLASH_SHIP_MATERIALIZE: {
         // Part 1: Ship materializes
         let imageData = splashState.imgImageData.data;
@@ -225,5 +229,239 @@ var Splash = (function(glob) {
     splashState.frame += 1;
   }
 
-  return {"start": preSplash};
+  const BOSS_INTRO_CANCEL = -1;
+  const BOSS_INTRO_MATERIALIZE = 0;
+  const BOSS_INTRO_FOCUS = 1;
+  var bossIntroState = {
+    "canvasOverlay": null,
+    "canvasOverlayCtx": null,
+    "state": 0,
+    "animFrame": null,
+    "frame": 0,
+    "img": null,
+    "imgImageData": null,
+    "imgImageDataOpac": null,
+    "imgRotation": 0,
+    "materializeFrameCount": 124,
+    "focusFrameCountMax": 400,
+    "focusFrameCount": 400,
+    "focusLastTs": 0,
+    "focusRingLast": 0,
+    "focusNumRings": 32,
+    "focusOuterRingRadiusMult": 2,
+    "text": null,
+    "isTextDrawn": false,
+    "left": 0,
+    "top": 0,
+    "width": 0,
+    "height": 0,
+    "canvasWidth": 0,
+    "canvasHeight": 0,
+    "aspect": 0,
+    "canvasImageData": null,
+    "callback": null
+  };
+
+  function preBossIntro(args) {
+    bossIntroState.canvasOverlay = args.canvasOverlay;
+    bossIntroState.canvasOverlayCtx = args.canvasOverlayCtx;
+    bossIntroState.state = BOSS_INTRO_MATERIALIZE;
+    bossIntroState.frame = 0;
+    bossIntroState.img = args.img;
+    bossIntroState.imgRotation = args.imgRotation;
+    bossIntroState.text = args.text;
+    bossIntroState.isTextDrawn = false;
+    bossIntroState.canvasWidth = args.canvasOverlay.width;
+    bossIntroState.canvasHeight = args.canvasOverlay.height;
+    bossIntroState.aspect = args.canvasOverlay.width / args.canvasOverlay.height;
+    bossIntroState.width = args.destWidth;
+    bossIntroState.height = args.destHeight;
+    bossIntroState.left = args.canvasX;
+    bossIntroState.top = args.canvasY;
+    bossIntroState.callback = args.callback;
+    bossIntroState.focusFrameCount = bossIntroState.focusFrameCountMax;
+    bossIntroState.focusLastTs = 0;
+    bossIntroState.focusRingLast = 0;
+
+    bossIntroState.canvasOverlayCtx.clearRect(
+      0, 0,
+      bossIntroState.canvasWidth,
+      bossIntroState.canvasHeight
+    );
+
+// bossIntroState.canvasOverlayCtx.fillStyle = "#AAA";
+// bossIntroState.canvasOverlayCtx.fillRect(0, 0, args.canvasOverlay.width, args.canvasOverlay.height);
+
+    /* Get image data from prerendered image */
+    var offscreenCanvas = doc.createElement("canvas");
+    var width = bossIntroState.width;
+    var height = bossIntroState.height;
+    offscreenCanvas.width = width;
+    offscreenCanvas.height = height;
+    var ctx = offscreenCanvas.getContext("2d");
+    var rot = args.imgRotation;
+    var cos = Math.cos;
+    var sin = Math.sin;
+    ctx.save();
+    let midX = 0.5 * width;
+    let midY = 0.5 * height;
+    ctx.setTransform(
+      cos(rot), sin(rot), -sin(rot), cos(rot), midX, midY
+    );
+    ctx.drawImage(
+      bossIntroState.img, args.srcX, args.srcY,
+      args.srcWidth, args.srcHeight,
+      -0.5 * width, -0.5 * height, width, height
+    );
+    ctx.restore();
+    bossIntroState.imgImageData = ctx.getImageData(0, 0, width, height);
+    bossIntroState.imgImageDataOpac = new Uint8Array(width * height);
+    var imageData = bossIntroState.imgImageData.data;
+    var imgImageDataOpac = bossIntroState.imgImageDataOpac;
+    for (let k = 3, n = width*height*4, m = 0; k < n; k += 4, m += 1) {
+      imgImageDataOpac[m] = imageData[k];
+      imageData[k] = 0;
+    }
+    offscreenCanvas = null;
+    ctx = null;
+
+    bossIntro();
+  }
+  function bossIntro(ts) {
+    bossIntroState.animFrame = global.requestAnimationFrame(bossIntro);
+    var ctx = bossIntroState.canvasOverlayCtx;
+
+    switch (bossIntroState.state) {
+      case BOSS_INTRO_CANCEL:
+        // Cancel animation
+        global.cancelAnimationFrame(bossIntroState.animFrame);
+        return bossIntroEnd();
+      // break;
+      case BOSS_INTRO_MATERIALIZE: {
+        // Part 1: Ship materializes
+        let imageData = bossIntroState.imgImageData.data;
+        let width = bossIntroState.width;
+        let height = bossIntroState.height;
+        let frame = bossIntroState.frame;
+        let imgImageDataOpac = bossIntroState.imgImageDataOpac;
+        let materializeFrameCount = bossIntroState.materializeFrameCount;
+        let x = 0.5 * width;
+        let y = 0.5 * height;
+        let frac = frame / materializeFrameCount;
+        let angle = frac * Math.PI / 2;
+        // let angle = frac * 2 * Math.PI;
+        let vecX = -1;
+        let vecY = 0;
+
+        // for (let k = 0, n = width * height; k < n; k += 1) {
+        //   if ((k - frame) % materializeFrameCount === 0) {
+        //     imageData[k * 4 + 3] = imgImageDataOpac[k];
+        //   }
+        // }
+        for (let k = 0, m = 0; k < height; k += 1) {
+          for (let iK = 0; iK < width; iK += 1, m += 1) {
+            let px = iK - x;
+            let py = k - y;
+            let dot = vecX * px + vecY * py;
+            let dAngle = Math.acos(dot / Math.sqrt(px * px + py * py)) || 0;
+            dAngle = (dAngle / Math.PI) * Math.PI / 2;
+            if (0 <= dAngle && dAngle <= angle) {
+              imageData[m * 4 + 3] = imgImageDataOpac[m];
+            }
+          }
+        }
+      }
+      break;
+      case BOSS_INTRO_FOCUS: {
+        // Part 2: Draw focus around ship
+        ctx.save();
+        ctx.strokeStyle = "#400";
+        let width = bossIntroState.width;
+        let height = bossIntroState.height;
+        let x = bossIntroState.left + 0.5 * width;
+        let y = bossIntroState.top + 0.5 * height;
+        let r = parseInt(ROOT_TWO_OVER_TWO * Math.max(width, height), 10);
+        let numRings = bossIntroState.focusNumRings;
+        let r2 = r + numRings;
+        ctx.clearRect(x - 4 * width, y - 4 * height, 8 * width, 8 * height);
+
+        for (let k = r; k < r2; k += 1) {
+          ctx.beginPath();
+          ctx.arc(x, y, k, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+
+        let rad = r + bossIntroState.focusRingLast;
+        ctx.strokeStyle = "#AAF";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, rad, 0, 2 * Math.PI);
+        ctx.stroke();
+        bossIntroState.focusLastTs = ts;
+        if (bossIntroState.focusRingLast < numRings) {
+          bossIntroState.focusRingLast += 1;
+        } else {
+          bossIntroState.focusRingLast = 0;
+        }
+
+        let frac = bossIntroState.focusFrameCount / bossIntroState.focusFrameCountMax;
+        r2 = r + numRings + parseInt(bossIntroState.focusOuterRingRadiusMult * (r + numRings) * frac, 10);
+        ctx.beginPath();
+        ctx.arc(x, y, r2, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        ctx.restore();
+        bossIntroState.focusFrameCount -= 1;
+      }
+      break;
+    }
+
+    let frame = bossIntroState.frame;
+    let matFrameCount = bossIntroState.materializeFrameCount;
+    let focusFrameCount = bossIntroState.focusFrameCount;
+    if (frame >= matFrameCount) {
+      bossIntroState.state = BOSS_INTRO_FOCUS;
+    }
+    if (focusFrameCount <= 0) {
+      bossIntroState.state = BOSS_INTRO_CANCEL;
+    }
+
+    if (!bossIntroState.isTextDrawn) {
+      ctx.save();
+      ctx.font = "36 monospace`";
+      ctx.textBaseline = "bottom";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#FFF";
+      ctx.fillText(
+        bossIntroState.text,
+        0.5 * bossIntroState.canvasWidth,
+        bossIntroState.canvasHeight
+      );
+      ctx.restore();
+    }
+
+    ctx.putImageData(
+      bossIntroState.imgImageData,
+      bossIntroState.left,
+      bossIntroState.top,
+      0, 0,
+      bossIntroState.width,
+      bossIntroState.height
+    );
+    bossIntroState.frame += 1;
+  }
+  function bossIntroEnd() {
+    bossIntroState.imgImageData = null;
+    bossIntroState.imgImageDataOpac = null;
+    bossIntroState.canvasOverlayCtx.clearRect(
+      0, 0,
+      bossIntroState.canvasWidth, bossIntroState.canvasHeight
+    );
+    bossIntroState.callback();
+  }
+
+  return {
+    "start": preSplash,
+    "bossIntro": preBossIntro
+  };
 })(window);

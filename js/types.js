@@ -539,8 +539,8 @@ function Enemy(game, type, isBoss, isActive) {
   var verticalPos = 0;
   var horizontalPos = 0;
   if (isBoss) {
-    verticalPos = 0;
-    horizontalPos = 0.75;
+    horizontalPos = enemyData.spawnPos[0];
+    verticalPos = enemyData.spawnPos[1];
   } else {
     verticalPos = Math.random() * (1 - game.modelScale);
     verticalPos = ((global.performance.now()|0) % 2) ? -verticalPos : verticalPos;
@@ -609,9 +609,11 @@ function Enemy(game, type, isBoss, isActive) {
     active = isActive || false;
     texCoordsBufferIndexShip = enemyData.texType
     if (isBoss) {
-      translateVec.y = 0;
+      translateVec.x = enemyData.spawnPos[0];
+      translateVec.y = enemyData.spawnPos[0];
       this.update = updateBoss;
     } else {
+      translateVec.x = horizontalPos;
       translateVec.y = Math.random() * (1 - modelScale);
       translateVec.y = ((now|0) % 2) ? -translateVec.y : translateVec.y;
       this.update = updateEnemy;
@@ -623,7 +625,7 @@ function Enemy(game, type, isBoss, isActive) {
       weapon.reset(weaponType, 50, projDir, coolDownMult * projData.coolDown, weaponData.texType, true);
     }
 
-    state.position[0] = horizontalPos;
+    state.position[0] = translateVec.x;
     state.position[1] = translateVec.y;
     state.velocity[0] = (isBoss) ? 0 : -velocity;
 

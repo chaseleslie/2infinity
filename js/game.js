@@ -73,7 +73,8 @@
   const LEVEL_INTRO = 0;
   const LEVEL_PLAYING = 1;
   const LEVEL_END = 2;
-  const LEVEL_BOSS = 3;
+  const LEVEL_BOSS_INTRO = 3;
+  const LEVEL_BOSS = 4;
 
   const DIFFICULTY_EASY = 1;
   const DIFFICULTY_MEDIUM = 2;
@@ -806,6 +807,12 @@
     Game.pauseTs = global.performance.now();
     Game.running = false;
     global.cancelAnimationFrame(Game.animFrame);
+    Game.keydownMap["ArrowLeft"] = 0;
+    Game.keydownMap["ArrowUp"] = 0;
+    Game.keydownMap["ArrowRight"] = 0;
+    Game.keydownMap["ArrowDown"] = 0;
+    Game.keydownMap["Shoot"] = 0;
+    Game.keydownMap["Dive"] = 0;
   }
 
   function restart() {
@@ -824,19 +831,47 @@
       stop();
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       let img = doc.getElementById("img_ship");
-      Splash.start(
-        global.performance.now(), {
-          "canvasOverlay": canvasOverlay,
-          "canvasOverlayCtx": canvasOverlayCtx,
-          "callback": start,
-          "img": img,
-          "imgX": 0,
-          "imgY": 0,
-          "imgWidth": parseInt(img.dataset.unitSize, 10),
-          "imgHeight": parseInt(img.dataset.unitSize, 10),
-          "text": Game.gameData.levels[Game.level].introText
-        }
-      );
+      Splash.start({
+        "canvasOverlay": canvasOverlay,
+        "canvasOverlayCtx": canvasOverlayCtx,
+        "callback": start,
+        "img": img,
+        "imgX": 0,
+        "imgY": 0,
+        "imgWidth": parseInt(img.dataset.unitSize, 10),
+        "imgHeight": parseInt(img.dataset.unitSize, 10),
+        "text": Game.gameData.levels[Game.level].introText
+      });
+      return;
+    } else if (Game.levelState === LEVEL_BOSS_INTRO) {
+      Game.levelState = LEVEL_BOSS;
+      Game.overlayDirtyFlag |= OVERLAY_BOSS_HP_DIRTY;
+      global.cancelAnimationFrame(Game.animFrame);
+      stop();
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      let img = doc.getElementById("img_boss");
+      let imgUnitSize = parseInt(img.dataset.unitSize, 10);
+      let bossData = Game.gameData.bosses[Game.level];
+      let imgSpritePos = bossData.spritePos;
+      const ROOT_TWO = Math.sqrt(2);
+      let destWidth = parseInt(1.75 * bossData.modelScales[0] * Game.modelScale * imgUnitSize / ROOT_TWO, 10);
+      let destHeight = parseInt(1.75 * bossData.modelScales[1] * Game.modelScale * imgUnitSize, 10);
+      Splash.bossIntro({
+        "canvasOverlay": canvasOverlay,
+        "canvasOverlayCtx": canvasOverlayCtx,
+        "callback": start,
+        "img": img,
+        "srcX": imgSpritePos[0] * imgUnitSize,
+        "srcY": imgSpritePos[1] * imgUnitSize,
+        "srcWidth": imgUnitSize / ROOT_TWO,
+        "srcHeight": imgUnitSize,
+        "imgRotation": Math.PI,
+        "destWidth": destWidth,
+        "destHeight": destHeight,
+        "canvasX": (bossData.spawnPos[0] + 1) / 2 * canvasOverlay.width - 0.5 * destWidth,
+        "canvasY": (bossData.spawnPos[1] + 1) / 2 * canvasOverlay.height - 0.5 * destHeight,
+        "text": Game.gameData.levels[Game.level].bossText
+      });
       return;
     }
 
@@ -880,6 +915,8 @@
       enemies = Game.enemies;
     } else if (Game.levelState === LEVEL_BOSS) {
       enemies = Game.bosses;
+    } else {
+      return;
     }
 
     player.update(dt);
@@ -974,7 +1011,8 @@
       }
 
       if (!enemiesActive) {
-        Game.levelState = LEVEL_BOSS;
+        // Game.levelState = LEVEL_BOSS;
+        Game.levelState = LEVEL_BOSS_INTRO;
         Game.overlayDirtyFlag |= OVERLAY_BOSS_HP_DIRTY;
         Game.bosses.push(new Enemy(Game, Game.level, true, true));
       }
@@ -1111,43 +1149,50 @@
       ctx.save();
       let player = null;
       let x = 0;
-      if (Game.overlayDirtyFlag & OVERLAY_HP_DIRTY) {
-        x = ctx.lineWidth;
-        player = Game.player;
-        ctx.strokeStyle = "#FFF";
-      } else {
-        x = ctx.canvas.width - 8 - hpWidth;
-        player = Game.bosses[Game.level];
-        ctx.strokeStyle = "#CAA";
+      let flag = Game.overlayDirtyFlag & (OVERLAY_HP_DIRTY | OVERLAY_BOSS_HP_DIRTY);
+
+      while (flag) {
+        if (flag & OVERLAY_HP_DIRTY) {
+          x = ctx.lineWidth;
+          player = Game.player;
+          ctx.strokeStyle = "#FFF";
+          flag &= ~OVERLAY_HP_DIRTY;
+        } else if (flag & OVERLAY_BOSS_HP_DIRTY) {
+          x = ctx.canvas.width - 8 - hpWidth;
+          player = Game.bosses[Game.level];
+          ctx.strokeStyle = "#CAA";
+          flag &= ~OVERLAY_BOSS_HP_DIRTY;
+        }
+        let percentage = Math.max(0, player.hitPoints / player.maxHitPoints);
+
+        let y = ctx.lineWidth;
+        let w = hpWidth;
+        w = (w % 8) ? w + 8 - w % 8 : w;
+        let h = hpHeight;
+        h = (h % 8) ? h + 8 - h % 8 : h;
+        let d = 10;
+        let d2 = 0.5 * d;
+        let red = parseInt((1 - percentage) * 0xFF, 10).toString(16);
+        let green = parseInt(percentage * 0xFF, 10).toString(16);
+        let color = `#${("0" + red).substr(-2)}${("0" + green).substr(-2)}88`;
+
+        ctx.clearRect(x, y, w, h);
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2;
+        ctx.fillRect(x + d2, y + d2, percentage * (w - d), h - d);
+        ctx.moveTo(x + d, y);
+        ctx.lineTo(x + w - d, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + d);
+        ctx.lineTo(x + w, y + h - d);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - d, y + h);
+        ctx.lineTo(x + d, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - d);
+        ctx.lineTo(x, y + d);
+        ctx.quadraticCurveTo(x, y, x + d, y);
+        ctx.stroke();
       }
-      let percentage = Math.max(0, player.hitPoints / player.maxHitPoints);
 
-      let y = ctx.lineWidth;
-      let w = hpWidth;
-      w = (w % 8) ? w + 8 - w % 8 : w;
-      let h = hpHeight;
-      h = (h % 8) ? h + 8 - h % 8 : h;
-      let d = 10;
-      let d2 = 0.5 * d;
-      let red = parseInt((1 - percentage) * 0xFF, 10).toString(16);
-      let green = parseInt(percentage * 0xFF, 10).toString(16);
-      let color = `#${("0" + red).substr(-2)}${("0" + green).substr(-2)}88`;
-
-      ctx.clearRect(x, y, w, h);
-      ctx.beginPath();
-      ctx.fillStyle = color;
-      ctx.lineWidth = 2;
-      ctx.fillRect(x + d2, y + d2, percentage * (w - d), h - d);
-      ctx.moveTo(x + d, y);
-      ctx.lineTo(x + w - d, y);
-      ctx.quadraticCurveTo(x + w, y, x + w, y + d);
-      ctx.lineTo(x + w, y + h - d);
-      ctx.quadraticCurveTo(x + w, y + h, x + w - d, y + h);
-      ctx.lineTo(x + d, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - d);
-      ctx.lineTo(x, y + d);
-      ctx.quadraticCurveTo(x, y, x + d, y);
-      ctx.stroke();
       ctx.restore();
     }
 
