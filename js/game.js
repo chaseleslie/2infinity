@@ -115,7 +115,7 @@
     // "overlayDirtyFlag": OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY,
     "overlayState": {
       "flag": OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY,
-      "indicatorFrameCountMax": 32,
+      "indicatorFrameCountMax": 64,
       "playerIndicatorFrameCount": 0,
       "bossIndicatorFrameCount": 0
     },
@@ -786,7 +786,6 @@
 
   function start() {
     if (!Game.running) {
-      // debugger;
       Game.overlayState.flag |= OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY;
       doc.body.addEventListener("keydown", handleKeyDown, false);
       doc.body.addEventListener("keyup", handleKeyUp, false);
@@ -928,6 +927,7 @@
       return;
     }
 
+    /* Update player */
     player.update(dt);
     var score = 0;
     var playerWeapons = player.weapons;
@@ -942,15 +942,17 @@
     }
     var playerHitbox = player.hitbox;
 
+    /* Update enemies */
     score = 0;
     for (let k = enemies.length - 1; k >= 0; k -= 1) {
       let enemy = enemies[k];
       if (!enemy.active) {
         continue;
       }
-      score -= enemy.update(dt);
-      if (score) {
+      let hitScore = -enemy.update(dt);
+      if (hitScore) {
         Game.overlayState.flag |= OVERLAY_HP_DIRTY | OVERLAY_DECREMENT;
+        score += hitScore;
       }
       let hitbox = enemy.hitbox;
       let enemyPrune = enemy.prune;
@@ -968,7 +970,7 @@
       updateScore(Game, score);
     }
 
-    // Check for player collisions with enemies
+    /* Check for player collisions with enemies */
     if (!playerHitbox.depth && Game.levelState === LEVEL_PLAYING) {
       for (let k = 0; k < enemies.length; k += 1) {
         let keepLooping = true;
@@ -1209,9 +1211,18 @@
         }
 
         if (frameCount > 0) {
-          ctx.strokeStyle = "#4F4";
+          if (Math.floor(Math.sin(2*Math.PI*(60/1000)*frameCount)) >= 0) {
+            ctx.strokeStyle = "#4F4";
+          } else {
+            ctx.strokeStyle = "#FFF";
+          }
+
         } else if (frameCount < 0) {
-          ctx.strokeStyle = "#F44";
+          if (Math.floor(Math.sin(2*Math.PI*(60/1000)*frameCount)) >= 0) {
+            ctx.strokeStyle = "#F44";
+          } else {
+            ctx.strokeStyle = "#FFF";
+          }
         } else {
           ctx.strokeStyle = "#FFF";
         }
