@@ -336,7 +336,7 @@ var Splash = (function(glob) {
         // Cancel animation
         global.cancelAnimationFrame(bossIntroState.animFrame);
         return bossIntroEnd();
-      // break;
+
       case BOSS_INTRO_MATERIALIZE: {
         // Part 1: Ship materializes
         let imageData = bossIntroState.imgImageData.data;
@@ -345,26 +345,26 @@ var Splash = (function(glob) {
         let frame = bossIntroState.frame;
         let imgImageDataOpac = bossIntroState.imgImageDataOpac;
         let materializeFrameCount = bossIntroState.materializeFrameCount;
+        let acos = Math.acos;
+        let sqrt = Math.sqrt;
         let x = 0.5 * width;
         let y = 0.5 * height;
         let frac = frame / materializeFrameCount;
-        let angle = frac * Math.PI / 2;
-        // let angle = frac * 2 * Math.PI;
+        let TWOPI = 2 * Math.PI;
+        let angle = frac * TWOPI;
         let vecX = -1;
         let vecY = 0;
 
-        // for (let k = 0, n = width * height; k < n; k += 1) {
-        //   if ((k - frame) % materializeFrameCount === 0) {
-        //     imageData[k * 4 + 3] = imgImageDataOpac[k];
-        //   }
-        // }
         for (let k = 0, m = 0; k < height; k += 1) {
           for (let iK = 0; iK < width; iK += 1, m += 1) {
             let px = iK - x;
             let py = k - y;
             let dot = vecX * px + vecY * py;
-            let dAngle = Math.acos(dot / Math.sqrt(px * px + py * py)) || 0;
-            dAngle = (dAngle / Math.PI) * Math.PI / 2;
+            let dAngle = acos(dot / sqrt(px * px + py * py)) || 0;
+
+            if (py < 0) {
+              dAngle = TWOPI - dAngle;
+            }
             if (0 <= dAngle && dAngle <= angle) {
               imageData[m * 4 + 3] = imgImageDataOpac[m];
             }
