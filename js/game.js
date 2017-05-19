@@ -64,17 +64,20 @@
   canvasOverlayProps.fpsTemplateStrProps = canvasOverlayCtx.measureText(canvasOverlayProps.fpsTemplateStr);
   canvasOverlayCtx.restore();
 
-  const OVERLAY_SCORE_DIRTY = 1;
-  const OVERLAY_HP_DIRTY = 2;
-  const OVERLAY_FPS_DIRTY = 4;
-  const OVERLAY_BOSS_NAME_DIRTY = 8;
-  const OVERLAY_BOSS_HP_DIRTY = 16;
+  const OVERLAY_INCREMENT = 0b0000001;
+  const OVERLAY_DECREMENT = 0b0000010;
+  const OVERLAY_SCORE_DIRTY = 0b00000100;
+  const OVERLAY_HP_DIRTY = 0b00001000;
+  const OVERLAY_FPS_DIRTY = 0b00010000;
+  const OVERLAY_BOSS_NAME_DIRTY = 0b000100000;
+  const OVERLAY_BOSS_HP_DIRTY = 0b01000000;
 
   const LEVEL_INTRO = 0;
   const LEVEL_PLAYING = 1;
   const LEVEL_END = 2;
   const LEVEL_BOSS_INTRO = 3;
   const LEVEL_BOSS = 4;
+  const LEVEL_GAME_OVER = 5;
 
   const DIFFICULTY_EASY = 1;
   const DIFFICULTY_MEDIUM = 2;
@@ -109,7 +112,13 @@
     "running": false,
     "isMenuShown": false,
     "animFrame": null,
-    "overlayDirtyFlag": OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY,
+    // "overlayDirtyFlag": OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY,
+    "overlayState": {
+      "flag": OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY,
+      "indicatorFrameCountMax": 32,
+      "playerIndicatorFrameCount": 0,
+      "bossIndicatorFrameCount": 0
+    },
     "overlayLastTs": 0,
     "displayFPS": false,
     "muted": false,
@@ -587,7 +596,7 @@
     e.target.classList.toggle("checked");
     e.target.classList.toggle("unchecked");
     Game.displayFPS = !Game.displayFPS;
-    Game.overlayDirtyFlag |= OVERLAY_FPS_DIRTY;
+    Game.overlayState.flag |= OVERLAY_FPS_DIRTY;
     hideMenu();
     start();
   }
@@ -778,7 +787,7 @@
   function start() {
     if (!Game.running) {
       // debugger;
-      Game.overlayDirtyFlag |= OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY;
+      Game.overlayState.flag |= OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY;
       doc.body.addEventListener("keydown", handleKeyDown, false);
       doc.body.addEventListener("keyup", handleKeyUp, false);
       Game.startTs = global.performance.now();
@@ -845,7 +854,7 @@
       return;
     } else if (Game.levelState === LEVEL_BOSS_INTRO) {
       Game.levelState = LEVEL_BOSS;
-      Game.overlayDirtyFlag |= OVERLAY_BOSS_HP_DIRTY;
+      Game.overlayState.flag |= OVERLAY_BOSS_HP_DIRTY;
       global.cancelAnimationFrame(Game.animFrame);
       stop();
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -885,7 +894,7 @@
 
     var overlayNeedsUpdating = Boolean(Game.displayFPS);
     if (overlayNeedsUpdating && (ts > Game.overlayLastTs + 1000)) {
-      Game.overlayDirtyFlag |= OVERLAY_FPS_DIRTY;
+      Game.overlayState.flag |= OVERLAY_FPS_DIRTY;
       Game.overlayLastTs = ts;
     }
 
@@ -925,7 +934,7 @@
     for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
       score += playerWeapons[k].update(dt, enemies);
       if (score && Game.levelState === LEVEL_BOSS) {
-        Game.overlayDirtyFlag |= OVERLAY_BOSS_HP_DIRTY;
+        Game.overlayState.flag |= OVERLAY_BOSS_HP_DIRTY | OVERLAY_DECREMENT;
       }
     }
     if (score) {
@@ -941,7 +950,7 @@
       }
       score -= enemy.update(dt);
       if (score) {
-        Game.overlayDirtyFlag |= OVERLAY_HP_DIRTY;
+        Game.overlayState.flag |= OVERLAY_HP_DIRTY | OVERLAY_DECREMENT;
       }
       let hitbox = enemy.hitbox;
       let enemyPrune = enemy.prune;
@@ -978,10 +987,10 @@
               if (hp <= 0) {
                 restart();
                 keepLooping = false;
-                Game.overlayDirtyFlag = OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY | OVERLAY_FPS_DIRTY;
+                Game.overlayState.flag = OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY | OVERLAY_FPS_DIRTY;
                 break;
               } else {
-                Game.overlayDirtyFlag |= OVERLAY_HP_DIRTY;
+                Game.overlayState.flag |= OVERLAY_HP_DIRTY | OVERLAY_DECREMENT;
               }
               updateScore(Game, -enemy.points);
             }
@@ -993,9 +1002,19 @@
       }
     }
 
+    updateLevel(Game, ts, enemies);
+
+    if (Game.keydownMap["Shoot"]) {
+      fireWeapon(Game, ts, dt);
+    }
+
+    Game.starMap.update(dt);
+  }
+
+  function updateLevel(Game, ts, enemies) {
     if (Game.levelState === LEVEL_PLAYING) {
       spawnEnemies(Game, ts);
-      if (Game.overlayDirtyFlag) {
+      if (Game.overlayState.flag) {
         updateWeapon(Game);
       }
       if (Game.score >= Game.gameData.levels[Game.level].scoreGoal) {
@@ -1011,9 +1030,8 @@
       }
 
       if (!enemiesActive) {
-        // Game.levelState = LEVEL_BOSS;
         Game.levelState = LEVEL_BOSS_INTRO;
-        Game.overlayDirtyFlag |= OVERLAY_BOSS_HP_DIRTY;
+        Game.overlayState.flag |= OVERLAY_BOSS_HP_DIRTY | OVERLAY_INCREMENT;
         Game.bosses.push(new Enemy(Game, Game.level, true, true));
       }
     } else if (Game.levelState === LEVEL_BOSS) {
@@ -1026,21 +1044,17 @@
       if (!bossActive) {
         if (Game.level < Game.gameData.levels.length - 1) {
           Game.level += 1;
+          Game.levelState = LEVEL_INTRO;
+        } else {
+          Game.levelState = LEVEL_GAME_OVER;
         }
-        Game.levelState = LEVEL_INTRO;
       }
     }
-
-    if (Game.keydownMap["Shoot"]) {
-      fireWeapon(Game, ts, dt);
-    }
-
-    Game.starMap.update(dt);
   }
 
   function updateScore(Game, score) {
     Game.score += score;
-    Game.overlayDirtyFlag |= OVERLAY_SCORE_DIRTY;
+    Game.overlayState.flag |= OVERLAY_SCORE_DIRTY;
   }
 
   function updateWeapon(Game) {
@@ -1098,12 +1112,13 @@
     var hpWidth = canvasOverlayProps.hpWidthScale * width;
     var hpHeight = canvasOverlayProps.hpHeightScale * height;
     var canvasOverlayFont = canvasOverlayProps.canvasOverlayFont;
+    var keepDirtyFlags = 0;
 
     ctx.save();
     ctx.font = canvasOverlayFont;
 
     /* Update score display */
-    if (Game.overlayDirtyFlag & OVERLAY_SCORE_DIRTY) {
+    if (Game.overlayState.flag & OVERLAY_SCORE_DIRTY) {
       let scoreTemplateStrProps = canvasOverlayProps.scoreTemplateStrProps;
       let scoreTemplateNumDigits = canvasOverlayProps.scoreTemplateNumDigits;
       ctx.save();
@@ -1122,7 +1137,7 @@
     }
 
     /* Update fps display */
-    if (Game.displayFPS && Game.overlayDirtyFlag & OVERLAY_FPS_DIRTY) {
+    if (Game.displayFPS && Game.overlayState.flag & OVERLAY_FPS_DIRTY) {
       let fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
       let fpsTemplateNumDigits = canvasOverlayProps.fpsTemplateNumDigits;
       ctx.save();
@@ -1145,24 +1160,62 @@
     }
 
     /* Update hitpoints indicator */
-    if (Game.overlayDirtyFlag & OVERLAY_HP_DIRTY || Game.overlayDirtyFlag & OVERLAY_BOSS_HP_DIRTY) {
+    if (Game.overlayState.flag & OVERLAY_HP_DIRTY || Game.overlayState.flag & OVERLAY_BOSS_HP_DIRTY) {
       ctx.save();
       let player = null;
       let x = 0;
-      let flag = Game.overlayDirtyFlag & (OVERLAY_HP_DIRTY | OVERLAY_BOSS_HP_DIRTY);
+      let flag = Game.overlayState.flag & (OVERLAY_HP_DIRTY | OVERLAY_BOSS_HP_DIRTY);
 
       while (flag) {
+        let frameCount = 0;
         if (flag & OVERLAY_HP_DIRTY) {
           x = ctx.lineWidth;
           player = Game.player;
-          ctx.strokeStyle = "#FFF";
           flag &= ~OVERLAY_HP_DIRTY;
+
+          if (Game.overlayState.flag & OVERLAY_INCREMENT) {
+            Game.overlayState.playerIndicatorFrameCount = Game.overlayState.indicatorFrameCountMax;
+          } else if (Game.overlayState.flag & OVERLAY_DECREMENT) {
+            Game.overlayState.playerIndicatorFrameCount = -Game.overlayState.indicatorFrameCountMax;
+          } else if (Game.overlayState.playerIndicatorFrameCount > 0) {
+            Game.overlayState.playerIndicatorFrameCount -= 1;
+          } else if (Game.overlayState.playerIndicatorFrameCount < 0) {
+            Game.overlayState.playerIndicatorFrameCount += 1;
+          }
+
+          frameCount = Game.overlayState.playerIndicatorFrameCount;
+          if (frameCount) {
+            keepDirtyFlags |= OVERLAY_HP_DIRTY;
+          }
         } else if (flag & OVERLAY_BOSS_HP_DIRTY) {
           x = ctx.canvas.width - 8 - hpWidth;
           player = Game.bosses[Game.level];
-          ctx.strokeStyle = "#CAA";
           flag &= ~OVERLAY_BOSS_HP_DIRTY;
+
+          if (Game.overlayState.flag & OVERLAY_INCREMENT) {
+            Game.overlayState.bossIndicatorFrameCount = Game.overlayState.indicatorFrameCountMax;
+          } else if (Game.overlayState.flag & OVERLAY_DECREMENT) {
+            Game.overlayState.bossIndicatorFrameCount = -Game.overlayState.indicatorFrameCountMax;
+          } else if (Game.overlayState.bossIndicatorFrameCount > 0) {
+            Game.overlayState.bossIndicatorFrameCount -= 1;
+          } else if (Game.overlayState.bossIndicatorFrameCount < 0) {
+            Game.overlayState.bossIndicatorFrameCount += 1;
+          }
+
+          frameCount = Game.overlayState.bossIndicatorFrameCount;
+          if (frameCount) {
+            keepDirtyFlags |= OVERLAY_BOSS_HP_DIRTY;
+          }
         }
+
+        if (frameCount > 0) {
+          ctx.strokeStyle = "#4F4";
+        } else if (frameCount < 0) {
+          ctx.strokeStyle = "#F44";
+        } else {
+          ctx.strokeStyle = "#FFF";
+        }
+
         let percentage = Math.max(0, player.hitPoints / player.maxHitPoints);
 
         let y = ctx.lineWidth;
@@ -1196,12 +1249,13 @@
       ctx.restore();
     }
 
-    // if (Game.overlayDirtyFlag & OVERLAY_BOSS_NAME_DIRTY) {
+    // if (Game.overlayState.flag & OVERLAY_BOSS_NAME_DIRTY) {
     //
     // }
 
     ctx.restore();
-    Game.overlayDirtyFlag = 0;
+
+    Game.overlayState.flag = keepDirtyFlags;
   }
 
   function draw(Game) {
@@ -1219,7 +1273,7 @@
 
     Game.starMap.draw(gl);
 
-    if (Game.overlayDirtyFlag) {
+    if (Game.overlayState.flag) {
       drawOverlay(Game);
     }
   }
