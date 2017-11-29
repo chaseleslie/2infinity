@@ -3,9 +3,14 @@
 <svg version="1.1" width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
 
   <defs>
-		<linearGradient id="gradient">
+		<linearGradient id="boss1Gradient">
 			<stop offset="0%" stop-color="#2A3F00" />
 			<stop offset="100%" stop-color="#400" />
+		</linearGradient>
+
+    <linearGradient id="boss2Gradient">
+			<stop offset="0%" stop-color="#383878" />
+			<stop offset="100%" stop-color="#008" />
 		</linearGradient>
 	</defs>
 
@@ -16,15 +21,15 @@
 	<path d="M0,0 L362,256 L0,512 L60,352 L0,256 L60,160 Z" stroke="black" fill="#002929" />
 
 	<!-- Wing traces -->
-	<path d="M0,0 L280,198 L220,180 Z" stroke="#400" fill="url(#gradient)" />
-	<path d="M0,512 L280,314 L220,332 Z" stroke="#400" fill="url(#gradient)" />
+	<path d="M0,0 L280,198 L220,180 Z" stroke="#400" fill="url(#boss1Gradient)" />
+	<path d="M0,512 L280,314 L220,332 Z" stroke="#400" fill="url(#boss1Gradient)" />
 
 	<!-- Thrusters -->
 	<path d="M0,0 L60,160 L68,148 Z" stroke="#2A3F00" fill="#2A3F00" />
 	<path d="M0,512 L60,352 L68,364 Z" stroke="#2A3F00" fill="#2A3F00" />
 
 	<!-- Fuselage -->
-	<path d="M100,160 L220,256 L100,352 Z" stroke="#400" fill="url(#gradient)" />
+	<path d="M100,160 L220,256 L100,352 Z" stroke="#400" fill="url(#boss1Gradient)" />
 	<path d="M166,213 L166,299 L100,256 Z" stroke="#400" fill="#400" />
 
   <!-- Lightning -->
@@ -34,4 +39,34 @@
 	<!-- Nose shape -->
 	<path d="M300,210 C382,230 382,284 300,302" stroke="#400" fill="#002929" />
 	<!-- ********************************************************************* -->
+
+  <!-- ********************************************************************* -->
+  <!-- BOSS SHIP 2 -->
+
+  <!-- Main ship outline -->
+	<path d="M512,0 L874,256 L512,512 L572,352 L512,256 L572,160 Z" stroke="black" fill="#000033" />
+
+	<!-- Wing traces -->
+	<path d="M512,0 L792,198 L732,180 Z" stroke="#400" fill="url(#boss2Gradient)" />
+	<path d="M512,512 L792,314 L732,332 Z" stroke="#400" fill="url(#boss2Gradient)" />
+
+	<!-- Thrusters -->
+	<path d="M512,0 L572,160 L580,148 Z" stroke="#440088" fill="#440088" />
+	<path d="M512,512 L572,352 L580,364 Z" stroke="#440088" fill="#440088" />
+
+	<!-- Fuselage -->
+	<path d="M612,160 L732,256 L612,352 Z" stroke="#400" fill="url(#boss2Gradient)" />
+	<path d="M678,213 L678,299 L612,256 Z" stroke="#013" fill="#013" />
+
+  <!-- Lightning -->
+	<path d="M612,120 L672,168 L662,180 L732,216 L672,168 L682,156 Z" stroke="#408" fill="#024" />
+	<path d="M612,392 L672,344 L662,332 L732,296 L672,344 L682,356 Z" stroke="#408" fill="#024" />
+
+	<!-- Nose shape -->
+	<path d="M812,210 C894,230 894,284 812,302" stroke="#400" fill="#000033" />
+
+  <!-- Nose deco -->
+  <path d="M772,226 Q772,276 822,256" stroke="#024" stroke-width="2" fill="#408" fill-opacity="0" />
+  <path d="M772,286 Q772,236 822,256" stroke="#024" stroke-width="2" fill="#408" fill-opacity="0" />
+  <!-- ********************************************************************* -->
 </svg>
