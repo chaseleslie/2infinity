@@ -15,10 +15,19 @@ html, body {
 
 #glcanvas {
   margin: 0px;
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0px;
+  left: 0px;
 }
 #glcanvas_overlay {
-  position: absolute;
   margin: 0px;
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0px;
+  left: 0px;
   z-index: 100;
 }
 
