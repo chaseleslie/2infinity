@@ -40,6 +40,17 @@
       "texType": 0,
       "spawnPos": [0.5, 0, 0],
       "spritePos": [0, 0]
+    },
+    {
+      "velocity": 0.00025,
+      "modelScales": [2, 2, 2],
+      "hitPoints": 2500,
+      "spawnIntervalMult": 1,
+      "weapon": 2,
+      "coolDownMult": 0.1,
+      "texType": 1,
+      "spawnPos": [0.5, 0, 0],
+      "spritePos": [1, 0]
     }
   ],
 
@@ -145,6 +156,15 @@
       "baseSpawnInterval": 5000,
       "introText": "Level 1",
       "bossText": "November Zulu"
+    },
+    {
+      "enemies": [0, 1, 2],
+      "scoreGoal": 200,
+      "playerWeapons": [0, 1, 2],
+      "playerWeaponsScoreThreshold": [0, 2000, 5000],
+      "baseSpawnInterval": 2000,
+      "introText": "Level 2",
+      "bossText": "Kalt Draussen"
     }
   ]
 }
