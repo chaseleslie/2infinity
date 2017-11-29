@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+		<radialGradient id="gradient">
+			<stop offset="0%" stop-color="#CCCCE8" />
+			<stop offset="100%" stop-color="#ABBAAB" />
+		</radialGradient>
+	</defs>
+
+	<!-- Health powerup -->
+  <circle cx="64" cy="64" r="63" fill="url(#gradient)" stroke="#AAA" />
+  <rect x="50" y="16" width="28" height="92" rx="8" ry="8" fill="#44F" stroke="#44F" />
+  <rect x="16" y="50" width="92" height="28" rx="8" ry="8" fill="#44F" stroke="#44F" />
+
+  <!-- Shield powerup -->
+  <circle cx="192" cy="64" r="63" fill="url(#gradient)" stroke="#AAA" />
+  <path d="M160,16 Q128,64 192,112 Q256,64 224,16 Z" fill="#44F" stroke="#44F" />
+  <path d="M180,24 L164,24 Q154,38 158,56 L180,56 Q188,56 188,48 L188,32 Q188,24 180,24 Z" fill="#DAA520" stroke="#44F" />
+  <path d="M204,24 L220,24 Q230,38 226,56 L204,56 Q196,56 196,48 L196,32 Q196,24 204,24 Z" fill="#DAA520" stroke="#44F" />
+  <path d="M160,64 Q166,84 192,102 Q218,84 224,64 Z" fill="#DAA520" stroke="#44F" />
+  <path d="M192,20 L192,20 L162,20 Q134,64 192,108 Q250,64 222,20 L192,20" fill-opacity="0" stroke="#FFF" />
+  <path d="M192,20 L192,60 L154,60 L230,60" fill-opacity="0" stroke="#FFF" />
+</svg>
