@@ -5,12 +5,194 @@ var Splash = (function(glob) {
   var global = glob;
   var doc = global.document;
   const ROOT_TWO_OVER_TWO = Utils.ROOT_TWO_OVER_TWO;
+
+  /* Intro Display */
+
+  const introState = Object.seal({
+    "canvasOverlayCtx": null,
+    "callback": null,
+    "KEY_MAP": null
+  });
+
+  function handleIntroKey(e) {
+    var keyHandled = true;
+    var key = introState.KEY_MAP[e.key];
+    switch (key || e.which || e.keyCode) {
+      // F5 / Alt
+      case 116:
+      case 18:
+        keyHandled = false;
+      break;
+      // Tab
+      case 0x09:
+        if (e.altKey) {
+          keyHandled = false;
+        }
+      break;
+      default:
+        keyHandled = true;
+      break;
+    }
+
+    if (keyHandled) {
+      e.preventDefault();
+      introEnd();
+    }
+  }
+
+  function introEnd() {
+    const ctx = introState.canvasOverlayCtx;
+    doc.body.removeEventListener("keydown", handleIntroKey, false);
+    doc.body.removeEventListener("click", handleIntroKey, false);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    introState.callback();
+  }
+
+  function preIntro(args) {
+    introState.canvasOverlayCtx = args.canvasOverlayCtx;
+    introState.callback = args.callback;
+    introState.KEY_MAP = args.KEY_MAP;
+    doc.body.addEventListener("keydown", handleIntroKey, false);
+    doc.body.addEventListener("click", handleIntroKey, false);
+    setupIntro();
+  }
+
+  function setupIntro() {
+    const ctx = introState.canvasOverlayCtx;
+    const width = ctx.canvas.width;
+    const height = ctx.canvas.height;
+    ctx.clearRect(0, 0, width, height);
+
+    /* Draw logo */
+    var logoTextHeight = height / 10;
+    logoTextHeight += (logoTextHeight % 8) ? 8 - logoTextHeight % 8 : 0;
+    const logoFontNormal = `${logoTextHeight}px sans-serif`;
+    const logoFontItalic = `italic ${logoTextHeight}px sans-serif`;
+    ctx.save();
+    ctx.fillStyle = "#FFF";
+    ctx.textBaseline = "middle";
+
+    const logoTextPrefix = "2";
+    const logoTextSuffix = "Infinity";
+    var logoTextYOffset = height / 10;
+    ctx.font = logoFontNormal;
+    var logoTextPrefixProps = ctx.measureText(logoTextPrefix);
+    ctx.font = logoFontItalic;
+    var logoTextSuffixProps = ctx.measureText(logoTextSuffix);
+    var logoTextWidth = logoTextPrefixProps.width + logoTextSuffixProps.width;
+
+    ctx.font = logoFontNormal;
+    ctx.fillText(
+      logoTextPrefix,
+      0.5 * width - 0.5 * logoTextWidth,
+      logoTextYOffset + 0.25 * logoTextHeight,
+      0.4 * width
+    );
+    ctx.font = logoFontItalic;
+    ctx.fillText(
+      logoTextSuffix,
+      0.5 * width - 0.5 * logoTextWidth + logoTextPrefixProps.width,
+      logoTextYOffset - 0.25 * logoTextHeight,
+      0.4 * width
+    );
+
+    /* Draw key map */
+    var keyTextHeight = height / 20;
+    keyTextHeight += (keyTextHeight % 8) ? 8 - keyTextHeight % 8 : 0;
+    var keyHeight = keyTextHeight + 4;
+    keyHeight += (keyHeight % 8) ? 8 - keyHeight % 8 : 0;
+    const spacing = 16;
+    const keyMapYOffset = 0.25 * height;
+    ctx.font = `${keyTextHeight}px monospace`;
+    ctx.strokeStyle = "#DDD";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#DDD";
+    ctx.fillText(
+      "Keyboard Controls",
+      0.5 * width,
+      0.5 * ((logoTextYOffset + logoTextHeight) + keyMapYOffset)
+    );
+    ctx.fillStyle = "#FFF";
+    const keys = [
+      {"keys": ["a", "\u2190"], "msg": "left",        "fixY": 0},
+      {"keys": ["w", "\u2191"], "msg": "up",          "fixY": 0},
+      {"keys": ["d", "\u2192"], "msg": "right",       "fixY": 0},
+      {"keys": ["s", "\u2193"], "msg": "down",        "fixY": 0},
+      {"keys": ["\u2423"],      "msg": "shoot",       "fixY": 0},
+      {"keys": ["c"],           "msg": "dive",        "fixY": 0},
+      {"keys": ["m"],           "msg": "mute/unmute", "fixY": 0},
+      {"keys": ["`"],           "msg": "console",     "fixY": 0.25 * keyHeight}
+    ];
+
+    for (let k = 0, n = keys.length; k < n; k += 1) {
+      let key = keys[k];
+      let xOff = width / 6 - 0.5 * (2 * keyHeight + spacing + 4 * ctx.lineWidth);
+      let yOff = keyMapYOffset + k * keyHeight + k * spacing;
+
+      for (let iK = 0, iN = key.keys.length; iK < iN; iK += 1) {
+        let x = xOff + iK * keyHeight + iK * spacing;
+        let y = yOff;
+        let w = keyHeight;
+        let h = keyHeight;
+        let d = 10;
+        ctx.moveTo(x + d, y);
+        ctx.lineTo(x + w - d, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + d);
+        ctx.lineTo(x + w, y + h - d);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - d, y + h);
+        ctx.lineTo(x + d, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - d);
+        ctx.lineTo(x, y + d);
+        ctx.quadraticCurveTo(x, y, x + d, y);
+        ctx.stroke();
+
+        let chr = key.keys[iK];
+        ctx.fillStyle = "#FFF";
+        ctx.fillText(chr, x + 0.5 * keyHeight, y + 0.5 * keyHeight + key.fixY);
+      }
+
+      ctx.save();
+      ctx.textAlign = "right";
+      ctx.fillText(
+        key.msg,
+        width - width / 6 + 0.5 * (keyTextHeight + 2 * ctx.lineWidth) + spacing,
+        yOff + 0.5 * keyHeight
+      );
+      ctx.restore();
+    }
+
+    /* Put border around keymap */
+    let margin = 20;
+    let x = width / 6 - 0.5 * (2 * keyHeight + spacing + 4 * ctx.lineWidth) - margin;
+    let y = 0.5 * ((logoTextYOffset + logoTextHeight) + keyMapYOffset) - 0.5 * keyTextHeight - margin;
+    let w = width - 2 * x;
+    let h = keys.length * (keyHeight + spacing + 2 * ctx.lineWidth) - spacing + keyTextHeight + 2 * margin;
+    let d = 10;
+    ctx.moveTo(x + d, y);
+    ctx.lineTo(x + w - d, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + d);
+    ctx.lineTo(x + w, y + h - d);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - d, y + h);
+    ctx.lineTo(x + d, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - d);
+    ctx.lineTo(x, y + d);
+    ctx.quadraticCurveTo(x, y, x + d, y);
+    ctx.stroke();
+
+    ctx.fillStyle = "#DDD";
+    ctx.fillText("Press any key to continue", 0.5 * width, height - 0.5 * keyTextHeight);
+    ctx.restore();
+  }
+
+  /* Splash Animation */
+
   const SPLASH_CANCEL = -1;
   const SPLASH_SHIP_MATERIALIZE = 0;
   const SPLASH_SHIP_MOVE = 1;
   const SPLASH_SHIP_JUMP_HYPERSPACE = 2;
 
-  var splashState = {
+  const splashState = Object.seal({
     "canvasOverlay": null,
     "canvasOverlayCtx": null,
     "state": 0,
@@ -34,7 +216,7 @@ var Splash = (function(glob) {
     "aspect": 0,
     "hyperspaceBarsImgData": null,
     "callback": null
-  };
+  });
 
   function splashHandleKeyDown(e) {
     switch (e.key || e.keyCode || e.which) {
@@ -231,10 +413,12 @@ var Splash = (function(glob) {
     splashState.frame += 1;
   }
 
+  /* Boss Intro Animation */
+
   const BOSS_INTRO_CANCEL = -1;
   const BOSS_INTRO_MATERIALIZE = 0;
   const BOSS_INTRO_FOCUS = 1;
-  var bossIntroState = {
+  const bossIntroState = Object.seal({
     "canvasOverlay": null,
     "canvasOverlayCtx": null,
     "state": 0,
@@ -261,7 +445,7 @@ var Splash = (function(glob) {
     "canvasHeight": 0,
     "aspect": 0,
     "callback": null
-  };
+  });
 
   function preBossIntro(args) {
     bossIntroState.canvasOverlay = args.canvasOverlay;
@@ -459,6 +643,7 @@ var Splash = (function(glob) {
   }
 
   return {
+    "intro": preIntro,
     "start": preSplash,
     "bossIntro": preBossIntro
   };
