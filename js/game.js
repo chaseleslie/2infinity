@@ -14,94 +14,96 @@
   var point = {"x": 0, "y": 0, "z": 0};
   var zProjection = 1;
   var aspect = canvas.width / canvas.height;
-  canvas.style.width = `${window.innerWidth}px`;
-  canvas.style.height = `${window.innerHeight}px`;
-  canvasOverlay.style.width = `${window.innerWidth}px`;
-  canvasOverlay.style.height = `${window.innerHeight}px`;
 
-  const KEY_MAP = {
-    "ArrowLeft": 37,
-    "Left": 37,
-    "a": 37,
-    "ArrowUp": 38,
-    "Up": 38,
-    "w": 38,
+  const KEY_MAP = Object.freeze({
+    "ArrowLeft":  37,
+    "Left":       37,
+    "a":          37,
+    "ArrowUp":    38,
+    "Up":         38,
+    "w":          38,
     "ArrowRight": 39,
-    "Right": 39,
-    "d": 39,
-    "ArrowDown": 40,
-    "Down": 40,
-    "s": 40,
+    "Right":      39,
+    "d":          39,
+    "ArrowDown":  40,
+    "Down":       40,
+    "s":          40,
 
-    "c": 99,
-    "m": 109,
-    "Escape": 27,
-    "Tab": 9,
-    "Alt": 18,
-    "F5": 116,
-    " ": 32
-  };
+    "c":          99,
+    "m":          109,
+    "Escape":     27,
+    "Tab":        9,
+    "Alt":        18,
+    "F5":         116,
+    " ":          32
+  });
 
-  var defaultFontSize = 32;
-  canvasOverlay.style.top = canvas.offsetTop;
-  canvasOverlay.style.left = canvas.offsetLeft;
+  const defaultFontSize = 32;
   canvasOverlayCtx.fillStyle = "#FFF";
   canvasOverlayCtx.font = `${defaultFontSize}px sans-serif`;
-  var canvasOverlayProps = {
-    "canvasOverlayFont": `${defaultFontSize}px monospace`,
-    "scoreTemplateStr": "Score: 000000",
-    "scoreTemplateStrProps": null,
+  var canvasOverlayProps = Object.seal({
+    "canvasOverlayFont":      `${defaultFontSize}px monospace`,
+    "scoreTemplateStr":       "Score: 000000",
+    "scoreTemplateStrProps":  null,
     "scoreTemplateNumDigits": 6,
-    "fpsTemplateStr": "fps: 0000",
-    "fpsTemplateStrProps": null,
-    "fpsTemplateNumDigits": 4,
-    "hpWidthScale": 0.125, // 1 / 8
-    "hpHeightScale": 0.022222222222 // 1 / 45
-  };
+    "fpsTemplateStr":         "fps: 0000",
+    "fpsTemplateStrProps":    null,
+    "fpsTemplateNumDigits":   4,
+    "hpWidthScale":           0.125, // 1 / 8
+    "hpHeightScale":          0.022222222222 // 1 / 45
+  });
   canvasOverlayCtx.save();
   canvasOverlayCtx.font = canvasOverlayProps.canvasOverlayFont;
   canvasOverlayProps.scoreTemplateStrProps = canvasOverlayCtx.measureText(canvasOverlayProps.scoreTemplateStr);
   canvasOverlayProps.fpsTemplateStrProps = canvasOverlayCtx.measureText(canvasOverlayProps.fpsTemplateStr);
   canvasOverlayCtx.restore();
 
-  const OVERLAY_INCREMENT = 0b0000001;
-  const OVERLAY_DECREMENT = 0b0000010;
-  const OVERLAY_SCORE_DIRTY = 0b00000100;
-  const OVERLAY_HP_DIRTY = 0b00001000;
-  const OVERLAY_FPS_DIRTY = 0b00010000;
-  const OVERLAY_BOSS_NAME_DIRTY = 0b000100000;
-  const OVERLAY_BOSS_HP_DIRTY = 0b01000000;
+  const OverlayFlags = Object.freeze({
+    "INCREMENT":       0b00000001,
+    "DECREMENT":       0b00000010,
+    "SCORE_DIRTY":     0b00000100,
+    "HP_DIRTY":        0b00001000,
+    "FPS_DIRTY":       0b00010000,
+    "BOSS_NAME_DIRTY": 0b00100000,
+    "BOSS_HP_DIRTY":   0b01000000
+  });
 
-  const LEVEL_INTRO = 0;
-  const LEVEL_PLAYING = 1;
-  const LEVEL_END = 2;
-  const LEVEL_BOSS_INTRO = 3;
-  const LEVEL_BOSS = 4;
-  const LEVEL_GAME_OVER = 5;
+  const LevelState = Object.freeze({
+    "INTRO":      0,
+    "PLAYING":    1,
+    "END":        2,
+    "BOSS_INTRO": 3,
+    "BOSS":       4,
+    "GAME_OVER":  5
+  });
 
-  const DIFFICULTY_EASY = 1;
-  const DIFFICULTY_MEDIUM = 2;
-  const DIFFICULTY_HARD = 3;
+  const Difficulty = Object.freeze({
+    "EASY":   1,
+    "MEDIUM": 2,
+    "HARD":   3
+  });
 
-  var difficultyMap = {
-    "prediv": {},
-    "spawnIntervalMult": {}
-  };
-  difficultyMap.prediv[DIFFICULTY_EASY] = 1.0;
-  difficultyMap.prediv[DIFFICULTY_MEDIUM] = 1/2.0;
-  difficultyMap.prediv[DIFFICULTY_HARD] = 1/3.0;
-  difficultyMap.spawnIntervalMult[DIFFICULTY_EASY] = 1;
-  difficultyMap.spawnIntervalMult[DIFFICULTY_MEDIUM] = 0.75;
-  difficultyMap.spawnIntervalMult[DIFFICULTY_HARD] = 0.5;
+  const difficultyMap = Object.freeze({
+    "prediv": Object.freeze({
+      [Difficulty.EASY]:   1.0,
+      [Difficulty.MEDIUM]: 1/2.0,
+      [Difficulty.HARD]:   1/3.0
+    }),
+    "spawnIntervalMult": Object.freeze({
+      [Difficulty.EASY]:   1,
+      [Difficulty.MEDIUM]: 0.75,
+      [Difficulty.HARD]:   0.5
+    })
+  });
 
-  var Game = {
-    "difficulty": DIFFICULTY_EASY,
+  const Game = {
+    "difficulty": Difficulty.EASY,
     "difficultyMap": difficultyMap,
     "aspect": aspect,
     "level": 0,
     "score": 0,
     "timestep": 10,
-    "levelState": LEVEL_INTRO,
+    "levelState": LevelState.INTRO,
     "time": 0,
     "accumulator": 0,
     "frame": 0,
@@ -112,17 +114,16 @@
     "running": false,
     "isMenuShown": false,
     "animFrame": null,
-    // "overlayDirtyFlag": OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY,
-    "overlayState": {
-      "flag": OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY,
+    "overlayState": Object.seal({
+      "flag": OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY,
       "indicatorFrameCountMax": 64,
       "playerIndicatorFrameCount": 0,
       "bossIndicatorFrameCount": 0
-    },
+    }),
     "overlayLastTs": 0,
     "displayFPS": false,
     "muted": false,
-    "keydownMap": {
+    "keydownMap": Object.seal({
       "ArrowLeft": 0,
       "ArrowUp": 0,
       "ArrowRight": 0,
@@ -130,7 +131,7 @@
       "Escape": 0,
       "Shoot": 0,
       "Dive": 0
-    },
+    }),
     "textures": {
       "ship": {
         "tex": null,
@@ -596,7 +597,7 @@
     e.target.classList.toggle("checked");
     e.target.classList.toggle("unchecked");
     Game.displayFPS = !Game.displayFPS;
-    Game.overlayState.flag |= OVERLAY_FPS_DIRTY;
+    Game.overlayState.flag |= OverlayFlags.FPS_DIRTY;
     hideMenu();
     start();
   }
@@ -786,7 +787,7 @@
 
   function start() {
     if (!Game.running) {
-      Game.overlayState.flag |= OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY;
+      Game.overlayState.flag |= OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
       doc.body.addEventListener("keydown", handleKeyDown, false);
       doc.body.addEventListener("keyup", handleKeyUp, false);
       Game.startTs = global.performance.now();
@@ -833,8 +834,8 @@
   }
 
   function main(ts) {
-    if (Game.levelState === LEVEL_INTRO) {
-      Game.levelState = LEVEL_PLAYING;
+    if (Game.levelState === LevelState.INTRO) {
+      Game.levelState = LevelState.PLAYING;
       global.cancelAnimationFrame(Game.animFrame);
       stop();
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -851,9 +852,9 @@
         "text": Game.gameData.levels[Game.level].introText
       });
       return;
-    } else if (Game.levelState === LEVEL_BOSS_INTRO) {
-      Game.levelState = LEVEL_BOSS;
-      Game.overlayState.flag |= OVERLAY_BOSS_HP_DIRTY;
+    } else if (Game.levelState === LevelState.BOSS_INTRO) {
+      Game.levelState = LevelState.BOSS;
+      Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY;
       global.cancelAnimationFrame(Game.animFrame);
       stop();
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -881,6 +882,9 @@
         "text": Game.gameData.levels[Game.level].bossText
       });
       return;
+    } else if (Game.levelState === LevelState.GAME_OVER) {
+      console.log("Game Over");
+      return;
     }
 
     Game.animFrame = global.requestAnimationFrame(main);
@@ -893,7 +897,7 @@
 
     var overlayNeedsUpdating = Boolean(Game.displayFPS);
     if (overlayNeedsUpdating && (ts > Game.overlayLastTs + 1000)) {
-      Game.overlayState.flag |= OVERLAY_FPS_DIRTY;
+      Game.overlayState.flag |= OverlayFlags.FPS_DIRTY;
       Game.overlayLastTs = ts;
     }
 
@@ -919,9 +923,9 @@
   function update(Game, ts, dt) {
     var player = Game.player;
     var enemies = null;
-    if (Game.levelState === LEVEL_PLAYING || Game.levelState === LEVEL_END) {
+    if (Game.levelState === LevelState.PLAYING || Game.levelState === LevelState.END) {
       enemies = Game.enemies;
-    } else if (Game.levelState === LEVEL_BOSS) {
+    } else if (Game.levelState === LevelState.BOSS) {
       enemies = Game.bosses;
     } else {
       return;
@@ -933,8 +937,8 @@
     var playerWeapons = player.weapons;
     for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
       score += playerWeapons[k].update(dt, enemies);
-      if (score && Game.levelState === LEVEL_BOSS) {
-        Game.overlayState.flag |= OVERLAY_BOSS_HP_DIRTY | OVERLAY_DECREMENT;
+      if (score && Game.levelState === LevelState.BOSS) {
+        Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.DECREMENT;
       }
     }
     if (score) {
@@ -951,7 +955,7 @@
       }
       let hitScore = -enemy.update(dt);
       if (hitScore) {
-        Game.overlayState.flag |= OVERLAY_HP_DIRTY | OVERLAY_DECREMENT;
+        Game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
         score += hitScore;
       }
       let hitbox = enemy.hitbox;
@@ -971,7 +975,7 @@
     }
 
     /* Check for player collisions with enemies */
-    if (!playerHitbox.depth && Game.levelState === LEVEL_PLAYING) {
+    if (!playerHitbox.depth && Game.levelState === LevelState.PLAYING) {
       for (let k = 0; k < enemies.length; k += 1) {
         let keepLooping = true;
         let enemy = enemies[k];
@@ -989,10 +993,10 @@
               if (hp <= 0) {
                 restart();
                 keepLooping = false;
-                Game.overlayState.flag = OVERLAY_SCORE_DIRTY | OVERLAY_HP_DIRTY | OVERLAY_FPS_DIRTY;
+                Game.overlayState.flag = OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY | OverlayFlags.FPS_DIRTY;
                 break;
               } else {
-                Game.overlayState.flag |= OVERLAY_HP_DIRTY | OVERLAY_DECREMENT;
+                Game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
               }
               updateScore(Game, -enemy.points);
             }
@@ -1014,15 +1018,15 @@
   }
 
   function updateLevel(Game, ts, enemies) {
-    if (Game.levelState === LEVEL_PLAYING) {
+    if (Game.levelState === LevelState.PLAYING) {
       spawnEnemies(Game, ts);
       if (Game.overlayState.flag) {
         updateWeapon(Game);
       }
       if (Game.score >= Game.gameData.levels[Game.level].scoreGoal) {
-        Game.levelState = LEVEL_END;
+        Game.levelState = LevelState.END;
       }
-    } else if (Game.levelState === LEVEL_END) {
+    } else if (Game.levelState === LevelState.END) {
       let enemiesActive = false;
       for (let k = 0, n = enemies.length; k < n; k += 1) {
         if (enemies[k].active) {
@@ -1032,11 +1036,11 @@
       }
 
       if (!enemiesActive) {
-        Game.levelState = LEVEL_BOSS_INTRO;
-        Game.overlayState.flag |= OVERLAY_BOSS_HP_DIRTY | OVERLAY_INCREMENT;
+        Game.levelState = LevelState.BOSS_INTRO;
+        Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.INCREMENT;
         Game.bosses.push(new Enemy(Game, Game.level, true, true));
       }
-    } else if (Game.levelState === LEVEL_BOSS) {
+    } else if (Game.levelState === LevelState.BOSS) {
       let bossActive = false;
       for (let k = 0, n = enemies.length; k < n; k += 1) {
         if (enemies[k].active) {
@@ -1046,9 +1050,10 @@
       if (!bossActive) {
         if (Game.level < Game.gameData.levels.length - 1) {
           Game.level += 1;
-          Game.levelState = LEVEL_INTRO;
+          Game.levelState = LevelState.INTRO;
+          Game.overlayState.flag = OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
         } else {
-          Game.levelState = LEVEL_GAME_OVER;
+          Game.levelState = LevelState.GAME_OVER;
         }
       }
     }
@@ -1056,7 +1061,7 @@
 
   function updateScore(Game, score) {
     Game.score += score;
-    Game.overlayState.flag |= OVERLAY_SCORE_DIRTY;
+    Game.overlayState.flag |= OverlayFlags.SCORE_DIRTY;
   }
 
   function updateWeapon(Game) {
@@ -1120,7 +1125,7 @@
     ctx.font = canvasOverlayFont;
 
     /* Update score display */
-    if (Game.overlayState.flag & OVERLAY_SCORE_DIRTY) {
+    if (Game.overlayState.flag & OverlayFlags.SCORE_DIRTY) {
       let scoreTemplateStrProps = canvasOverlayProps.scoreTemplateStrProps;
       let scoreTemplateNumDigits = canvasOverlayProps.scoreTemplateNumDigits;
       ctx.save();
@@ -1139,7 +1144,7 @@
     }
 
     /* Update fps display */
-    if (Game.displayFPS && Game.overlayState.flag & OVERLAY_FPS_DIRTY) {
+    if (Game.displayFPS && Game.overlayState.flag & OverlayFlags.FPS_DIRTY) {
       let fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
       let fpsTemplateNumDigits = canvasOverlayProps.fpsTemplateNumDigits;
       ctx.save();
@@ -1162,22 +1167,22 @@
     }
 
     /* Update hitpoints indicator */
-    if (Game.overlayState.flag & OVERLAY_HP_DIRTY || Game.overlayState.flag & OVERLAY_BOSS_HP_DIRTY) {
+    if (Game.overlayState.flag & OverlayFlags.HP_DIRTY || Game.overlayState.flag & OverlayFlags.BOSS_HP_DIRTY) {
       ctx.save();
       let player = null;
       let x = 0;
-      let flag = Game.overlayState.flag & (OVERLAY_HP_DIRTY | OVERLAY_BOSS_HP_DIRTY);
+      let flag = Game.overlayState.flag & (OverlayFlags.HP_DIRTY | OverlayFlags.BOSS_HP_DIRTY);
 
       while (flag) {
         let frameCount = 0;
-        if (flag & OVERLAY_HP_DIRTY) {
+        if (flag & OverlayFlags.HP_DIRTY) {
           x = ctx.lineWidth;
           player = Game.player;
-          flag &= ~OVERLAY_HP_DIRTY;
+          flag &= ~OverlayFlags.HP_DIRTY;
 
-          if (Game.overlayState.flag & OVERLAY_INCREMENT) {
+          if (Game.overlayState.flag & OverlayFlags.INCREMENT) {
             Game.overlayState.playerIndicatorFrameCount = Game.overlayState.indicatorFrameCountMax;
-          } else if (Game.overlayState.flag & OVERLAY_DECREMENT) {
+          } else if (Game.overlayState.flag & OverlayFlags.DECREMENT) {
             Game.overlayState.playerIndicatorFrameCount = -Game.overlayState.indicatorFrameCountMax;
           } else if (Game.overlayState.playerIndicatorFrameCount > 0) {
             Game.overlayState.playerIndicatorFrameCount -= 1;
@@ -1187,16 +1192,16 @@
 
           frameCount = Game.overlayState.playerIndicatorFrameCount;
           if (frameCount) {
-            keepDirtyFlags |= OVERLAY_HP_DIRTY;
+            keepDirtyFlags |= OverlayFlags.HP_DIRTY;
           }
-        } else if (flag & OVERLAY_BOSS_HP_DIRTY) {
+        } else if (flag & OverlayFlags.BOSS_HP_DIRTY) {
           x = ctx.canvas.width - 8 - hpWidth;
           player = Game.bosses[Game.level];
-          flag &= ~OVERLAY_BOSS_HP_DIRTY;
+          flag &= ~OverlayFlags.BOSS_HP_DIRTY;
 
-          if (Game.overlayState.flag & OVERLAY_INCREMENT) {
+          if (Game.overlayState.flag & OverlayFlags.INCREMENT) {
             Game.overlayState.bossIndicatorFrameCount = Game.overlayState.indicatorFrameCountMax;
-          } else if (Game.overlayState.flag & OVERLAY_DECREMENT) {
+          } else if (Game.overlayState.flag & OverlayFlags.DECREMENT) {
             Game.overlayState.bossIndicatorFrameCount = -Game.overlayState.indicatorFrameCountMax;
           } else if (Game.overlayState.bossIndicatorFrameCount > 0) {
             Game.overlayState.bossIndicatorFrameCount -= 1;
@@ -1206,7 +1211,7 @@
 
           frameCount = Game.overlayState.bossIndicatorFrameCount;
           if (frameCount) {
-            keepDirtyFlags |= OVERLAY_BOSS_HP_DIRTY;
+            keepDirtyFlags |= OverlayFlags.BOSS_HP_DIRTY;
           }
         }
 
@@ -1231,9 +1236,9 @@
 
         let y = ctx.lineWidth;
         let w = hpWidth;
-        w = (w % 8) ? w + 8 - w % 8 : w;
+        w = (w % 8) ? (w + 8 - w % 8) : w;
         let h = hpHeight;
-        h = (h % 8) ? h + 8 - h % 8 : h;
+        h = (h % 8) ? (h + 8 - h % 8) : h;
         let d = 10;
         let d2 = 0.5 * d;
         let red = parseInt((1 - percentage) * 0xFF, 10).toString(16);
@@ -1260,7 +1265,7 @@
       ctx.restore();
     }
 
-    // if (Game.overlayState.flag & OVERLAY_BOSS_NAME_DIRTY) {
+    // if (Game.overlayState.flag & OverlayFlags.BOSS_NAME_DIRTY) {
     //
     // }
 
@@ -1274,11 +1279,11 @@
 
     Game.player.draw(gl);
 
-    if (Game.levelState === LEVEL_PLAYING || Game.levelState === LEVEL_END) {
+    if (Game.levelState === LevelState.PLAYING || Game.levelState === LevelState.END) {
       for (let k = 0, n = Game.enemies.length; k < n; k += 1) {
         Game.enemies[k].draw(gl);
       }
-    } else if (Game.levelState === LEVEL_BOSS) {
+    } else if (Game.levelState === LevelState.BOSS) {
       Game.bosses[Game.level].draw(gl);
     }
 
