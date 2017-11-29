@@ -35,7 +35,8 @@
     "Tab":        9,
     "Alt":        18,
     "F5":         116,
-    " ":          32
+    " ":          32,
+    "`":          192
   });
 
   const defaultFontSize = 32;
@@ -399,6 +400,10 @@
         Game.muted = !Game.muted;
         e.preventDefault();
       break;
+      // Backtick
+      case 192:
+
+      break;
     }
     return ret;
   }
@@ -630,11 +635,11 @@
     switch (key || e.which || e.keyCode) {
       // F5 / Alt
       case 116:
-      case "18":
+      case 18:
         keyHandled = false;
       break;
       // Tab
-      case "0x09":
+      case 0x09:
         if (e.altKey) {
           keyHandled = false;
         }
