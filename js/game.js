@@ -1,4 +1,6 @@
-/* global Utils Splash Weapon Player Enemy StarMap */
+/* global Console Utils Splash Weapon Player Enemy StarMap */
+
+"use strict";
 
 (function(win, doc) {
   var global = win;
@@ -6,6 +8,7 @@
   var canvasOverlay = doc.getElementById("glcanvas_overlay");
   var canvasOverlayCtx = canvasOverlay.getContext("2d");
   var gameAudio = doc.getElementById("game_audio");
+  const gameConsole = doc.getElementById("console");
   var menu = doc.getElementById("menu");
   var menuResume = doc.getElementById("menu_resume");
   var menuRestart = doc.getElementById("menu_restart");
@@ -402,7 +405,10 @@
       break;
       // Backtick
       case 192:
-
+      stop();
+      showConsole();
+      e.preventDefault();
+      e.stopPropagation();
       break;
     }
     return ret;
@@ -480,6 +486,18 @@
   global.onbeforeunload = function() {
     saveSettings(Game);
   };
+
+  function showConsole() {
+    canvas.classList.add("inactive");
+    canvasOverlay.classList.add("inactive");
+    Console.show({"callback": hideConsole});
+  }
+
+  function hideConsole() {
+    canvas.classList.remove("inactive");
+    canvasOverlay.classList.remove("inactive");
+    start();
+  }
 
   function onMenuScroll(e) {
     var menuItems = Array.prototype.slice.call(menu.querySelectorAll("menuitem.selectable"));
@@ -1258,6 +1276,11 @@
     for (let k = 0; k < 50; k += 1) {
       Game.enemyWeapons.push(new Weapon(Game, 0, 50, 0, 0, 0, false));
     }
+
+    Console.init({
+      "KEY_MAP": KEY_MAP,
+      "console": gameConsole
+    });
 
     Splash.intro({
       "canvasOverlayCtx": canvasOverlayCtx,
