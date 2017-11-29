@@ -32,7 +32,7 @@ var Splash = (function(glob) {
     "canvasWidth": 0,
     "canvasHeight": 0,
     "aspect": 0,
-    "canvasImageData": null,
+    "hyperspaceBarsImgData": null,
     "callback": null
   };
 
@@ -49,8 +49,8 @@ var Splash = (function(glob) {
   }
 
   function splashEnd() {
-    delete splashState.canvasImageData;
-    splashState.canvasImageData = null;
+    delete splashState.hyperspaceBarsImgData;
+    splashState.hyperspaceBarsImgData = null;
     splashState.img = null;
     splashState.imgImageData = null;
     splashState.imgImageDataOpac = null;
@@ -64,7 +64,7 @@ var Splash = (function(glob) {
   function preSplash(args) {
     splashState.canvasOverlay = args.canvasOverlay;
     splashState.canvasOverlayCtx = args.canvasOverlayCtx;
-    splashState.canvasImageData = args.canvasOverlayCtx.createImageData(
+    splashState.hyperspaceBarsImgData = args.canvasOverlayCtx.createImageData(
       splashState.canvasOverlay.width, splashState.canvasOverlay.height
     );
     splashState.canvasWidth = splashState.canvasOverlay.width;
@@ -86,9 +86,9 @@ var Splash = (function(glob) {
     splashState.moveEndPos = splashState.canvasWidth / 3;
 
     /* Prerender hyperspace bars */
-    for (let k = 0; k < splashState.canvasOverlay.height; k += 1) {
-      for (let iK = 0; iK < splashState.canvasOverlay.width; iK += 1) {
-        let buff = splashState.canvasImageData.data;
+    for (let k = 0, n = splashState.canvasOverlay.height; k < n; k += 1) {
+      for (let iK = 0, iN = splashState.canvasOverlay.width; iK < iN; iK += 1) {
+        let buff = splashState.hyperspaceBarsImgData.data;
         let pixel = k * splashState.canvasOverlay.width * 4 + iK * 4;
         buff[pixel] = 220;
         buff[pixel + 1] = 220;
@@ -182,13 +182,15 @@ var Splash = (function(glob) {
         for (let k = 0, n = splashState.height; k < n; k += 8) {
           let x = 0;
           if (k <= halfHeight) {
-            x = parseInt(left + aspect * k, 10);
+            // x = parseInt(left + aspect * k, 10);
+            x = parseInt(left + 1.25 * aspect * k, 10);
           } else {
-            x = parseInt(left + aspect * (splashState.height - k), 10);
+            // x = parseInt(left + aspect * (splashState.height - k), 10);
+            x = parseInt(left + 1.25 * aspect * (splashState.height - k), 10);
           }
 
           let y = splashState.top + k;
-          ctx.putImageData(splashState.canvasImageData, x, y, 0, 0, splashState.canvasWidth, 1);
+          ctx.putImageData(splashState.hyperspaceBarsImgData, x, y, 0, 0, splashState.canvasWidth, 1);
         }
       }
       break;
@@ -258,7 +260,6 @@ var Splash = (function(glob) {
     "canvasWidth": 0,
     "canvasHeight": 0,
     "aspect": 0,
-    "canvasImageData": null,
     "callback": null
   };
 
@@ -288,9 +289,6 @@ var Splash = (function(glob) {
       bossIntroState.canvasWidth,
       bossIntroState.canvasHeight
     );
-
-// bossIntroState.canvasOverlayCtx.fillStyle = "#AAA";
-// bossIntroState.canvasOverlayCtx.fillRect(0, 0, args.canvasOverlay.width, args.canvasOverlay.height);
 
     /* Get image data from prerendered image */
     var offscreenCanvas = doc.createElement("canvas");
