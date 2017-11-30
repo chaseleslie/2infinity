@@ -40,20 +40,47 @@ function noop() {
 
 function Shell() {
   const Commands = Object.freeze({
-    "setlvl": setLevel,
-    "sethp": setHitpoints
+    "level": {
+      "exec": level,
+      "sub": [
+        "get",
+        "set"
+      ]
+    },
+    "hp": {
+      "exec": hitpoints,
+      "sub": [
+        "get",
+        "set"
+      ]
+    }
   });
   const history = [];
+  var historyIndex = 0;
 
-  function setLevel(args) {
+  function historyBack() {
+    if (historyIndex > 0) {
+      historyIndex -= 1;
+    }
+    return history[historyIndex];
+  }
+
+  function historyForward() {
+    if (historyIndex < history.length) {
+      historyIndex += 1;
+    }
+    return history[historyIndex];
+  }
+
+  function level(args) {
     if (args.length > 1) {
-      console.log("setLevel()", args);
+      console.log("level()", args);
     }
   }
 
-  function setHitpoints(args) {
+  function hitpoints(args) {
     if (args.length > 1) {
-      console.log("setHitpoints()", args);
+      console.log("hitpoints()", args);
     }
   }
 
@@ -63,11 +90,16 @@ function Shell() {
     const args = command.split(" ");
     const cmd = args[0];
     if (Commands[cmd]) {
-      Commands[cmd](args);
+      Commands[cmd].exec(args);
     }
+    historyIndex = history.length;
   }
 
-  return {"interpret": interpret};
+  return {
+    "interpret": interpret,
+    "historyBack": historyBack,
+    "historyForward": historyForward
+  };
 }
 
 function EntryList() {
@@ -120,30 +152,54 @@ function init(args) {
   state.game = args.game;
   state.shell = new Shell();
   state.entryList = new EntryList();
-  state.consoleInputEnter.addEventListener("click", function() {
-    state.shell.interpret(state.consoleInput.value);
-    state.consoleInput.value = "";
-  }, false);
+  state.consoleInputEnter.addEventListener("click", handleInputEnter, false);
+  state.consoleInput.addEventListener("keydown", handleInputKeyDown, false);
 }
 
 function show(args = {"callback": noop}) {
   state.callback = args.callback;
-  global.addEventListener("keydown", handleKeyDown, false);
+  global.addEventListener("keydown", handleWindowKeyDown, false);
   state.console.classList.remove("hidden");
+  state.consoleInput.value = "";
+  state.consoleInput.focus();
 }
 
 function hide() {
-  global.removeEventListener("keydown", handleKeyDown, false);
+  global.removeEventListener("keydown", handleWindowKeyDown, false);
   state.console.classList.add("hidden");
   state.callback();
 }
 
-function handleKeyDown(evt) {
+function handleInputEnter() {
+  state.shell.interpret(state.consoleInput.value);
+  state.consoleInput.value = "";
+  state.consoleInput.focus();
+}
+
+function handleWindowKeyDown(evt) {
   const key = state.KEY_MAP[evt.key];
 
-  switch (key) {
+  switch (key || evt.which || evt.keyCode) {
     case 192:
       hide();
+    break;
+  }
+}
+
+function handleInputKeyDown(evt) {
+  const key = state.KEY_MAP[evt.key];
+
+  switch (key || evt.which || evt.keyCode) {
+    case 13:
+      handleInputEnter();
+    break;
+    // ArrowUp
+    case 38:
+      state.consoleInput.value = state.shell.historyBack() || "";
+    break;
+    // ArrowDown
+    case 40:
+      state.consoleInput.value = state.shell.historyForward() || "";
     break;
   }
 }

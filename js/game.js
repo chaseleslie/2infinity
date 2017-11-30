@@ -3,23 +3,23 @@
 "use strict";
 
 (function(win, doc) {
-  var global = win;
-  var canvas = doc.getElementById("glcanvas");
-  var canvasOverlay = doc.getElementById("glcanvas_overlay");
-  var canvasOverlayCtx = canvasOverlay.getContext("2d");
-  var gameAudio = doc.getElementById("game_audio");
+  const global = win;
+  const canvas = doc.getElementById("glcanvas");
+  const canvasOverlay = doc.getElementById("glcanvas_overlay");
+  const canvasOverlayCtx = canvasOverlay.getContext("2d");
+  const gameAudio = doc.getElementById("game_audio");
   const gameConsole = doc.getElementById("console");
   const gameConsoleEntries = doc.getElementById("console_entries");
   const gameConsoleInput = doc.getElementById("console_input");
   const gameConsoleInputEnter = doc.getElementById("console_input_enter");
-  var menu = doc.getElementById("menu");
-  var menuResume = doc.getElementById("menu_resume");
-  var menuRestart = doc.getElementById("menu_restart");
-  var menuDisplayFPS = doc.getElementById("menu_display_fps");
-  var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-  var point = {"x": 0, "y": 0, "z": 0};
-  var zProjection = 1;
-  var aspect = canvas.width / canvas.height;
+  const menu = doc.getElementById("menu");
+  const menuResume = doc.getElementById("menu_resume");
+  const menuRestart = doc.getElementById("menu_restart");
+  const menuDisplayFPS = doc.getElementById("menu_display_fps");
+  const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+  const point = Object.seal({"x": 0, "y": 0, "z": 0});
+  const zProjection = 1;
+  const aspect = canvas.width / canvas.height;
 
   const KEY_MAP = Object.freeze({
     "ArrowLeft":  37,
@@ -37,6 +37,7 @@
 
     "c":          99,
     "m":          109,
+    "Enter":      13,
     "Escape":     27,
     "Tab":        9,
     "Alt":        18,
