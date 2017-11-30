@@ -9,6 +9,9 @@
   var canvasOverlayCtx = canvasOverlay.getContext("2d");
   var gameAudio = doc.getElementById("game_audio");
   const gameConsole = doc.getElementById("console");
+  const gameConsoleEntries = doc.getElementById("console_entries");
+  const gameConsoleInput = doc.getElementById("console_input");
+  const gameConsoleInputEnter = doc.getElementById("console_input_enter");
   var menu = doc.getElementById("menu");
   var menuResume = doc.getElementById("menu_resume");
   var menuRestart = doc.getElementById("menu_restart");
@@ -328,10 +331,20 @@
     "projectileLastTs": 0
   };
 
+  Console.init({
+    "KEY_MAP": KEY_MAP,
+    "game": Game,
+    "console": gameConsole,
+    "consoleEntries": gameConsoleEntries,
+    "consoleInput": gameConsoleInput,
+    "consoleInputEnter": gameConsoleInputEnter
+  });
+
   var circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
   Game.verticesCircle = circleCoords.vertices;
   Game.textures.circle.coords = [circleCoords.tex];
 
+  Console.debug("Fetching game data");
   Game.gameData = null;
   var gameDataURL = "js/game_data.json";
   gameDataURL += (win.location.hash === "#dev") ? `?ts=${Date.now()}` : "" ;
@@ -344,6 +357,7 @@
         Game.gameData = xhr.response;
         setup(Game, gl);
       } else {
+        Console.error(`Error: fetching game data failed with status ${xhr.status}`);
         console.error(xhr);
       }
     }
@@ -1174,6 +1188,7 @@
     gl.depthFunc(gl.LEQUAL);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    Console.debug("Initializing shaders");
     Game.fragShader = Utils.getShader(gl, "gl_shader_frag");
     Game.vertShader = Utils.getShader(gl, "gl_shader_vert");
     Game.shaderProg = gl.createProgram();
@@ -1182,6 +1197,7 @@
     gl.linkProgram(Game.shaderProg);
     if (!gl.getProgramParameter(Game.shaderProg, gl.LINK_STATUS)) {
       console.log(gl.getProgramInfoLog(Game.shaderProg));
+      Console.error("Error: linking WebGL program");
       return;
     }
 
@@ -1240,6 +1256,8 @@
       texObj.texIdIndex = texIdIndex;
     }
 
+    Console.debug("Initializing textures");
+
     loadTexture(Game.textures.ship, "img_ship", Game.textures.ship.coords, Game.textures.numTextures);
     Game.textures.numTextures += 1;
 
@@ -1276,11 +1294,6 @@
     for (let k = 0; k < 50; k += 1) {
       Game.enemyWeapons.push(new Weapon(Game, 0, 50, 0, 0, 0, false));
     }
-
-    Console.init({
-      "KEY_MAP": KEY_MAP,
-      "console": gameConsole
-    });
 
     Splash.intro({
       "canvasOverlayCtx": canvasOverlayCtx,

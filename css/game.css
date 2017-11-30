@@ -5,12 +5,8 @@ html, body {
   height: 100%;
 }
 
-.hidden {
-  display: none;
-}
-
-.inactive {
-  opacity: 0.7;
+input, textarea, select, button {
+  box-sizing: border-box;
 }
 
 #glcanvas {
@@ -82,6 +78,14 @@ html, body {
   background-position: right;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.inactive {
+  opacity: 0.7 !important;
+}
+
 #console {
   position: absolute;
   z-index: 1000;
@@ -90,5 +94,46 @@ html, body {
   top: 50%;
   left: 50%;
   transform: translateX(-50%) translateY(-50%);
+  display: grid;
+  grid-template-rows: 1fr 14fr 1fr;
   background-color: #AAA;
+  font-size: 16px;
+  color: #D8D8FF;
+}
+
+#console_entries_filter {
+  width: 100%;
+}
+
+#console_entries {
+  overflow-y: scroll;
+  background-color: #2C3044;
+}
+
+#console_input_container {
+  display: grid;
+  grid-template-columns: 9fr 1fr;
+}
+
+#console_input {
+  width: 100%;
+  border: 2px solid #1F1F3F;
+  font-family: monospace;
+  font-size: 16px;
+  background-color: #20202E;
+  color: #D8D8FF;
+}
+
+#console_input_enter {
+  width: 100%;
+  border: 2px solid #1F1F3F;
+  background-color: #2C3044;
+  color: #D8D8FF;
+}
+
+.console_entry {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+  font-family: monospace;
 }

@@ -72,7 +72,14 @@
         <menuitem id="menu_name" class="unselectable"><strong>&lt; <sub>2</sub>Infinity &gt;</strong></menuitem>
       </menu>
     </div>
-    <div id="console" class="hidden"></div>
+    <div id="console" class="hidden">
+      <div id="console_entries_filter"></div>
+      <div id="console_entries"></div>
+      <div id="console_input_container">
+        <input id="console_input" type="text">
+        <button id="console_input_enter">Enter</button>
+      </div>
+    </div>
     <audio id="game_audio" class="hidden" src="sound/blaster.mp3"></audio>
     <img id="img_ship" src="img/ship/ship_sprite.svg" width="1024" height="1024" data-unit-size="512" class="hidden">
     <img id="img_enemy_ship" src="img/enemy/enemy_ship_sprite.svg" width="1024" height="1024" data-unit-size="512" class="hidden">
