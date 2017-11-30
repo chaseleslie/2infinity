@@ -1,4 +1,4 @@
-/* global Console Utils Splash Weapon Player Enemy StarMap */
+/* global Console Utils Splash Weapon Player Enemy Boss StarMap */
 
 "use strict";
 
@@ -844,7 +844,7 @@
         }
 
         let enemyType = 0;
-        enemy.reset(enemyType, false, false);
+        enemy.reset(enemyType, false);
       }
     }
     if (score) {
@@ -915,7 +915,7 @@
       if (!enemiesActive) {
         Game.levelState = LevelState.BOSS_INTRO;
         Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.INCREMENT;
-        Game.bosses.push(new Enemy(Game, Game.level, true, true));
+        Game.bosses.push(new Boss(Game, Game.level, true));
       }
     } else if (Game.levelState === LevelState.BOSS) {
       let bossActive = false;
@@ -977,12 +977,12 @@
           let enemy = Game.enemies[iK];
           if (!enemy.active) {
             foundEnemy = true;
-            enemy.reset(type, false, true);
+            enemy.reset(type, true);
             break;
           }
         }
         if (!foundEnemy) {
-          Game.enemies.push(new Enemy(Game, type, false, true));
+          Game.enemies.push(new Enemy(Game, type, true));
         }
         levelEnemies.lastTs[k] = ts;
       }

@@ -1,4 +1,4 @@
-/* global Physics Utils */
+/* global Physics Utils Weapon */
 /* exported Player */
 
 "use strict";
