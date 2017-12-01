@@ -3,7 +3,7 @@
 
 var Physics = (function() {
 
-  var isArrayLike = Utils.isArrayLike;
+  const isArrayLike = Utils.isArrayLike;
 
   function State(pos, vel) {
     this.position = null;
@@ -159,9 +159,9 @@ var Physics = (function() {
     }
   };
 
-  var zeroedArray = new Float32Array([0, 0, 0]);
-  var freeState = new State(zeroedArray, zeroedArray);
-  var freeDerivs = [
+  const zeroedArray = new Float32Array([0, 0, 0]);
+  const freeState = new State(zeroedArray, zeroedArray);
+  const freeDerivs = [
     new StateDerivative(),
     new StateDerivative(),
     new StateDerivative(),
@@ -169,11 +169,11 @@ var Physics = (function() {
   ];
 
   function evaluateState(stateInitial, t, dt, stateDerivative, outStateDeriv, acc) {
-    var initialPos = stateInitial.position;
-    var initialVel = stateInitial.velocity;
-    var derivVel = stateDerivative.velocity;
-    var derivAcc = stateDerivative.acceleration;
-    var state = freeState;
+    const initialPos = stateInitial.position;
+    const initialVel = stateInitial.velocity;
+    const derivVel = stateDerivative.velocity;
+    const derivAcc = stateDerivative.acceleration;
+    const state = freeState;
 
     state.position[0] = initialPos[0] + derivVel[0] * dt;
     state.position[1] = initialPos[1] + derivVel[1] * dt;
@@ -204,20 +204,20 @@ var Physics = (function() {
     deriv3 = evaluateState(state, t, dt * 0.5, deriv2, deriv3, acc);
     deriv4 = evaluateState(state, t, dt, deriv3, deriv4, acc);
 
-    var vel1 = deriv1.velocity;
-    var vel2 = deriv2.velocity;
-    var vel3 = deriv3.velocity;
-    var vel4 = deriv4.velocity;
-    var statePos = state.position;
+    const vel1 = deriv1.velocity;
+    const vel2 = deriv2.velocity;
+    const vel3 = deriv3.velocity;
+    const vel4 = deriv4.velocity;
+    const statePos = state.position;
     statePos[0] += (1.0 / 6 * (vel1[0] + 2 * (vel2[0] + vel3[0]) + vel4[0])) * dt;
     statePos[1] += (1.0 / 6 * (vel1[1] + 2 * (vel2[1] + vel3[1]) + vel4[1])) * dt;
     statePos[2] += (1.0 / 6 * (vel1[2] + 2 * (vel2[2] + vel3[2]) + vel4[2])) * dt;
 
-    var acc1 = deriv1.acceleration;
-    var acc2 = deriv2.acceleration;
-    var acc3 = deriv3.acceleration;
-    var acc4 = deriv4.acceleration;
-    var stateVel = state.velocity;
+    const acc1 = deriv1.acceleration;
+    const acc2 = deriv2.acceleration;
+    const acc3 = deriv3.acceleration;
+    const acc4 = deriv4.acceleration;
+    const stateVel = state.velocity;
     stateVel[0] += (1.0 / 6 * (acc1[0] + 2 * (acc2[0] + acc3[0]) + acc4[0])) * dt;
     stateVel[1] += (1.0 / 6 * (acc1[1] + 2 * (acc2[1] + acc3[1]) + acc4[1])) * dt;
     stateVel[2] += (1.0 / 6 * (acc1[2] + 2 * (acc2[2] + acc3[2]) + acc4[2])) * dt;

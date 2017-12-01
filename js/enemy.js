@@ -3,10 +3,9 @@
 
 "use strict";
 
-var global = window;
-
 function Enemy(game, type, isActive) {
-  const isEven = () => (global.performance.now()|0) % 2;
+  const global = window;
+  const stepFn = () => Utils.getRandomInt(0, 1);
   const aspect = game.aspect;
   var enemyData = game.gameData.enemies[type];
   var velocity = enemyData.velocity;
@@ -20,7 +19,7 @@ function Enemy(game, type, isActive) {
   var prune = 0;
   const showDestroyedFrames = 8;
   var active = isActive || false;
-  const verticalPos = (isEven() ? 1 : -1) * Math.random() * (1 - game.modelScale);
+  const verticalPos = (stepFn() ? 1 : -1) * Math.random() * (1 - game.modelScale);
   const horizontalPos = 1.10;
   const depthPos = 0.0;
   const vertices = [
@@ -287,6 +286,7 @@ function Enemy(game, type, isActive) {
 }
 
 function Boss(game, type, isActive) {
+  const global = window;
   const aspect = game.aspect;
   var enemyData = game.gameData.bosses[type];
   var velocity = enemyData.velocity;

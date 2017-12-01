@@ -4,7 +4,7 @@
 "use strict";
 
 function Player(game, aspect) {
-  var maxHp = 1000;
+  const maxHp = 1000;
   var hp = maxHp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
   const velocityDefault = 0.0006;
@@ -25,41 +25,41 @@ function Player(game, aspect) {
   const animMovementMax = rollingMax;
   var animMovementCount = 0;
 
-  var weapons = [];
+  const weapons = [];
   var weaponSelected = 0;
-  var projCount = 50;
-  var projDir = 0;
-  var startPos = {x: -0.5, y: 0.0, z: 0.0};
-  var vertices = [
+  const projCount = 50;
+  const projDir = 0;
+  const startPos = {x: -0.5, y: 0.0, z: 0.0};
+  const vertices = [
     new Float32Array(3),
     new Float32Array(3),
     new Float32Array(3)
   ];
-  var state = new Physics.State(
+  const state = new Physics.State(
     [startPos.x, startPos.y, startPos.z],
     [0, 0, 0]
   );
 
   for (let k = 0; k < game.gameData.weapons.length; k += 1) {
-    let weapon = game.gameData.weapons[k];
+    const weapon = game.gameData.weapons[k];
     weapons.push(new Weapon(game, k, projCount, projDir, null, weapon.texType));
   }
 
-  var translateVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
-  var rotations = {"x": 0, "y": 0, "z": 0};
-  var scales = {
+  const translateVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
+  const rotations = {"x": 0, "y": 0, "z": 0};
+  const scales = {
     "x": game.modelScale / aspect,
     "y": game.modelScale,
     "z": game.modelScale / aspect
   };
-  var mvUniformMatrix = Utils.modelViewMatrix(
+  const mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
     translateVec,
     rotations,
     scales
   );
 
-  var hitbox = {
+  const hitbox = {
     "left": 0,
     "right": 0,
     "top": 0,
@@ -73,7 +73,7 @@ function Player(game, aspect) {
     state.velocity[1] = 0;
     state.velocity[2] = 0;
 
-    var trans = translateVec;
+    const trans = translateVec;
 
     trans.x = state.position[0];
     trans.y = state.position[1];
@@ -111,20 +111,20 @@ function Player(game, aspect) {
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     for (let k = 0; k < weapons.length; k += 1) {
-      let weapon = weapons[k];
+      const weapon = weapons[k];
       weapon.draw(gl);
     }
   };
   this.update = function(dt) {
-    var arrowLeft = game.keydownMap["ArrowLeft"];
-    var arrowUp = game.keydownMap["ArrowUp"];
-    var arrowRight = game.keydownMap["ArrowRight"];
-    var arrowDown = game.keydownMap["ArrowDown"];
-    var dive = game.keydownMap["Dive"];
-    var rot = rotations;
+    const cos = Math.cos;
+    const sin = Math.sin;
+    const arrowLeft = game.keydownMap["ArrowLeft"];
+    const arrowUp = game.keydownMap["ArrowUp"];
+    const arrowRight = game.keydownMap["ArrowRight"];
+    const arrowDown = game.keydownMap["ArrowDown"];
+    const dive = game.keydownMap["Dive"];
+    const rot = rotations;
     var isMoving = false;
-    var cos = Math.cos;
-    var sin = Math.sin;
 
     if (arrowLeft && !arrowRight) {
       state.velocity[0] = -velocity;
@@ -190,22 +190,22 @@ function Player(game, aspect) {
 
     /* Clamp player to viewport */
     if (arrowLeft) {
-      let left = getPositionLeft();
+      const left = getPositionLeft();
       if (left < -1.0) {
-        let vertTri = game.verticesTriangle;
-        let p1 = -vertTri[0] * scales.x * cos(rot.y) * cos(rot.z);
-        let p2 = -vertTri[1] * scales.y * (cos(rot.x) * sin(rot.z) + sin(rot.x) * sin(rot.z));
-        let p3 = vertTri[2] * scales.z * (cos(rot.x) * cos(rot.z) * sin(rot.y) - sin(rot.x) * sin(rot.z));
+        const vertTri = game.verticesTriangle;
+        const p1 = -vertTri[0] * scales.x * cos(rot.y) * cos(rot.z);
+        const p2 = -vertTri[1] * scales.y * (cos(rot.x) * sin(rot.z) + sin(rot.x) * sin(rot.z));
+        const p3 = vertTri[2] * scales.z * (cos(rot.x) * cos(rot.z) * sin(rot.y) - sin(rot.x) * sin(rot.z));
         state.position[0] = p1 + p2 + p3 - 1;
       }
     }
     if (arrowUp) {
-      let top = getPositionTop();
+      const top = getPositionTop();
       if (top > 1.0) {
-        let vertTri = game.verticesTriangle;
-        let p1 = vertTri[0] * scales.x * cos(rot.y) * sin(rot.z);
-        let p2 = vertTri[1] * scales.y * (sin(rot.x) * sin(rot.y) * sin(rot.z) - cos(rot.x) * cos(rot.z));
-        let p3 = -vertTri[2] * scales.z * (cos(rot.x) * sin(rot.y) * sin(rot.z) + cos(rot.z) * sin(rot.x));
+        const vertTri = game.verticesTriangle;
+        const p1 = vertTri[0] * scales.x * cos(rot.y) * sin(rot.z);
+        const p2 = vertTri[1] * scales.y * (sin(rot.x) * sin(rot.y) * sin(rot.z) - cos(rot.x) * cos(rot.z));
+        const p3 = -vertTri[2] * scales.z * (cos(rot.x) * sin(rot.y) * sin(rot.z) + cos(rot.z) * sin(rot.x));
         state.position[1] = p1 + p2 + p3 + 1;
       }
 
@@ -215,22 +215,22 @@ function Player(game, aspect) {
       }
     }
     if (arrowRight) {
-      let right = getPositionRight();
+      const right = getPositionRight();
       if (right > 1.0) {
-        let vertTri = game.verticesTriangle;
-        let p1 = -vertTri[3] * scales.x * cos(rot.y) * cos(rot.z);
-        let p2 = -vertTri[4] * scales.y * (cos(rot.x) * sin(rot.z) + sin(rot.x) * sin(rot.z));
-        let p3 = vertTri[5] * scales.z * (cos(rot.x) * cos(rot.z) * sin(rot.y) - sin(rot.x) * sin(rot.z));
+        const vertTri = game.verticesTriangle;
+        const p1 = -vertTri[3] * scales.x * cos(rot.y) * cos(rot.z);
+        const p2 = -vertTri[4] * scales.y * (cos(rot.x) * sin(rot.z) + sin(rot.x) * sin(rot.z));
+        const p3 = vertTri[5] * scales.z * (cos(rot.x) * cos(rot.z) * sin(rot.y) - sin(rot.x) * sin(rot.z));
         state.position[0] = p1 + p2 + p3 + 1;
       }
     }
     if (arrowDown) {
-      let bottom = getPositionBottom();
+      const bottom = getPositionBottom();
       if (bottom < -1.0) {
-        let vertTri = game.verticesTriangle;
-        let p1 = vertTri[6] * scales.x * cos(rot.y) * sin(rot.z);
-        let p2 = vertTri[7] * scales.y * (sin(rot.x) * sin(rot.y) * sin(rot.z) - cos(rot.x) * cos(rot.z));
-        let p3 = -vertTri[8] * scales.z * (cos(rot.x) * sin(rot.y) * sin(rot.z) + cos(rot.z) * sin(rot.x));
+        const vertTri = game.verticesTriangle;
+        const p1 = vertTri[6] * scales.x * cos(rot.y) * sin(rot.z);
+        const p2 = vertTri[7] * scales.y * (sin(rot.x) * sin(rot.y) * sin(rot.z) - cos(rot.x) * cos(rot.z));
+        const p3 = -vertTri[8] * scales.z * (cos(rot.x) * sin(rot.y) * sin(rot.z) + cos(rot.z) * sin(rot.x));
         state.position[1] = p1 + p2 + p3 - 1;
       }
 
@@ -254,23 +254,27 @@ function Player(game, aspect) {
       texCoordsBufferIndex = game.textures.ship.SHIP_IDLE;
     }
   };
+
   this.takeHit = function(points) {
     hp -= dmgRate * points;
     return points;
   };
+
   this.fireWeapon = function(ts, dt) {
-    var weapon = weapons[weaponSelected];
+    const weapon = weapons[weaponSelected];
     var fired = false;
     if (!pitching) {
       fired = weapon.fireWeapon(ts, dt, projDir, getHitbox());
     }
     return fired;
   };
+
   this.selectWeapon = function(weapon) {
     weaponSelected = weapon;
   };
+
   this.containsPointHitbox = function(point) {
-    var hitbox = getHitbox();
+    const hitbox = getHitbox();
     return (
       (point.x >= hitbox.left) &&
       (point.x <= hitbox.right) &&
@@ -278,22 +282,24 @@ function Player(game, aspect) {
       (point.y >= hitbox.bottom)
     );
   };
+
   this.containsPoint = function(point) {
     //Parametric equations solution
-    var pos = getPosition();
-    var p1 = pos[0], p2 = pos[1], p3 = pos[2];
-    var denom = (p2[1] - p3[1])*(p1[0] - p3[0]) + (p3[0] - p2[0])*(p1[1] - p3[1]);
-    var a = ((p2[1] - p3[1])*(point.x - p3[0]) + (p3[0] - p2[0])*(point.y - p3[1])) / denom;
-    var b = ((p3[1] - p1[1])*(point.x - p3[0]) + (p1[0] - p3[0])*(point.y - p3[1])) / denom;
-    var c = 1 - a - b;
+    const pos = getPosition();
+    const p1 = pos[0], p2 = pos[1], p3 = pos[2];
+    const denom = (p2[1] - p3[1])*(p1[0] - p3[0]) + (p3[0] - p2[0])*(p1[1] - p3[1]);
+    const a = ((p2[1] - p3[1])*(point.x - p3[0]) + (p3[0] - p2[0])*(point.y - p3[1])) / denom;
+    const b = ((p3[1] - p1[1])*(point.x - p3[0]) + (p1[0] - p3[0])*(point.y - p3[1])) / denom;
+    const c = 1 - a - b;
     return (
       (0 <= a && a <= 1) &&
       (0 <= b && b <= 1) &&
       (0 <= c && c <= 1)
     );
   };
+
   this.intersectsWith = function(rect) {
-    var hitbox = getHitbox();
+    const hitbox = getHitbox();
     return (
       (rect.left < hitbox.right) &&
       (hitbox.left < rect.right) &&
@@ -304,22 +310,22 @@ function Player(game, aspect) {
 
   function getPosition() {
     //  |>
-    var tri = game.verticesTriangleSub;
-    var vert1 = tri[0];
-    var vert2 = tri[1];
-    var vert3 = tri[2];
+    const tri = game.verticesTriangleSub;
+    const vert1 = tri[0];
+    const vert2 = tri[1];
+    const vert3 = tri[2];
 
-    var p1 = Utils.matrixMultiplyPoint(
+    const p1 = Utils.matrixMultiplyPoint(
       game.pUniformMatrix,
       Utils.matrixMultiplyPoint(mvUniformMatrix, vert1, vertices[0]),
       vertices[0]
     );
-    var p2 = Utils.matrixMultiplyPoint(
+    const p2 = Utils.matrixMultiplyPoint(
       game.pUniformMatrix,
       Utils.matrixMultiplyPoint(mvUniformMatrix, vert2, vertices[1]),
       vertices[1]
     );
-    var p3 = Utils.matrixMultiplyPoint(
+    const p3 = Utils.matrixMultiplyPoint(
       game.pUniformMatrix,
       Utils.matrixMultiplyPoint(mvUniformMatrix, vert3, vertices[2]),
       vertices[2]
@@ -335,38 +341,43 @@ function Player(game, aspect) {
     vertices[2][2] = p3[2];
     return vertices;
   }
+
   function getPositionLeft() {
-    var tri = game.verticesTriangle;
-    var x = tri[0], y = tri[1], z = tri[2], w = 1;
-    var mvm = mvUniformMatrix;
-    var c1r1 = mvm[0], c1r2 = mvm[4], c1r3 = mvm[8], c1r4 = mvm[12];
+    const tri = game.verticesTriangle;
+    const x = tri[0], y = tri[1], z = tri[2], w = 1;
+    const mvm = mvUniformMatrix;
+    const c1r1 = mvm[0], c1r2 = mvm[4], c1r3 = mvm[8], c1r4 = mvm[12];
 
     return (x*c1r1 + y*c1r2 + z*c1r3 + w*c1r4) * game.pUniformMatrix[0];
   }
+
   function getPositionRight() {
-    var tri = game.verticesTriangle;
-    var x = tri[3], y = tri[4], z = tri[5], w = 1;
-    var mvm = mvUniformMatrix;
-    var c1r1 = mvm[0], c1r2 = mvm[4], c1r3 = mvm[8], c1r4 = mvm[12];
+    const tri = game.verticesTriangle;
+    const x = tri[3], y = tri[4], z = tri[5], w = 1;
+    const mvm = mvUniformMatrix;
+    const c1r1 = mvm[0], c1r2 = mvm[4], c1r3 = mvm[8], c1r4 = mvm[12];
 
     return (x*c1r1 + y*c1r2 + z*c1r3 + w*c1r4) * game.pUniformMatrix[0];
   }
+
   function getPositionTop() {
-    var tri = game.verticesTriangle;
-    var x = tri[0], y = tri[1], z = tri[2], w = 1;
-    var mvm = mvUniformMatrix;
-    var c2r1 = mvm[1], c2r2 = mvm[5], c2r3 = mvm[9], c2r4 = mvm[13];
+    const tri = game.verticesTriangle;
+    const x = tri[0], y = tri[1], z = tri[2], w = 1;
+    const mvm = mvUniformMatrix;
+    const c2r1 = mvm[1], c2r2 = mvm[5], c2r3 = mvm[9], c2r4 = mvm[13];
 
     return (x*c2r1 + y*c2r2 + z*c2r3 + w*c2r4) * game.pUniformMatrix[0];
   }
+
   function getPositionBottom() {
-    var tri = game.verticesTriangle;
-    var x = tri[6], y = tri[7], z = tri[8], w = 1;
-    var mvm = mvUniformMatrix;
-    var c2r1 = mvm[1], c2r2 = mvm[5], c2r3 = mvm[9], c2r4 = mvm[13];
+    const tri = game.verticesTriangle;
+    const x = tri[6], y = tri[7], z = tri[8], w = 1;
+    const mvm = mvUniformMatrix;
+    const c2r1 = mvm[1], c2r2 = mvm[5], c2r3 = mvm[9], c2r4 = mvm[13];
 
     return (x*c2r1 + y*c2r2 + z*c2r3 + w*c2r4) * game.pUniformMatrix[0];
   }
+
   function getHitbox() {
     hitbox.left = getPositionLeft();
     hitbox.right = getPositionRight();

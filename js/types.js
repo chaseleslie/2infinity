@@ -4,7 +4,7 @@
 "use strict";
 
 function StarMap(game, numStars) {
-  var stars = [];
+  const stars = [];
   numStars = numStars || 256;
   for (let k = 0; k < numStars; k += 1) {
     stars.push(new Star(game));
@@ -12,13 +12,13 @@ function StarMap(game, numStars) {
 
   this.draw = function(gl) {
     for (let k = 0; k < numStars; k += 1) {
-      let star = stars[k];
+      const star = stars[k];
       star.draw(gl);
     }
   };
   this.update = function(dt) {
     for (let k = 0; k < numStars; k += 1) {
-      let star = stars[k];
+      const star = stars[k];
       star.update(dt);
       if (star.offScreen) {
         star.reset();
@@ -28,29 +28,28 @@ function StarMap(game, numStars) {
 }
 
 function Star(game) {
-  var depths = [0.8, 0.9, 1.0];
-  var speedAndDepth = Math.floor(Math.random() * depths.length);
-  var scale = 12;
-  var scaleBounds = scale / 4;
-  var xScale = game.modelScale / (scale * 2);
-  var yScale = game.modelScale / scale;
-  var zScale = game.modelScale / scale;
-  var verticalPos = Math.random() * (scaleBounds - yScale);
-  verticalPos = (Math.round(Math.random()) % 2) ? -verticalPos : verticalPos;
-  var horizontalPos = (scaleBounds - xScale) * Math.random();
-  horizontalPos = (Math.round(Math.random()) % 2) ? -horizontalPos : horizontalPos ;
-  var depthPos = depths[speedAndDepth];
-  var speeds = [
+  const stepFn = () => Utils.getRandomInt(0, 1);
+  const depths = [0.8, 0.9, 1.0];
+  const speedAndDepth = Math.floor(Math.random() * depths.length);
+  const scale = 12;
+  const scaleBounds = scale / 4;
+  const xScale = game.modelScale / (scale * 2);
+  const yScale = game.modelScale / scale;
+  const zScale = game.modelScale / scale;
+  var verticalPos = (stepFn() ? 1 : -1) * Math.random() * (scaleBounds - yScale);
+  var horizontalPos = (stepFn() ? 1 : -1) * (scaleBounds - xScale) * Math.random();
+  const depthPos = depths[speedAndDepth];
+  const speeds = [
     0.0001, 0.00005, 0.00002
   ];
-  var speed = speeds[speedAndDepth];
-  var state = new Physics.State(
+  const speed = speeds[speedAndDepth];
+  const state = new Physics.State(
     [horizontalPos, verticalPos, depthPos],
     [-speed, 0, 0]
   );
   var texCoordsBufferIndex = 0;
 
-  var mvUniformMatrix = Utils.modelViewMatrix(
+  const mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
     {"x": horizontalPos, "y": verticalPos, "z": depthPos},
     {"x": 0, "y": 0, "z": 0},
@@ -58,8 +57,7 @@ function Star(game) {
   );
 
   this.reset = function() {
-    verticalPos = Math.random() * (scaleBounds - yScale);
-    verticalPos = (Math.round(Math.random()) % 2) ? -verticalPos : verticalPos;
+    verticalPos = (stepFn() ? 1 : -1) * Math.random() * (scaleBounds - yScale);
     horizontalPos = 1 + scale/4 + Math.random() * xScale;
 
     state.position[0] = horizontalPos;
@@ -73,6 +71,7 @@ function Star(game) {
     mvUniformMatrix[14] = depthPos;
     mvUniformMatrix[15] = 1;
   };
+
   this.draw = function(gl) {
     gl.activeTexture(game.textures.star.texId);
     gl.bindTexture(gl.TEXTURE_2D, game.textures.star.tex);
@@ -87,6 +86,7 @@ function Star(game) {
 
     gl.bindTexture(gl.TEXTURE_2D, null);
   };
+
   this.update = function(dt) {
     Physics.integrateState(state, game.time, dt);
     mvUniformMatrix[12] = state.position[0];
@@ -100,6 +100,7 @@ function Star(game) {
 
     return (x*c1r1 + y*c1r2 + z*c1r3 + w*c1r4) * game.pUniformMatrix[0];
   }
+
   function offScreen() {
     return getPositionRight() < -scaleBounds;
   }
