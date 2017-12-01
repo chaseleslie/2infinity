@@ -2,37 +2,37 @@
 
 var Utils = (function(glob) {
 
-  const global = glob;
-  const cos = Math.cos;
-  const sin = Math.sin;
-  const identityMatrix = new Float32Array([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1
-  ]);
-  const randArr = new Uint8Array(32);
+const global = glob;
+const cos = Math.cos;
+const sin = Math.sin;
+const identityMatrix = new Float32Array([
+  1, 0, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 1
+]);
+const randArr = new Uint8Array(32);
 
-  function ExponentialAverage(alpha, initVal) {
-    alpha = alpha || 0.5;
-    var avg = initVal || 0;
+function ExponentialAverage(alpha, initVal) {
+  alpha = alpha || 0.5;
+  var avg = initVal || 0;
 
-    function setAlpha(a) {
-      if (typeof a === "number" || a instanceof Number) {
-        if (a >= 0 && a <= 1) {
-          alpha = parseFloat(a);
-        }
+  function setAlpha(a) {
+    if (typeof a === "number" || a instanceof Number) {
+      if (a >= 0 && a <= 1) {
+        alpha = parseFloat(a);
       }
     }
-
-    function update(val) {
-      avg = alpha * val + (1 - alpha) * avg;
-    }
-
-    Object.defineProperty(this, "alpha", {get: function() {return alpha;}, set: setAlpha});
-    Object.defineProperty(this, "average", {get: function() {return avg;}});
-    this.update = update;
   }
+
+  function update(val) {
+    avg = alpha * val + (1 - alpha) * avg;
+  }
+
+  Object.defineProperty(this, "alpha", {get: function() {return alpha;}, set: setAlpha});
+  Object.defineProperty(this, "average", {get: function() {return avg;}});
+  this.update = update;
+}
 
 function getShader(gl, id, type) {
   const shaderScript = document.getElementById(id);
