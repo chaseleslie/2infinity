@@ -31,7 +31,7 @@
 
   "bosses": [
     {
-      "velocity": 0.00015,
+      "velocity": 0.00025,
       "modelScales": [2, 2, 2],
       "hitPoints": 2000,
       "spawnIntervalMult": 1,
@@ -42,11 +42,11 @@
       "spritePos": [0, 0]
     },
     {
-      "velocity": 0.00025,
+      "velocity": 0.00030,
       "modelScales": [2, 2, 2],
       "hitPoints": 2500,
       "spawnIntervalMult": 1,
-      "weapon": 2,
+      "weapon": 3,
       "coolDownMult": 0.1,
       "texType": 1,
       "spawnPos": [0.5, 0, 0],
@@ -72,6 +72,12 @@
       "projectileCount": 2,
       "projectileType": 2,
       "projectileDeltaAngle": 0.09817477042468103
+    },
+    {
+      "texType": 2,
+      "projectileCount": 3,
+      "projectileType": 2,
+      "projectileDeltaAngle": 0.04908738521234052
     }
   ],
 

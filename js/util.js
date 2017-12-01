@@ -2,44 +2,45 @@
 
 var Utils = (function(glob) {
 
-  var global = glob;
-  var cos = Math.cos;
-  var sin = Math.sin;
-  var identityMatrix = new Float32Array([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1
-  ]);
+const global = glob;
+const cos = Math.cos;
+const sin = Math.sin;
+const identityMatrix = new Float32Array([
+  1, 0, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 1
+]);
+const randArr = new Uint8Array(32);
 
-  function ExponentialAverage(alpha, initVal) {
-    alpha = alpha || 0.5;
-    var avg = initVal || 0;
+function ExponentialAverage(alpha, initVal) {
+  alpha = alpha || 0.5;
+  var avg = initVal || 0;
 
-    function setAlpha(a) {
-      if (typeof a === "number" || a instanceof Number) {
-        if (a >= 0 && a <= 1) {
-          alpha = parseFloat(a);
-        }
+  function setAlpha(a) {
+    if (typeof a === "number" || a instanceof Number) {
+      if (a >= 0 && a <= 1) {
+        alpha = parseFloat(a);
       }
     }
-
-    function update(val) {
-      avg = alpha * val + (1 - alpha) * avg;
-    }
-
-    Object.defineProperty(this, "alpha", {get: function() {return alpha;}, set: setAlpha});
-    Object.defineProperty(this, "average", {get: function() {return avg;}});
-    this.update = update;
   }
 
+  function update(val) {
+    avg = alpha * val + (1 - alpha) * avg;
+  }
+
+  Object.defineProperty(this, "alpha", {get: function() {return alpha;}, set: setAlpha});
+  Object.defineProperty(this, "average", {get: function() {return avg;}});
+  this.update = update;
+}
+
 function getShader(gl, id, type) {
-  var shaderScript = document.getElementById(id);
+  const shaderScript = document.getElementById(id);
   if (!shaderScript) {
     return null;
   }
 
-  var shaderSource = shaderScript.text;
+  const shaderSource = shaderScript.text;
 
   if (!type) {
     if (shaderScript.type === "x-shader/x-fragment") {
@@ -51,7 +52,7 @@ function getShader(gl, id, type) {
     }
   }
 
-  var shader = gl.createShader(type);
+  const shader = gl.createShader(type);
   gl.shaderSource(shader, shaderSource);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -62,13 +63,12 @@ function getShader(gl, id, type) {
   return shader;
 }
 
-var randArr = new Uint8Array(32);
 function getRandomInt(min, max) {
   max += 1;
-  var range = max - min;
+  const range = max - min;
   if (typeof global.crypto === "object" && typeof global.crypto.getRandomValues === "function") {
-    let numBytes = Math.ceil(Math.log2(range) / 8);
-    let maxNum = Math.pow(256, numBytes);
+    const numBytes = Math.ceil(Math.log2(range) / 8);
+    const maxNum = Math.pow(256, numBytes);
     let val = 0;
     let flag = true;
 
@@ -94,18 +94,18 @@ function mapValue(val, x1, y1, x2, y2) {
 
 function createCircleVertices(centerVertex, numPoints, radius) {
   radius = (typeof radius === "number") ? radius : 1;
-  var vertices = [];
-  var tex = [];
-  var x0 = centerVertex.x;
-  var y0 = centerVertex.y;
-  var z0 = centerVertex.z;
-  var pi = (360 / numPoints) * DEG2RAD;
+  const vertices = [];
+  const tex = [];
+  const x0 = centerVertex.x;
+  const y0 = centerVertex.y;
+  const z0 = centerVertex.z;
+  const pi = (360 / numPoints) * DEG2RAD;
   var x1 = x0 + 1;
   var y1 = y0;
-  var xmax = x0 + radius;
-  var xmin = x0 - radius;
-  var ymax = y0 + radius;
-  var ymin = y0 - radius;
+  const xmax = x0 + radius;
+  const xmin = x0 - radius;
+  const ymax = y0 + radius;
+  const ymin = y0 - radius;
 
   for (let k = 0; k <= numPoints; k += 1) {
     vertices.push(x0);
@@ -137,16 +137,16 @@ function createCircleVertices(centerVertex, numPoints, radius) {
 
 function fetchURL(opts) {
   opts = opts || {};
-  var method = opts.method || "GET";
-  var url = opts.url || opts.uri || "";
-  var callback = opts.callback || opts.cb || null;
-  var msg = opts.message || opts.msg || opts.payload || null;
+  const method = opts.method || "GET";
+  const url = opts.url || opts.uri || "";
+  const callback = opts.callback || opts.cb || null;
+  const msg = opts.message || opts.msg || opts.payload || null;
 
-  var xhr = new global.XMLHttpRequest();
+  const xhr = new global.XMLHttpRequest();
   xhr.open(method, url);
   xhr.responseType = opts.responseType || "";
   if (opts.headers && typeof opts.headers === "object") {
-    let headers = opts.headers;
+    const headers = opts.headers;
     for (let prop in headers) {
       if (Object.prototype.hasOwnProperty.call(headers, prop)) {
         xhr.setRequestHeader(prop, headers[prop]);
@@ -193,15 +193,15 @@ function isArrayLike(arr) {
 }
 
 function modelViewMatrix(mvMatrix, trans, rotate, scale) {
-  var x = trans.x;
-  var y = trans.y;
-  var z = trans.z;
-  var alpha = rotate.x;
-  var beta = rotate.y;
-  var gamma = rotate.z;
-  var w = scale.x;
-  var h = scale.y;
-  var d = scale.z;
+  const x = trans.x;
+  const y = trans.y;
+  const z = trans.z;
+  const alpha = rotate.x;
+  const beta = rotate.y;
+  const gamma = rotate.z;
+  const w = scale.x;
+  const h = scale.y;
+  const d = scale.z;
 
   mvMatrix[0] = w * cos(gamma) * cos(beta);
   mvMatrix[1] = -w * sin(gamma) * cos(beta);
@@ -224,12 +224,12 @@ function modelViewMatrix(mvMatrix, trans, rotate, scale) {
 }
 
 function matrixMultiplyPoint(matrix, point, outPoint) {
-  var x = point[0], y = point[1], z = point[2], w = point[3] || 1;
+  const x = point[0], y = point[1], z = point[2], w = point[3] || 1;
 
-  var c1r1 = matrix[ 0], c2r1 = matrix[ 1], c3r1 = matrix[ 2], c4r1 = matrix[ 3],
-      c1r2 = matrix[ 4], c2r2 = matrix[ 5], c3r2 = matrix[ 6], c4r2 = matrix[ 7],
-      c1r3 = matrix[ 8], c2r3 = matrix[ 9], c3r3 = matrix[10], c4r3 = matrix[11],
-      c1r4 = matrix[12], c2r4 = matrix[13], c3r4 = matrix[14], c4r4 = matrix[15];
+  const c1r1 = matrix[ 0], c2r1 = matrix[ 1], c3r1 = matrix[ 2], c4r1 = matrix[ 3],
+        c1r2 = matrix[ 4], c2r2 = matrix[ 5], c3r2 = matrix[ 6], c4r2 = matrix[ 7],
+        c1r3 = matrix[ 8], c2r3 = matrix[ 9], c3r3 = matrix[10], c4r3 = matrix[11],
+        c1r4 = matrix[12], c2r4 = matrix[13], c3r4 = matrix[14], c4r4 = matrix[15];
 
   outPoint[0] = x*c1r1 + y*c1r2 + z*c1r3 + w*c1r4;
   outPoint[1] = x*c2r1 + y*c2r2 + z*c2r3 + w*c2r4;
@@ -251,10 +251,10 @@ function multiplyArrayOfMatrices(matrices) {
 
 function multiplyMatrices(a, b) {
   // Multiply a*b, store result in a
-  var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
-      a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
-      a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
-      a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+  const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
+        a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
+        a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
+        a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
 
   var b0  = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
   a[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
@@ -323,10 +323,10 @@ function translateMatrix(matrix, x, y, z) {
   return matrix;
 }
 
-var DEG2RAD = Math.PI / 180;
-var RAD2DEG = 180 / Math.PI;
-var ROOT_TWO_OVER_TWO = Math.sqrt(2) / 2;
-var TWOPI = Math.PI * 2;
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
+const ROOT_TWO_OVER_TWO = Math.sqrt(2) / 2;
+const TWOPI = Math.PI * 2;
 
 return {
   "ExponentialAverage": ExponentialAverage,
