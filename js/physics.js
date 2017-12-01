@@ -223,11 +223,32 @@ function integrateState(state, t, dt, acc) {
   stateVel[2] += (1.0 / 6 * (acc1[2] + 2 * (acc2[2] + acc3[2]) + acc4[2])) * dt;
 }
 
+function copyState(dst, src) {
+  dst.position[0] = src.position[0];
+  dst.position[1] = src.position[1];
+  dst.position[2] = src.position[2];
+  dst.velocity[0] = src.velocity[0];
+  dst.velocity[1] = src.velocity[1];
+  dst.velocity[2] = src.velocity[2];
+}
+
+function interpolateState(dst, state1, state2, alpha) {
+  const alpha1 = 1 - alpha;
+  dst.position[0] = (state1.position[0] * alpha1) + (state2.position[0] * alpha);
+  dst.position[1] = (state1.position[1] * alpha1) + (state2.position[1] * alpha);
+  dst.position[2] = (state1.position[2] * alpha1) + (state2.position[2] * alpha);
+  dst.velocity[0] = (state1.velocity[0] * alpha1) + (state2.velocity[0] * alpha);
+  dst.velocity[1] = (state1.velocity[1] * alpha1) + (state2.velocity[1] * alpha);
+  dst.velocity[2] = (state1.velocity[2] * alpha1) + (state2.velocity[2] * alpha);
+}
+
 return {
   "State": State,
   "StateDerivative": StateDerivative,
   "evaluateState": evaluateState,
-  "integrateState": integrateState
+  "integrateState": integrateState,
+  "copyState": copyState,
+  "interpolateState": interpolateState
 };
 
 })();
