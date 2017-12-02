@@ -11,7 +11,8 @@ const identityMatrix = new Float32Array([
   0, 0, 1, 0,
   0, 0, 0, 1
 ]);
-const randArr = new Uint8Array(32);
+const randArrayUint8 = new Uint8Array(32);
+const randArrayUint32 = new Uint32Array(4);
 
 function ExponentialAverage(alpha, initVal) {
   alpha = alpha || 0.5;
@@ -70,22 +71,27 @@ function getRandomInt(min, max) {
     const numBytes = Math.ceil(Math.log2(range) / 8);
     const maxNum = Math.pow(256, numBytes);
     let val = 0;
-    let flag = true;
 
-    while (flag) {
-      global.crypto.getRandomValues(randArr);
+    while (true) {
+      global.crypto.getRandomValues(randArrayUint8);
       for (let k = 0; k < numBytes; k += 1) {
-        val = (val << 8) + randArr[k];
+        val = (val << 8) + randArrayUint8[k];
       }
 
       if (val + range - (val % range) < maxNum) {
-        flag = false;
+        break;
       }
     }
     return min + (val % range);
   }
 
   return min + Math.floor(Math.random() * (range + 1));
+}
+
+function random() {
+  const max = 4294967295;
+  global.crypto.getRandomValues(randArrayUint32);
+  return randArrayUint32[0] / max;
 }
 
 function mapValue(val, x1, y1, x2, y2) {
@@ -332,6 +338,7 @@ return {
   "ExponentialAverage": ExponentialAverage,
   "getShader": getShader,
   "getRandomInt": getRandomInt,
+  "random": random,
   "mapValue": mapValue,
   "createCircleVertices": createCircleVertices,
   "fetchURL": fetchURL,
