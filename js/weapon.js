@@ -80,7 +80,7 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType, isActive) {
       const hitbox = proj.hitbox;
       for (let n = 0; n < enemies.length; n += 1) {
         const enemy = enemies[n];
-        const enemyActive = enemy.active && enemy.hitPoints > 0;
+        const enemyActive = enemy.active && enemy.hitpoints > 0;
         if (enemyActive && enemy.positionDepth === hitbox.depth && enemy.intersectsWith(hitbox)) {
           const projPos = proj.position;
           for (let m = 0; m < projPos.length; m += 1) {

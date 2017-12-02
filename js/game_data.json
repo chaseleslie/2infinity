@@ -3,7 +3,7 @@
     {
       "velocity": 0.00015,
       "modelScales": [1, 1, 1],
-      "hitPoints": 100,
+      "hitpoints": 100,
       "spawnIntervalMult": 1,
       "weapon": null,
       "coolDownMult": null,
@@ -12,7 +12,7 @@
     {
       "velocity": 0.0001,
       "modelScales": [2, 2, 2],
-      "hitPoints": 200,
+      "hitpoints": 200,
       "spawnIntervalMult": 1.5,
       "weapon": null,
       "coolDownMult": null,
@@ -21,7 +21,7 @@
     {
       "velocity": 0.000125,
       "modelScales": [1.5, 1.5, 1.5],
-      "hitPoints": 100,
+      "hitpoints": 100,
       "spawnIntervalMult": 1.25,
       "weapon": 0,
       "coolDownMult": 7.5,
@@ -33,7 +33,7 @@
     {
       "velocity": 0.00025,
       "modelScales": [2, 2, 2],
-      "hitPoints": 2000,
+      "hitpoints": 2000,
       "spawnIntervalMult": 1,
       "weapon": 2,
       "coolDownMult": 1,
@@ -44,7 +44,7 @@
     {
       "velocity": 0.00030,
       "modelScales": [2, 2, 2],
-      "hitPoints": 2500,
+      "hitpoints": 2500,
       "spawnIntervalMult": 1,
       "weapon": 3,
       "coolDownMult": 0.1,

@@ -336,7 +336,6 @@ const Game = {
 };
 
 Console.init({
-  "KEY_MAP": KEY_MAP,
   "game": Game,
   "console": gameConsole,
   "consoleEntries": gameConsoleEntries,
@@ -505,15 +504,52 @@ global.onbeforeunload = function() {
   saveSettings(Game);
 };
 
+function clearAllLevels() {
+  const levels = Game.gameData.levels;
+  for (let k = 0, n = levels.length; k < n; k += 1) {
+    clearLevel(k);
+  }
+}
+
+function clearLevel(lvl) {
+  const now = global.performance.now();
+  const levelEnemies = Game.levelEnemies;
+  const lastTs = levelEnemies[lvl].lastTs;
+  for (let k = 0, n = lastTs.length; k < n; k += 1) {
+    lastTs[k] = now;
+  }
+}
+
+function clearEnemies() {
+  const enemies = Game.enemies;
+  for (let k = 0, n = enemies.length; k < n; k += 1) {
+    const enemy = enemies[k];
+    enemy.reset(0, false);
+  }
+}
+
 function showConsole() {
   canvas.classList.add("inactive");
   canvasOverlay.classList.add("inactive");
   Console.show({"callback": hideConsole});
 }
 
-function hideConsole() {
+function hideConsole(args) {
+  const game = Game;
   canvas.classList.remove("inactive");
   canvasOverlay.classList.remove("inactive");
+
+  if (args.level !== null) {
+    clearEnemies();
+    game.level = args.level - 1;
+    game.levelState = LevelState.INTRO;
+    clearAllLevels();
+  }
+
+  if (args.hitpoints !== null) {
+    game.player.hitpoints = args.hitpoints;
+  }
+
   start();
 }
 
@@ -859,7 +895,7 @@ function update(Game, ts, dt) {
     for (let k = 0; k < enemies.length; k += 1) {
       let keepLooping = true;
       let enemy = enemies[k];
-      if (enemy.active && enemy.hitPoints > 0 && enemy.intersectsWith(playerHitbox)) {
+      if (enemy.active && enemy.hitpoints > 0 && enemy.intersectsWith(playerHitbox)) {
         let playerPos = player.position;
         for (let iK = 0; iK < playerPos.length; iK += 1) {
           let vert = playerPos[iK];
@@ -868,7 +904,7 @@ function update(Game, ts, dt) {
           point.z = vert[2];
           let directHit = enemy.containsPoint(point);
           if (directHit ) {
-            enemy.takeHit(enemy.hitPoints);
+            enemy.takeHit(enemy.hitpoints);
             let hp = player.takeHit(enemy.points);
             if (hp <= 0) {
               restart();
@@ -1112,7 +1148,7 @@ function drawOverlay(Game) {
         ctx.strokeStyle = "#FFF";
       }
 
-      let percentage = Math.max(0, player.hitPoints / player.maxHitPoints);
+      let percentage = Math.max(0, player.hitpoints / player.maxHitpoints);
 
       let y = ctx.lineWidth;
       let w = hpWidth;

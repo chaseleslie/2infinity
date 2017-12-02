@@ -389,8 +389,8 @@ function Player(game) {
     return hitbox;
   }
 
-  Object.defineProperty(this, "hitPoints", {get: function () {return hp;}});
-  Object.defineProperty(this, "maxHitPoints", {get: function () {return maxHp;}});
+  Object.defineProperty(this, "hitpoints", {get: function () {return hp;}, set: function(hp_) {hp = hp_;}});
+  Object.defineProperty(this, "maxHitpoints", {get: function () {return maxHp;}});
   Object.defineProperty(this, "weapons", {get: function() {return weapons;}});
   Object.defineProperty(this, "position", {get: getPosition});
   Object.defineProperty(this, "positionLeft", {get: getPositionLeft});
