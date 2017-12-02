@@ -30,46 +30,44 @@ function StarMap(game, numStars) {
 function Star(game) {
   const stepFn = () => Utils.getRandomInt(0, 1);
   const depths = [0.8, 0.9, 1.0];
-  const speedAndDepth = Math.floor(Math.random() * depths.length);
+  const speedAndDepth = Utils.getRandomInt(0, depths.length - 1);
   const scale = 12;
   const scaleBounds = scale / 4;
-  const xScale = game.modelScale / (scale * 2);
-  const yScale = game.modelScale / scale;
-  const zScale = game.modelScale / scale;
-  var verticalPos = (stepFn() ? 1 : -1) * Math.random() * (scaleBounds - yScale);
-  var horizontalPos = (stepFn() ? 1 : -1) * (scaleBounds - xScale) * Math.random();
   const depthPos = depths[speedAndDepth];
   const speeds = [
     0.0001, 0.00005, 0.00002
   ];
   const speed = speeds[speedAndDepth];
   const state = new Physics.State(
-    [horizontalPos, verticalPos, depthPos],
+    [0, 0, depthPos],
     [-speed, 0, 0]
   );
   var texCoordsBufferIndex = 0;
 
+  const translations = Object.seal({"x": 0, "y": 0, "z": depthPos});
+  const rotations = Object.freeze({"x": 0, "y": 0, "z": 0});
+  const scales = Object.freeze({
+    "x": game.modelScale / (scale * 2),
+    "y": game.modelScale / scale,
+    "z": game.modelScale / scale
+  });
   const mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
-    {"x": horizontalPos, "y": verticalPos, "z": depthPos},
-    {"x": 0, "y": 0, "z": 0},
-    {"x": xScale, "y": yScale, "z": zScale}
+    translations,
+    rotations,
+    scales
   );
 
   this.reset = function() {
-    verticalPos = (stepFn() ? 1 : -1) * Math.random() * (scaleBounds - yScale);
-    horizontalPos = 1 + scale/4 + Math.random() * xScale;
+    const vertPos = (stepFn() ? 1 : -1) * Utils.random() * (scaleBounds - scales.y);
+    const horizPos = 1 + (scale / 4) + (Utils.random() * scales.x);
 
-    state.position[0] = horizontalPos;
-    state.position[1] = verticalPos;
+    state.position[0] = horizPos;
+    state.position[1] = vertPos;
+    translations.x = horizPos;
+    translations.y = vertPos;
 
-    mvUniformMatrix[0] = xScale;
-    mvUniformMatrix[5] = yScale;
-    mvUniformMatrix[10] = zScale;
-    mvUniformMatrix[12] = horizontalPos;
-    mvUniformMatrix[13] = verticalPos;
-    mvUniformMatrix[14] = depthPos;
-    mvUniformMatrix[15] = 1;
+    Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
   };
 
   this.draw = function(gl) {
@@ -93,10 +91,10 @@ function Star(game) {
   };
 
   function getPositionRight() {
-    var tri = game.verticesTriangle;
-    var x = tri[0], y = tri[1], z = tri[2], w = 1;
-    var mvm = mvUniformMatrix;
-    var c1r1 = mvm[0], c1r2 = mvm[4], c1r3 = mvm[8], c1r4 = mvm[12];
+    const tri = game.verticesRectangle;
+    const x = tri[3], y = tri[4], z = tri[5], w = 1;
+    const mvm = mvUniformMatrix;
+    const c1r1 = mvm[0], c1r2 = mvm[4], c1r3 = mvm[8], c1r4 = mvm[12];
 
     return (x*c1r1 + y*c1r2 + z*c1r3 + w*c1r4) * game.pUniformMatrix[0];
   }
@@ -107,4 +105,9 @@ function Star(game) {
 
   Object.defineProperty(this, "positionRight", {get: getPositionRight});
   Object.defineProperty(this, "offScreen", {get: offScreen});
+
+  this.reset();
+  translations.x = -4 + 8 * Utils.random();
+  state.position[0] = translations.x;
+  mvUniformMatrix[12] = translations.x;
 }

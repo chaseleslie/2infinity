@@ -119,6 +119,7 @@ function Player(game) {
     const cos = Math.cos;
     const sin = Math.sin;
     const aspect = game.aspect;
+    const rAspect = game.recipAspect;
     const arrowLeft = game.keydownMap["ArrowLeft"];
     const arrowUp = game.keydownMap["ArrowUp"];
     const arrowRight = game.keydownMap["ArrowRight"];
@@ -197,12 +198,12 @@ function Player(game) {
         const p1 = -vertTri[0] * scales.x * cos(rot.y) * cos(rot.z);
         const p2 = -vertTri[1] * scales.y * (cos(rot.x) * sin(rot.z) + sin(rot.x) * sin(rot.z));
         const p3 = vertTri[2] * scales.z * (cos(rot.x) * cos(rot.z) * sin(rot.y) - sin(rot.x) * sin(rot.z));
-        state.position[0] = p1 + p2 + p3 - 1;
+        state.position[0] = (p1 + p2 + p3 - 1) * aspect;
       }
     }
     if (arrowUp) {
       const top = getPositionTop();
-      if (top > 1.0) {
+      if (top > rAspect) {
         const vertTri = game.verticesTriangle;
         const p1 = vertTri[0] * scales.x * cos(rot.y) * sin(rot.z);
         const p2 = vertTri[1] * scales.y * (sin(rot.x) * sin(rot.y) * sin(rot.z) - cos(rot.x) * cos(rot.z));
@@ -222,12 +223,12 @@ function Player(game) {
         const p1 = -vertTri[3] * scales.x * cos(rot.y) * cos(rot.z);
         const p2 = -vertTri[4] * scales.y * (cos(rot.x) * sin(rot.z) + sin(rot.x) * sin(rot.z));
         const p3 = vertTri[5] * scales.z * (cos(rot.x) * cos(rot.z) * sin(rot.y) - sin(rot.x) * sin(rot.z));
-        state.position[0] = p1 + p2 + p3 + 1;
+        state.position[0] = (p1 + p2 + p3 + 1) * aspect;
       }
     }
     if (arrowDown) {
       const bottom = getPositionBottom();
-      if (bottom < -1.0) {
+      if (bottom < -rAspect) {
         const vertTri = game.verticesTriangle;
         const p1 = vertTri[6] * scales.x * cos(rot.y) * sin(rot.z);
         const p2 = vertTri[7] * scales.y * (sin(rot.x) * sin(rot.y) * sin(rot.z) - cos(rot.x) * cos(rot.z));

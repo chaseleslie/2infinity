@@ -104,11 +104,12 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType, isActive) {
 
   this.fireWeapon = function(ts, dt, projDir, hitbox) {
     var numFoundProj = 0;
-    const hitboxCenterX = hitbox.left + (hitbox.right - hitbox.left) / 2;
-    const hitboxCenterY = hitbox.bottom + (hitbox.top - hitbox.bottom) / 2;
+    const aspect = game.aspect;
+    const hitboxCenterX = hitbox.left + 0.5 * (hitbox.right - hitbox.left);
+    const hitboxCenterY = hitbox.bottom + 0.5 * (hitbox.top - hitbox.bottom);
     const hitboxRadius = Math.abs(hitbox.right - hitboxCenterX);
-    const oddProjCount = projCount % 2;
-    const medianProjCount = Math.ceil(projCount / 2);
+    const oddProjCount = projCount & 1;
+    const medianProjCount = Math.ceil(0.5 * projCount);
     const cos = Math.cos;
     const sin = Math.sin;
 
@@ -134,13 +135,13 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType, isActive) {
             pDeltaAngle = -(numFoundProj - medianProjCount) * projDeltaAngle;
           }
         } else if (!oddProjCount) {
-          pDeltaAngle = Math.floor((numFoundProj - 1) / 2) * projDeltaAngle + 0.5 * projDeltaAngle;
-          pDeltaAngle = (numFoundProj % 2) ? -pDeltaAngle : pDeltaAngle;
+          pDeltaAngle = Math.floor(0.5 * (numFoundProj - 1)) * projDeltaAngle + 0.5 * projDeltaAngle;
+          pDeltaAngle = (numFoundProj & 1) ? -pDeltaAngle : pDeltaAngle;
         }
 
         const pDir = projDir + pDeltaAngle;
-        const xVal = hitboxCenterX + hitboxRadius * cos(pDir);
-        const yVal = hitboxCenterY + hitboxRadius * sin(pDir);
+        const xVal = aspect * (hitboxCenterX + hitboxRadius * cos(pDir));
+        const yVal = aspect * (hitboxCenterY + hitboxRadius * sin(pDir));
         proj.reset(projType, xVal, yVal, true, pDir, projTexType);
         if (numFoundProj >= projCount) {
           break;
@@ -164,8 +165,8 @@ function Weapon(game, type, numProj, projDir, coolDown, pTexType, isActive) {
             pDeltaAngle = -(numFoundProj - medianProjCount) * projDeltaAngle;
           }
         } else if (!oddProjCount) {
-          pDeltaAngle = Math.floor((numFoundProj - 1) / 2) * projDeltaAngle + 0.5 * projDeltaAngle;
-          pDeltaAngle = (numFoundProj % 2) ? -pDeltaAngle : pDeltaAngle;
+          pDeltaAngle = Math.floor(0.5 * (numFoundProj - 1)) * projDeltaAngle + 0.5 * projDeltaAngle;
+          pDeltaAngle = (numFoundProj & 1) ? -pDeltaAngle : pDeltaAngle;
         }
 
         const pDir = projDir + pDeltaAngle;

@@ -19,8 +19,8 @@ function Enemy(game, type, isActive) {
   var prune = 0;
   const showDestroyedFrames = 8;
   var active = isActive || false;
-  const verticalPos = (stepFn() ? 1 : -1) * Math.random() * (1 - game.modelScale);
-  const horizontalPos = 1.10;
+  const verticalPos = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
+  const horizontalPos = 1.10 * game.aspect;
   const depthPos = 0.0;
   const vertices = [
     new Float32Array(3),
@@ -62,7 +62,6 @@ function Enemy(game, type, isActive) {
   }
 
   this.reset = function(eType, isActive) {
-    const now = global.performance.now();
     const modelScale = game.modelScale;
     type = eType;
     enemyData = game.gameData.enemies[type];
@@ -80,8 +79,7 @@ function Enemy(game, type, isActive) {
     active = isActive || false;
     texCoordsBufferIndexShip = enemyData.texType
     translateVec.x = horizontalPos;
-    translateVec.y = Math.random() * (1 - modelScale);
-    translateVec.y = ((now|0) % 2) ? -translateVec.y : translateVec.y;
+    translateVec.y = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
 
     if (weapon) {
       const weaponData = game.gameData.weapons[weaponType];

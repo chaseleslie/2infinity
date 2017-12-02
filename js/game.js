@@ -315,7 +315,7 @@ const Game = {
   "mvUniform": null,
 
   "pUniformMatrix": new Float32Array([
-    1.0, 0.0, 0.0, 0.0,
+    1.0 / aspect, 0.0, 0.0, 0.0,
     0.0, 1.0, 0.0, 0.0,
     0.0, 0.0, 1.0, zProjection,
     0.0, 0.0, 0.0, 1.0
