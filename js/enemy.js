@@ -9,7 +9,7 @@ function Enemy(game, type, isActive) {
   const aspect = game.aspect;
   var enemyData = game.gameData.enemies[type];
   var velocity = enemyData.velocity;
-  var hp = enemyData.hitPoints;
+  var hp = enemyData.hitpoints;
   var points = hp;
   var weaponType = enemyData.weapon;
   var coolDownMult = enemyData.coolDownMult;
@@ -69,7 +69,7 @@ function Enemy(game, type, isActive) {
     scales.x = enemyData.modelScales[0] * modelScale / aspect;
     scales.y = enemyData.modelScales[1] * modelScale;
     scales.z = enemyData.modelScales[2] * modelScale;
-    hp = enemyData.hitPoints;
+    hp = enemyData.hitpoints;
     points = hp;
     weaponType = enemyData.weapon;
     coolDownMult = enemyData.coolDownMult;
@@ -268,8 +268,8 @@ function Enemy(game, type, isActive) {
     return hitbox;
   }
 
-  Object.defineProperty(this, "hitPoints", {get: function () {return hp;}});
-  Object.defineProperty(this, "maxHitPoints", {get: function () {return enemyData.hitPoints;}});
+  Object.defineProperty(this, "hitpoints", {get: function () {return hp;}});
+  Object.defineProperty(this, "maxHitpoints", {get: function () {return enemyData.hitpoints;}});
   Object.defineProperty(this, "points", {get: function () {return points;}});
   Object.defineProperty(this, "prune", {get: function () {return prune >= showDestroyedFrames;}});
   Object.defineProperty(this, "position", {get: getPosition});
@@ -288,7 +288,7 @@ function Boss(game, type, isActive) {
   const aspect = game.aspect;
   var enemyData = game.gameData.bosses[type];
   var velocity = enemyData.velocity;
-  var hp = enemyData.hitPoints;
+  var hp = enemyData.hitpoints;
   var points = hp;
   var weaponType = enemyData.weapon;
   var coolDownMult = enemyData.coolDownMult;
@@ -361,7 +361,7 @@ function Boss(game, type, isActive) {
     scales.x = enemyData.modelScales[0] * modelScale / aspect;
     scales.y = enemyData.modelScales[1] * modelScale;
     scales.z = enemyData.modelScales[2] * modelScale;
-    hp = enemyData.hitPoints;
+    hp = enemyData.hitpoints;
     points = hp;
     weaponType = enemyData.weapon;
     coolDownMult = enemyData.coolDownMult;
@@ -623,8 +623,8 @@ function Boss(game, type, isActive) {
     return hitbox;
   }
 
-  Object.defineProperty(this, "hitPoints", {get: function () {return hp;}});
-  Object.defineProperty(this, "maxHitPoints", {get: function () {return enemyData.hitPoints;}});
+  Object.defineProperty(this, "hitpoints", {get: function () {return hp;}});
+  Object.defineProperty(this, "maxHitpoints", {get: function () {return enemyData.hitpoints;}});
   Object.defineProperty(this, "points", {get: function () {return points;}});
   Object.defineProperty(this, "prune", {get: function () {return prune >= showDestroyedFrames;}});
   Object.defineProperty(this, "position", {get: getPosition});

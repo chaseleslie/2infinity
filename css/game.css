@@ -137,3 +137,27 @@ input, textarea, select, button {
   white-space: pre;
   font-family: monospace;
 }
+
+.console_entry_debug {
+  color: inherit;
+}
+
+.console_entry_log {
+  color: inherit;
+}
+
+.console_entry_warn {
+  color: #FFFF55;
+}
+
+.console_entry_error {
+  color: #FF5555;
+}
+
+.console_entry_print {
+  color: inherit;
+}
+
+.console_entry_echo {
+  color: #AAF;
+}

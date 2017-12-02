@@ -11,7 +11,8 @@ const EntryType = Object.freeze({
   "LOG":   1,
   "WARN":  2,
   "ERROR": 3,
-  "PRINT": 4
+  "PRINT": 4,
+  "ECHO":  5
 });
 
 const EntryTypeString = Object.freeze({
@@ -19,11 +20,28 @@ const EntryTypeString = Object.freeze({
   [EntryType.LOG]:   "LOG   ",
   [EntryType.WARN]:  "WARN  ",
   [EntryType.ERROR]: "ERROR ",
-  [EntryType.PRINT]: "      "
+  [EntryType.PRINT]: "      ",
+  [EntryType.ECHO]:  "      "
 });
 
 const state = Object.seal({
-  "KEY_MAP": null,
+  "KEY_MAP": Object.freeze({
+    "ArrowLeft":  37,
+    "Left":       37,
+    "ArrowUp":    38,
+    "Up":         38,
+    "ArrowRight": 39,
+    "Right":      39,
+    "ArrowDown":  40,
+    "Down":       40,
+
+    "Enter":      13,
+    "Escape":     27,
+    "Tab":        9,
+    "Alt":        18,
+    "F5":         116,
+    "`":          192
+  }),
   "console": null,
   "consoleEntries": null,
   "consoleInput": null,
@@ -31,7 +49,11 @@ const state = Object.seal({
   "game": null,
   "shell": null,
   "entryList": null,
-  "callback": null
+  "callback": null,
+  "callbackArgs": Object.seal({
+    "level": null,
+    "hitpoints": null
+  })
 });
 
 function noop() {
@@ -40,20 +62,8 @@ function noop() {
 
 function Shell() {
   const Commands = Object.freeze({
-    "level": {
-      "exec": level,
-      "sub": [
-        "get",
-        "set"
-      ]
-    },
-    "hp": {
-      "exec": hitpoints,
-      "sub": [
-        "get",
-        "set"
-      ]
-    }
+    "level": level,
+    "hp": hitpoints
   });
   const history = [];
   var historyIndex = 0;
@@ -72,25 +82,67 @@ function Shell() {
     return history[historyIndex];
   }
 
+  function getLevel() {
+    let lvl = state.callbackArgs.level;
+    if (lvl === null) {
+      lvl = state.game.level + 1;
+    }
+    state.entryList.add(EntryType.PRINT, `lvl ${lvl}`);
+  }
+
+  function setLevel(args) {
+    const lvl = parseInt(args[1], 10);
+    if (!isFinite(lvl) || isNaN(lvl) || lvl < 1 || lvl > state.game.gameData.levels.length) {
+      return;
+    }
+    state.callbackArgs.level = lvl;
+  }
+
   function level(args) {
     if (args.length > 1) {
-      console.log("level()", args);
+      setLevel(args);
+      getLevel();
+    } else {
+      getLevel(args);
     }
+  }
+
+  function getHitpoints() {
+    let hp = state.callbackArgs.hitpoints;
+    if (hp === null) {
+      hp = state.game.player.hitpoints;
+    }
+    state.entryList.add(EntryType.PRINT, `hp ${hp}`);
+  }
+
+  function setHitpoints(args) {
+    const hp = parseInt(args[1], 10);
+    if (!isFinite(hp) || isNaN(hp)) {
+      return;
+    }
+    state.callbackArgs.hitpoints = hp;
   }
 
   function hitpoints(args) {
     if (args.length > 1) {
-      console.log("hitpoints()", args);
+      setHitpoints(args);
+      getHitpoints();
+    } else {
+      getHitpoints(args);
     }
   }
 
   function interpret(command = "") {
+    if (!command) {
+      return;
+    }
+
     history.push(command);
-    state.entryList.add(EntryType.PRINT, command);
+    state.entryList.add(EntryType.ECHO, command);
     const args = command.split(" ");
     const cmd = args[0];
     if (Commands[cmd]) {
-      Commands[cmd].exec(args);
+      Commands[cmd](args);
     }
     historyIndex = history.length;
   }
@@ -103,24 +155,51 @@ function Shell() {
 }
 
 function EntryList() {
+  const NodeStyles = Object.freeze({
+    [EntryType.DEBUG]: "console_entry_debug",
+    [EntryType.LOG]:   "console_entry_log",
+    [EntryType.WARN]:  "console_entry_warn",
+    [EntryType.ERROR]: "console_entry_error",
+    [EntryType.PRINT]: "console_entry_print",
+    [EntryType.ECHO]:  "console_entry_echo"
+  });
   const entries = [];
   const nodes = [];
 
   function addNode(entry) {
     const node = doc.createElement("div");
     node.classList.add("console_entry");
+    node.classList.add(NodeStyles[entry.type]);
     node.textContent = formatEntry(entry);
+    node.dataset.type = entry.type;
     nodes.push(node);
     state.consoleEntries.appendChild(node);
     node.scrollIntoView({"block": "end", "behavior": "smooth"});
   }
 
   function formatEntry(entry) {
-    const date = new Date(entry.ts);
-    const hours = `0${date.getHours()}`.substr(-2);
-    const minutes = `0${date.getMinutes()}`.substr(-2);
-    const ts = entry.type === EntryType.PRINT ? "" : `[${hours}:${minutes}] `;
-    const header = entry.type === EntryType.PRINT ? "" : `${EntryTypeString[entry.type]}${ts}`;
+    var header = "";
+
+    switch (entry.type) {
+      case EntryType.DEBUG:
+      case EntryType.LOG:
+      case EntryType.WARN:
+      case EntryType.ERROR: {
+        const date = new Date(entry.ts);
+        const hours = `0${date.getHours()}`.substr(-2);
+        const minutes = `0${date.getMinutes()}`.substr(-2);
+        const ts = `[${hours}:${minutes}] `;
+        header = `${EntryTypeString[entry.type]}${ts}`;
+      }
+      break;
+
+      case EntryType.PRINT:
+      case EntryType.ECHO:
+      default:
+
+      break;
+    }
+
     return `${header}${entry.msg}`;
   }
 
@@ -144,7 +223,6 @@ function Entry(type, msg, ts) {
 }
 
 function init(args) {
-  state.KEY_MAP = args.KEY_MAP;
   state.console = args.console;
   state.consoleEntries = args.consoleEntries;
   state.consoleInput = args.consoleInput;
@@ -162,12 +240,15 @@ function show(args = {"callback": noop}) {
   state.console.classList.remove("hidden");
   state.consoleInput.value = "";
   state.consoleInput.focus();
+  for (let key of Object.keys(state.callbackArgs)) {
+    state.callbackArgs[key] = null;
+  }
 }
 
 function hide() {
   global.removeEventListener("keydown", handleWindowKeyDown, false);
   state.console.classList.add("hidden");
-  state.callback();
+  state.callback(state.callbackArgs);
 }
 
 function handleInputEnter() {
