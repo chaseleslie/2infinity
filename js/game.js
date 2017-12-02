@@ -109,6 +109,8 @@ const Game = {
   "difficulty": Difficulty.EASY,
   "difficultyMap": difficultyMap,
   "aspect": aspect,
+  "recipAspect": 1 / aspect,
+  "zProjection": zProjection,
   "level": 0,
   "score": 0,
   "timestep": 10,
@@ -1203,7 +1205,7 @@ function setup(Game, gl) {
     return;
   }
 
-  Game.player = new Player(Game, aspect);
+  Game.player = new Player(Game);
   Game.players.push(Game.player);
   gl.useProgram(Game.shaderProg);
 

@@ -3,7 +3,7 @@
 
 "use strict";
 
-function Player(game, aspect) {
+function Player(game) {
   const maxHp = 1000;
   var hp = maxHp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
@@ -48,9 +48,9 @@ function Player(game, aspect) {
   const translateVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
   const rotations = {"x": 0, "y": 0, "z": 0};
   const scales = {
-    "x": game.modelScale / aspect,
+    "x": game.modelScale * game.recipAspect,
     "y": game.modelScale,
-    "z": game.modelScale / aspect
+    "z": game.modelScale * game.recipAspect
   };
   const mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
@@ -118,6 +118,7 @@ function Player(game, aspect) {
   this.update = function(dt) {
     const cos = Math.cos;
     const sin = Math.sin;
+    const aspect = game.aspect;
     const arrowLeft = game.keydownMap["ArrowLeft"];
     const arrowUp = game.keydownMap["ArrowUp"];
     const arrowRight = game.keydownMap["ArrowRight"];
