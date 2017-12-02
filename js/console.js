@@ -171,6 +171,7 @@ function EntryList() {
     node.classList.add("console_entry");
     node.classList.add(NodeStyles[entry.type]);
     node.textContent = formatEntry(entry);
+    node.dataset.type = entry.type;
     nodes.push(node);
     state.consoleEntries.appendChild(node);
     node.scrollIntoView({"block": "end", "behavior": "smooth"});
