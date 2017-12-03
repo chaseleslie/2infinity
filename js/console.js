@@ -250,13 +250,16 @@ function EntryList() {
       entries.push(entry);
       addNode(entry);
     },
-    "refresh": function() {
+    "clear": function() {
       const parent = state.consoleEntries;
       let child = parent.lastChild;
       while (child) {
         parent.removeChild(child);
         child = parent.lastChild;
       }
+    },
+    "refresh": function() {
+      this.clear();
 
       const docFrag = doc.createDocumentFragment();
       for (let k = 0, n = nodes.length; k < n; k += 1) {
