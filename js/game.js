@@ -558,6 +558,12 @@ function hideConsole(args) {
 
   if (args.hitpoints !== null) {
     game.player.hitpoints = args.hitpoints;
+    game.overlayState.flag |= OverlayFlags.HP_DIRTY;
+  }
+
+  if (args.score !== null) {
+    game.score = args.score;
+    game.overlayState.flag |= OverlayFlags.SCORE_DIRTY;
   }
 
   start();

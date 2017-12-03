@@ -57,7 +57,8 @@ const state = Object.seal({
   "callback": null,
   "callbackArgs": Object.seal({
     "level": null,
-    "hitpoints": null
+    "hitpoints": null,
+    "score": null
   })
 });
 
@@ -68,7 +69,8 @@ function noop() {
 function Shell() {
   const Commands = Object.freeze({
     "level": level,
-    "hp": hitpoints
+    "hp": hitpoints,
+    "score": score
   });
   const history = [];
   var historyIndex = 0;
@@ -92,7 +94,7 @@ function Shell() {
     if (lvl === null) {
       lvl = state.game.level + 1;
     }
-    state.entryList.add(EntryType.PRINT, `lvl ${lvl}`);
+    state.entryList.add(EntryType.PRINT, `lvl is ${lvl}`);
   }
 
   function setLevel(args) {
@@ -106,7 +108,7 @@ function Shell() {
   function level(args) {
     if (args.length > 1) {
       setLevel(args);
-      getLevel();
+      getLevel(args);
     } else {
       getLevel(args);
     }
@@ -117,7 +119,7 @@ function Shell() {
     if (hp === null) {
       hp = state.game.player.hitpoints;
     }
-    state.entryList.add(EntryType.PRINT, `hp ${hp}`);
+    state.entryList.add(EntryType.PRINT, `hp is ${hp}`);
   }
 
   function setHitpoints(args) {
@@ -131,9 +133,34 @@ function Shell() {
   function hitpoints(args) {
     if (args.length > 1) {
       setHitpoints(args);
-      getHitpoints();
+      getHitpoints(args);
     } else {
       getHitpoints(args);
+    }
+  }
+
+  function getScore() {
+    let scor = state.callbackArgs.score;
+    if (scor === null) {
+      scor = state.game.score;
+    }
+    state.entryList.add(EntryType.PRINT, `score is ${scor}`);
+  }
+
+  function setScore(args) {
+    const scor = parseInt(args[1], 10);
+    if (!isFinite(scor) || isNaN(scor)) {
+      return;
+    }
+    state.callbackArgs.score = scor;
+  }
+
+  function score(args) {
+    if (args.length > 1) {
+      setScore(args);
+      getScore();
+    } else {
+      getScore(args);
     }
   }
 
