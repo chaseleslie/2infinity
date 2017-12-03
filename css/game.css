@@ -103,7 +103,15 @@ input, textarea, select, button {
 
 #console_entries_filter {
   width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 4fr;
+  background-color: #20202E;
 }
+
+/*#console_entries_filter label {
+  height: 100%;
+  display: inline-block;
+}*/
 
 #console_entries {
   overflow-y: scroll;
@@ -160,4 +168,10 @@ input, textarea, select, button {
 
 .console_entry_echo {
   color: #AAF;
+}
+
+.middle_centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
