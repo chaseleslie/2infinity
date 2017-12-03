@@ -13,6 +13,8 @@ const identityMatrix = new Float32Array([
 ]);
 const randArrayUint8 = new Uint8Array(32);
 const randArrayUint32 = new Uint32Array(4);
+const UINT32_MAX = 4294967295;
+const UINT32_MAX_RECIP = 1 / UINT32_MAX;
 
 function ExponentialAverage(alpha, initVal) {
   alpha = alpha || 0.5;
@@ -89,9 +91,8 @@ function getRandomInt(min, max) {
 }
 
 function random() {
-  const max = 4294967295;
   global.crypto.getRandomValues(randArrayUint32);
-  return randArrayUint32[0] / max;
+  return randArrayUint32[0] * UINT32_MAX_RECIP;
 }
 
 function mapValue(val, x1, y1, x2, y2) {
