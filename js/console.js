@@ -7,12 +7,12 @@ const Console = (function(global) {
 const doc = global.document;
 
 const EntryType = Object.freeze({
-  "DEBUG": 0,
-  "LOG":   1,
-  "WARN":  2,
-  "ERROR": 3,
-  "PRINT": 4,
-  "ECHO":  5
+  "DEBUG": 1,
+  "LOG":   2,
+  "WARN":  4,
+  "ERROR": 8,
+  "PRINT": 16,
+  "ECHO":  32
 });
 
 const EntryTypeString = Object.freeze({
@@ -44,15 +44,21 @@ const state = Object.seal({
   }),
   "console": null,
   "consoleEntries": null,
+  "consoleEntriesFilterDebug": null,
+  "consoleEntriesFilterLog": null,
+  "consoleEntriesFilterWarn": null,
+  "consoleEntriesFilterError": null,
   "consoleInput": null,
   "consoleInputEnter": null,
   "game": null,
   "shell": null,
   "entryList": null,
+  "entryFilterFlags": 0,
   "callback": null,
   "callbackArgs": Object.seal({
     "level": null,
-    "hitpoints": null
+    "hitpoints": null,
+    "score": null
   })
 });
 
@@ -63,7 +69,8 @@ function noop() {
 function Shell() {
   const Commands = Object.freeze({
     "level": level,
-    "hp": hitpoints
+    "hp": hitpoints,
+    "score": score
   });
   const history = [];
   var historyIndex = 0;
@@ -87,7 +94,7 @@ function Shell() {
     if (lvl === null) {
       lvl = state.game.level + 1;
     }
-    state.entryList.add(EntryType.PRINT, `lvl ${lvl}`);
+    state.entryList.add(EntryType.PRINT, `lvl is ${lvl}`);
   }
 
   function setLevel(args) {
@@ -101,7 +108,7 @@ function Shell() {
   function level(args) {
     if (args.length > 1) {
       setLevel(args);
-      getLevel();
+      getLevel(args);
     } else {
       getLevel(args);
     }
@@ -112,7 +119,7 @@ function Shell() {
     if (hp === null) {
       hp = state.game.player.hitpoints;
     }
-    state.entryList.add(EntryType.PRINT, `hp ${hp}`);
+    state.entryList.add(EntryType.PRINT, `hp is ${hp}`);
   }
 
   function setHitpoints(args) {
@@ -126,9 +133,34 @@ function Shell() {
   function hitpoints(args) {
     if (args.length > 1) {
       setHitpoints(args);
-      getHitpoints();
+      getHitpoints(args);
     } else {
       getHitpoints(args);
+    }
+  }
+
+  function getScore() {
+    let scor = state.callbackArgs.score;
+    if (scor === null) {
+      scor = state.game.score;
+    }
+    state.entryList.add(EntryType.PRINT, `score is ${scor}`);
+  }
+
+  function setScore(args) {
+    const scor = parseInt(args[1], 10);
+    if (!isFinite(scor) || isNaN(scor)) {
+      return;
+    }
+    state.callbackArgs.score = scor;
+  }
+
+  function score(args) {
+    if (args.length > 1) {
+      setScore(args);
+      getScore();
+    } else {
+      getScore(args);
     }
   }
 
@@ -168,13 +200,18 @@ function EntryList() {
 
   function addNode(entry) {
     const node = doc.createElement("div");
+    const type = entry.type;
     node.classList.add("console_entry");
-    node.classList.add(NodeStyles[entry.type]);
+    node.classList.add(NodeStyles[type]);
     node.textContent = formatEntry(entry);
-    node.dataset.type = entry.type;
+    node.dataset.type = type;
+    node.dataset.msg = entry.msg;
+    node.dataset.ts = entry.ts;
     nodes.push(node);
-    state.consoleEntries.appendChild(node);
-    node.scrollIntoView({"block": "end", "behavior": "smooth"});
+    if (type & state.entryFilterFlags) {
+      state.consoleEntries.appendChild(node);
+      node.scrollIntoView({"block": "end", "behavior": "smooth"});
+    }
   }
 
   function formatEntry(entry) {
@@ -212,6 +249,23 @@ function EntryList() {
       const entry = new Entry(type, msg, now);
       entries.push(entry);
       addNode(entry);
+    },
+    "refresh": function() {
+      const parent = state.consoleEntries;
+      let child = parent.lastChild;
+      while (child) {
+        parent.removeChild(child);
+        child = parent.lastChild;
+      }
+
+      const docFrag = doc.createDocumentFragment();
+      for (let k = 0, n = nodes.length; k < n; k += 1) {
+        let node = nodes[k];
+        if (Number(node.dataset.type) & state.entryFilterFlags) {
+          docFrag.appendChild(node);
+        }
+      }
+      state.consoleEntries.appendChild(docFrag);
     }
   };
 }
@@ -222,8 +276,22 @@ function Entry(type, msg, ts) {
   this.ts = ts;
 }
 
+function handleEntriesFilterChange() {
+  const debug = state.consoleEntriesFilterDebug.checked && EntryType.DEBUG;
+  const log = state.consoleEntriesFilterLog.checked && EntryType.LOG;
+  const warn = state.consoleEntriesFilterWarn.checked && EntryType.WARN;
+  const error = state.consoleEntriesFilterError.checked && EntryType.ERROR;
+
+  state.entryFilterFlags = debug | log | warn | error | EntryType.PRINT | EntryType.ECHO;
+  state.entryList.refresh();
+}
+
 function init(args) {
   state.console = args.console;
+  state.consoleEntriesFilterDebug = args.consoleEntriesFilterDebug;
+  state.consoleEntriesFilterLog = args.consoleEntriesFilterLog;
+  state.consoleEntriesFilterWarn = args.consoleEntriesFilterWarn;
+  state.consoleEntriesFilterError = args.consoleEntriesFilterError;
   state.consoleEntries = args.consoleEntries;
   state.consoleInput = args.consoleInput;
   state.consoleInputEnter = args.consoleInputEnter;
@@ -232,6 +300,24 @@ function init(args) {
   state.entryList = new EntryList();
   state.consoleInputEnter.addEventListener("click", handleInputEnter, false);
   state.consoleInput.addEventListener("keydown", handleInputKeyDown, false);
+  state.consoleEntriesFilterDebug.addEventListener("change", handleEntriesFilterChange, false);
+  state.consoleEntriesFilterLog.addEventListener("change", handleEntriesFilterChange, false);
+  state.consoleEntriesFilterWarn.addEventListener("change", handleEntriesFilterChange, false);
+  state.consoleEntriesFilterError.addEventListener("change", handleEntriesFilterChange, false);
+
+  if (state.game.devMode) {
+    state.consoleEntriesFilterDebug.checked = true;
+    state.consoleEntriesFilterLog.checked = true;
+    state.consoleEntriesFilterWarn.checked = true;
+    state.consoleEntriesFilterError.checked = true;
+    state.entryFilterFlags = (
+      EntryType.DEBUG | EntryType.LOG | EntryType.WARN | EntryType.ERROR |
+      EntryType.PRINT | EntryType.ECHO
+    );
+    state.entryList.refresh();
+  } else {
+    handleEntriesFilterChange();
+  }
 }
 
 function show(args = {"callback": noop}) {

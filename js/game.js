@@ -11,6 +11,10 @@ const canvasOverlayCtx = canvasOverlay.getContext("2d");
 const gameAudio = doc.getElementById("game_audio");
 const gameConsole = doc.getElementById("console");
 const gameConsoleEntries = doc.getElementById("console_entries");
+const gameConsoleEntriesFilterDebug = doc.getElementById("console_entries_filter_debug");
+const gameConsoleEntriesFilterLog = doc.getElementById("console_entries_filter_log");
+const gameConsoleEntriesFilterWarn = doc.getElementById("console_entries_filter_warn");
+const gameConsoleEntriesFilterError = doc.getElementById("console_entries_filter_error");
 const gameConsoleInput = doc.getElementById("console_input");
 const gameConsoleInputEnter = doc.getElementById("console_input_enter");
 const menu = doc.getElementById("menu");
@@ -21,6 +25,7 @@ const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
 const point = Object.seal({"x": 0, "y": 0, "z": 0});
 const zProjection = 1;
 const aspect = canvas.width / canvas.height;
+const devMode = global.location.hash.indexOf("#dev") === 0;
 
 const KEY_MAP = Object.freeze({
   "ArrowLeft":  37,
@@ -106,6 +111,7 @@ const difficultyMap = Object.freeze({
 });
 
 const Game = {
+  "devMode": devMode,
   "difficulty": Difficulty.EASY,
   "difficultyMap": difficultyMap,
   "aspect": aspect,
@@ -339,6 +345,10 @@ Console.init({
   "game": Game,
   "console": gameConsole,
   "consoleEntries": gameConsoleEntries,
+  "consoleEntriesFilterDebug": gameConsoleEntriesFilterDebug,
+  "consoleEntriesFilterLog": gameConsoleEntriesFilterLog,
+  "consoleEntriesFilterWarn": gameConsoleEntriesFilterWarn,
+  "consoleEntriesFilterError": gameConsoleEntriesFilterError,
   "consoleInput": gameConsoleInput,
   "consoleInputEnter": gameConsoleInputEnter
 });
@@ -548,6 +558,12 @@ function hideConsole(args) {
 
   if (args.hitpoints !== null) {
     game.player.hitpoints = args.hitpoints;
+    game.overlayState.flag |= OverlayFlags.HP_DIRTY;
+  }
+
+  if (args.score !== null) {
+    game.score = args.score;
+    game.overlayState.flag |= OverlayFlags.SCORE_DIRTY;
   }
 
   start();

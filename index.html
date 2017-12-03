@@ -76,7 +76,12 @@
       </menu>
     </div>
     <div id="console" class="hidden">
-      <div id="console_entries_filter"></div>
+      <div id="console_entries_filter">
+        <label class="middle_centered">Debug <input type="checkbox" id="console_entries_filter_debug"></label>
+        <label class="middle_centered">Log <input type="checkbox" id="console_entries_filter_log" checked></label>
+        <label class="middle_centered">Warn <input type="checkbox" id="console_entries_filter_warn" checked></label>
+        <label class="middle_centered">Error <input type="checkbox" id="console_entries_filter_error" checked></label>
+      </div>
       <div id="console_entries"></div>
       <div id="console_input_container">
         <input id="console_input" type="text">
