@@ -42,6 +42,7 @@ const state = Object.seal({
     "F5":         116,
     "`":          192
   }),
+  "LevelState": null,
   "console": null,
   "consoleEntries": null,
   "consoleEntriesFilterDebug": null,
@@ -58,7 +59,8 @@ const state = Object.seal({
   "callbackArgs": Object.seal({
     "level": null,
     "hitpoints": null,
-    "score": null
+    "score": null,
+    "state": null
   })
 });
 
@@ -70,7 +72,8 @@ function Shell() {
   const Commands = Object.freeze({
     "level": level,
     "hp": hitpoints,
-    "score": score
+    "score": score,
+    "state": levelstate
   });
   const history = [];
   var historyIndex = 0;
@@ -158,9 +161,37 @@ function Shell() {
   function score(args) {
     if (args.length > 1) {
       setScore(args);
-      getScore();
+      getScore(args);
     } else {
       getScore(args);
+    }
+  }
+
+  function getState() {
+    let stat = state.callbackArgs.state;
+    if (stat === null) {
+      stat = state.game.levelState;
+    }
+    const statStr = state.LevelState.map(stat);
+    state.entryList.add(EntryType.PRINT, `state is ${stat} (${statStr})`);
+  }
+
+  function setState(args) {
+    let stat = parseInt(args[1], 10);
+    if (isFinite(stat) && !isNaN(stat)) {
+      stat = state.LevelState.map(stat);
+    } else {
+      stat = args[1];
+    }
+    state.callbackArgs.state = state.LevelState.map(stat);
+  }
+
+  function levelstate(args) {
+    if (args.length > 1) {
+      setState(args);
+      getState(args);
+    } else {
+      getState(args);
     }
   }
 
@@ -172,7 +203,7 @@ function Shell() {
     history.push(command);
     state.entryList.add(EntryType.ECHO, command);
     const args = command.split(" ");
-    const cmd = args[0];
+    const cmd = args.length && args[0].toLowerCase();
     if (Commands[cmd]) {
       Commands[cmd](args);
     }
@@ -197,6 +228,7 @@ function EntryList() {
   });
   const entries = [];
   const nodes = [];
+  var queuePos = -1;
 
   function addNode(entry) {
     const node = doc.createElement("div");
@@ -250,13 +282,33 @@ function EntryList() {
       entries.push(entry);
       addNode(entry);
     },
-    "refresh": function() {
+    "queue": function(type, msg) {
+      if (queuePos < 0) {
+        queuePos = entries.length;
+      }
+      const now = Date.now();
+      const entry = new Entry(type, msg, now);
+      entries.push(entry);
+    },
+    "processQueue": function() {
+      if (queuePos >= 0) {
+        for (let k = queuePos, n = entries.length; k < n; k += 1) {
+          let entry = entries[k];
+          addNode(entry);
+        }
+        queuePos = -1;
+      }
+    },
+    "clear": function() {
       const parent = state.consoleEntries;
       let child = parent.lastChild;
       while (child) {
         parent.removeChild(child);
         child = parent.lastChild;
       }
+    },
+    "refresh": function() {
+      this.clear();
 
       const docFrag = doc.createDocumentFragment();
       for (let k = 0, n = nodes.length; k < n; k += 1) {
@@ -286,7 +338,13 @@ function handleEntriesFilterChange() {
   state.entryList.refresh();
 }
 
+/**
+@param {object} args Init arguments
+@this Console
+@returns {undefined} Returns
+*/
 function init(args) {
+  state.LevelState = args.LevelState;
   state.console = args.console;
   state.consoleEntriesFilterDebug = args.consoleEntriesFilterDebug;
   state.consoleEntriesFilterLog = args.consoleEntriesFilterLog;
@@ -329,6 +387,7 @@ function show(args = {"callback": noop}) {
   for (let key of Object.keys(state.callbackArgs)) {
     state.callbackArgs[key] = null;
   }
+  state.entryList.processQueue();
 }
 
 function hide() {
@@ -357,6 +416,7 @@ function handleInputKeyDown(evt) {
   const key = state.KEY_MAP[evt.key];
 
   switch (key || evt.which || evt.keyCode) {
+    // Enter
     case 13:
       handleInputEnter();
     break;
@@ -372,19 +432,19 @@ function handleInputKeyDown(evt) {
 }
 
 function debug(msg) {
-  state.entryList.add(EntryType.DEBUG, msg);
+  state.entryList.queue(EntryType.DEBUG, msg);
 }
 
 function log(msg) {
-  state.entryList.add(EntryType.LOG, msg);
+  state.entryList.queue(EntryType.LOG, msg);
 }
 
 function warn(msg) {
-  state.entryList.add(EntryType.WARN, msg);
+  state.entryList.queue(EntryType.WARN, msg);
 }
 
 function error(msg) {
-  state.entryList.add(EntryType.ERROR, msg);
+  state.entryList.queue(EntryType.ERROR, msg);
 }
 
 return {
