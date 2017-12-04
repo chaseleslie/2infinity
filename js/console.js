@@ -197,6 +197,7 @@ function EntryList() {
   });
   const entries = [];
   const nodes = [];
+  var queuePos = -1;
 
   function addNode(entry) {
     const node = doc.createElement("div");
@@ -250,6 +251,23 @@ function EntryList() {
       entries.push(entry);
       addNode(entry);
     },
+    "queue": function(type, msg) {
+      if (queuePos < 0) {
+        queuePos = entries.length;
+      }
+      const now = Date.now();
+      const entry = new Entry(type, msg, now);
+      entries.push(entry);
+    },
+    "processQueue": function() {
+      if (queuePos >= 0) {
+        for (let k = queuePos, n = entries.length; k < n; k += 1) {
+          let entry = entries[k];
+          addNode(entry);
+        }
+        queuePos = -1;
+      }
+    },
     "clear": function() {
       const parent = state.consoleEntries;
       let child = parent.lastChild;
@@ -289,6 +307,11 @@ function handleEntriesFilterChange() {
   state.entryList.refresh();
 }
 
+/**
+@param {object} args Init arguments
+@this Console
+@returns {undefined} Returns
+*/
 function init(args) {
   state.console = args.console;
   state.consoleEntriesFilterDebug = args.consoleEntriesFilterDebug;
@@ -332,6 +355,7 @@ function show(args = {"callback": noop}) {
   for (let key of Object.keys(state.callbackArgs)) {
     state.callbackArgs[key] = null;
   }
+  state.entryList.processQueue();
 }
 
 function hide() {
@@ -360,6 +384,7 @@ function handleInputKeyDown(evt) {
   const key = state.KEY_MAP[evt.key];
 
   switch (key || evt.which || evt.keyCode) {
+    // Enter
     case 13:
       handleInputEnter();
     break;
@@ -375,19 +400,19 @@ function handleInputKeyDown(evt) {
 }
 
 function debug(msg) {
-  state.entryList.add(EntryType.DEBUG, msg);
+  state.entryList.queue(EntryType.DEBUG, msg);
 }
 
 function log(msg) {
-  state.entryList.add(EntryType.LOG, msg);
+  state.entryList.queue(EntryType.LOG, msg);
 }
 
 function warn(msg) {
-  state.entryList.add(EntryType.WARN, msg);
+  state.entryList.queue(EntryType.WARN, msg);
 }
 
 function error(msg) {
-  state.entryList.add(EntryType.ERROR, msg);
+  state.entryList.queue(EntryType.ERROR, msg);
 }
 
 return {
