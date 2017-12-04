@@ -187,10 +187,12 @@ var Splash = (function(glob) {
 
   /* Splash Animation */
 
-  const SPLASH_CANCEL = -1;
-  const SPLASH_SHIP_MATERIALIZE = 0;
-  const SPLASH_SHIP_MOVE = 1;
-  const SPLASH_SHIP_JUMP_HYPERSPACE = 2;
+  const SplashState = Object.freeze({
+    "CANCEL":      -1,
+    "MATERIALIZE": 0,
+    "MOVE":        1,
+    "HYPERSPACE":  2
+  });
 
   const splashState = Object.seal({
     "canvasOverlay": null,
@@ -253,7 +255,7 @@ var Splash = (function(glob) {
     splashState.img = args.img;
     splashState.text = args.text;
     splashState.callback = args.callback;
-    splashState.state = SPLASH_SHIP_MATERIALIZE;
+    splashState.state = SplashState.MATERIALIZE;
     splashState.frame = 0;
 
     doc.body.addEventListener("click", splashHandleKeyDown, false);
@@ -306,7 +308,7 @@ var Splash = (function(glob) {
     splashState.animFrame = global.requestAnimationFrame(splash);
     const ctx = splashState.canvasOverlayCtx;
 
-    if (splashState.state <= SPLASH_SHIP_MOVE) {
+    if (splashState.state <= SplashState.MOVE) {
       ctx.clearRect(
         splashState.left,
         splashState.top,
@@ -323,11 +325,11 @@ var Splash = (function(glob) {
     }
 
     switch (splashState.state) {
-      case SPLASH_CANCEL:
+      case SplashState.CANCEL:
         // Cancel splash
         global.cancelAnimationFrame(splashState.animFrame);
         return splashEnd();
-      case SPLASH_SHIP_MATERIALIZE: {
+      case SplashState.MATERIALIZE: {
         // Part 1: Ship materializes
         const imageData = splashState.imgImageData.data;
         const width = splashState.width;
@@ -342,11 +344,11 @@ var Splash = (function(glob) {
         }
       }
       break;
-      case SPLASH_SHIP_MOVE:
+      case SplashState.MOVE:
         // Part 2: Ship moves to the center
         splashState.left += 4;
       break;
-      case SPLASH_SHIP_JUMP_HYPERSPACE: {
+      case SplashState.HYPERSPACE: {
         // Part 3: Ship jumps to hyperspace
         splashState.width -= 4;
         if (splashState.width <= 0) {
@@ -372,13 +374,13 @@ var Splash = (function(glob) {
     }
 
     if (splashState.frame > splashState.materializeFrameCount) {
-      splashState.state = SPLASH_SHIP_MOVE;
+      splashState.state = SplashState.MOVE;
     }
     if (splashState.left >= splashState.moveEndPos) {
-      splashState.state = SPLASH_SHIP_JUMP_HYPERSPACE;
+      splashState.state = SplashState.HYPERSPACE;
     }
     if (splashState.width <= 1) {
-      splashState.state = SPLASH_CANCEL;
+      splashState.state = SplashState.CANCEL;
     }
 
     if (!splashState.isTextDrawn) {
@@ -408,9 +410,11 @@ var Splash = (function(glob) {
 
   /* Boss Intro Animation */
 
-  const BOSS_INTRO_CANCEL = -1;
-  const BOSS_INTRO_MATERIALIZE = 0;
-  const BOSS_INTRO_FOCUS = 1;
+  const BossState = Object.freeze({
+    "CANCEL":      -1,
+    "MATERIALIZE": 0,
+    "FOCUS":       1
+  });
   const bossIntroState = Object.seal({
     "canvasOverlay": null,
     "canvasOverlayCtx": null,
@@ -446,7 +450,7 @@ var Splash = (function(glob) {
       case 116:
       break;
       default:
-        bossIntroState.state = BOSS_INTRO_CANCEL;
+        bossIntroState.state = BossState.CANCEL;
         e.preventDefault();
         return false;
     }
@@ -455,7 +459,7 @@ var Splash = (function(glob) {
   function preBossIntro(args) {
     bossIntroState.canvasOverlay = args.canvasOverlay;
     bossIntroState.canvasOverlayCtx = args.canvasOverlayCtx;
-    bossIntroState.state = BOSS_INTRO_MATERIALIZE;
+    bossIntroState.state = BossState.MATERIALIZE;
     bossIntroState.frame = 0;
     bossIntroState.img = args.img;
     bossIntroState.imgRotation = args.imgRotation;
@@ -518,14 +522,15 @@ var Splash = (function(glob) {
   function bossIntro(ts) {
     bossIntroState.animFrame = global.requestAnimationFrame(bossIntro);
     const ctx = bossIntroState.canvasOverlayCtx;
+    const PI = Math.PI;
 
     switch (bossIntroState.state) {
-      case BOSS_INTRO_CANCEL:
+      case BossState.CANCEL:
         // Cancel animation
         global.cancelAnimationFrame(bossIntroState.animFrame);
         return bossIntroEnd();
 
-      case BOSS_INTRO_MATERIALIZE: {
+      case BossState.MATERIALIZE: {
         // Part 1: Ship materializes
         const imageData = bossIntroState.imgImageData.data;
         const width = bossIntroState.width;
@@ -538,7 +543,7 @@ var Splash = (function(glob) {
         const x = 0.5 * width;
         const y = 0.5 * height;
         const frac = frame / materializeFrameCount;
-        const TWOPI = 2 * Math.PI;
+        const TWOPI = 2 * PI;
         const angle = frac * TWOPI;
         const vecX = -1;
         const vecY = 0;
@@ -560,7 +565,7 @@ var Splash = (function(glob) {
         }
       }
       break;
-      case BOSS_INTRO_FOCUS: {
+      case BossState.FOCUS: {
         // Part 2: Draw focus around ship
         ctx.save();
         ctx.strokeStyle = "#400";
@@ -575,7 +580,7 @@ var Splash = (function(glob) {
 
         for (let k = r; k < r2; k += 1) {
           ctx.beginPath();
-          ctx.arc(x, y, k, 0, 2 * Math.PI);
+          ctx.arc(x, y, k, 0, 2 * PI);
           ctx.stroke();
         }
 
@@ -583,7 +588,7 @@ var Splash = (function(glob) {
         ctx.strokeStyle = "#AAF";
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(x, y, rad, 0, 2 * Math.PI);
+        ctx.arc(x, y, rad, 0, 2 * PI);
         ctx.stroke();
         bossIntroState.focusLastTs = ts;
         if (bossIntroState.focusRingLast < numRings) {
@@ -595,7 +600,7 @@ var Splash = (function(glob) {
         const frac = bossIntroState.focusFrameCount / bossIntroState.focusFrameCountMax;
         r2 = r + numRings + parseInt(bossIntroState.focusOuterRingRadiusMult * (r + numRings) * frac, 10);
         ctx.beginPath();
-        ctx.arc(x, y, r2, 0, 2 * Math.PI);
+        ctx.arc(x, y, r2, 0, 2 * PI);
         ctx.stroke();
 
         ctx.restore();
@@ -608,10 +613,10 @@ var Splash = (function(glob) {
     const matFrameCount = bossIntroState.materializeFrameCount;
     const focusFrameCount = bossIntroState.focusFrameCount;
     if (frame >= matFrameCount) {
-      bossIntroState.state = BOSS_INTRO_FOCUS;
+      bossIntroState.state = BossState.FOCUS;
     }
     if (focusFrameCount <= 0) {
-      bossIntroState.state = BOSS_INTRO_CANCEL;
+      bossIntroState.state = BossState.CANCEL;
     }
 
     if (!bossIntroState.isTextDrawn) {
