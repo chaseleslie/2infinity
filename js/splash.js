@@ -238,6 +238,7 @@ var Splash = (function(glob) {
     splashState.imgImageDataOpac = null;
     const ctx = splashState.canvasOverlayCtx;
     ctx.clearRect(0, 0, splashState.canvasWidth, splashState.canvasHeight);
+    doc.body.removeEventListener("click", splashHandleKeyDown, false);
     doc.body.removeEventListener("keydown", splashHandleKeyDown, false);
 
     splashState.callback();
@@ -257,6 +258,7 @@ var Splash = (function(glob) {
     splashState.state = SPLASH_SHIP_MATERIALIZE;
     splashState.frame = 0;
 
+    doc.body.addEventListener("click", splashHandleKeyDown, false);
     doc.body.addEventListener("keydown", splashHandleKeyDown, false);
     splashState.width = args.imgWidth;
     splashState.height = args.imgHeight;
