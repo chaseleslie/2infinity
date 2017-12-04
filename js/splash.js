@@ -209,8 +209,6 @@ var Splash = (function(glob) {
     "top": 0,
     "width": 0,
     "height": 0,
-    "srcWidth": 0,
-    "srcHeight": 0,
     "canvasWidth": 0,
     "canvasHeight": 0,
     "aspect": 0,
@@ -260,13 +258,12 @@ var Splash = (function(glob) {
 
     doc.body.addEventListener("click", splashHandleKeyDown, false);
     doc.body.addEventListener("keydown", splashHandleKeyDown, false);
-    splashState.width = args.imgWidth;
+
+    splashState.aspect = splashState.canvasWidth / splashState.canvasHeight;
+    splashState.width = args.imgWidth / splashState.aspect;
     splashState.height = args.imgHeight;
-    splashState.srcWidth = splashState.width;
-    splashState.srcHeight = splashState.height;
     splashState.left = 0;
     splashState.top = 0.5 * splashState.canvasHeight - 0.5 * splashState.height;
-    splashState.aspect = splashState.canvasWidth / splashState.canvasHeight;
     splashState.moveEndPos = splashState.canvasWidth / 3;
 
     /* Prerender hyperspace bars */
@@ -351,24 +348,20 @@ var Splash = (function(glob) {
       break;
       case SPLASH_SHIP_JUMP_HYPERSPACE: {
         // Part 3: Ship jumps to hyperspace
-        splashState.srcWidth -= 4;
-        splashState.width = splashState.srcWidth;
-        if (splashState.srcWidth <= 0) {
-          splashState.srcWidth = 1;
+        splashState.width -= 4;
+        if (splashState.width <= 0) {
+          splashState.width = 1;
         }
 
-        const halfHeight = splashState.height / 2;
-        const aspect = splashState.aspect * ROOT_TWO_OVER_TWO;
+        const halfHeight = 0.5 * splashState.height;
         const left = splashState.left;
 
         for (let k = 0, n = splashState.height; k < n; k += 8) {
           let x = 0;
           if (k <= halfHeight) {
-            // x = parseInt(left + aspect * k, 10);
-            x = parseInt(left + 1.25 * aspect * k, 10);
+            x = Math.trunc(left + k);
           } else {
-            // x = parseInt(left + aspect * (splashState.height - k), 10);
-            x = parseInt(left + 1.25 * aspect * (splashState.height - k), 10);
+            x = Math.trunc(left + (splashState.height - k));
           }
 
           const y = splashState.top + k;
@@ -384,7 +377,7 @@ var Splash = (function(glob) {
     if (splashState.left >= splashState.moveEndPos) {
       splashState.state = SPLASH_SHIP_JUMP_HYPERSPACE;
     }
-    if (splashState.srcWidth <= 1) {
+    if (splashState.width <= 1) {
       splashState.state = SPLASH_CANCEL;
     }
 
@@ -407,8 +400,8 @@ var Splash = (function(glob) {
       splashState.left,
       splashState.top,
       0, 0,
-      splashState.srcWidth,
-      splashState.srcHeight
+      splashState.width,
+      splashState.height
     );
     splashState.frame += 1;
   }

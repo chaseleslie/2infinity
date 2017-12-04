@@ -824,7 +824,7 @@ function main(ts) {
     global.cancelAnimationFrame(Game.animFrame);
     stop();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    let img = doc.getElementById("img_ship");
+    const img = doc.getElementById("img_ship");
     Splash.start({
       "canvasOverlay": canvasOverlay,
       "canvasOverlayCtx": canvasOverlayCtx,
@@ -843,13 +843,13 @@ function main(ts) {
     global.cancelAnimationFrame(Game.animFrame);
     stop();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    let img = doc.getElementById("img_boss");
-    let imgUnitSize = parseInt(img.dataset.unitSize, 10);
-    let bossData = Game.gameData.bosses[Game.level];
-    let imgSpritePos = bossData.spritePos;
+    const img = doc.getElementById("img_boss");
+    const imgUnitSize = parseInt(img.dataset.unitSize, 10);
+    const bossData = Game.gameData.bosses[Game.level];
+    const imgSpritePos = bossData.spritePos;
     const ROOT_TWO = Math.sqrt(2);
-    let destWidth = parseInt(1.75 * bossData.modelScales[0] * Game.modelScale * imgUnitSize / ROOT_TWO, 10);
-    let destHeight = parseInt(1.75 * bossData.modelScales[1] * Game.modelScale * imgUnitSize, 10);
+    const destWidth = parseInt(1.75 * bossData.modelScales[0] * Game.modelScale * imgUnitSize / ROOT_TWO, 10);
+    const destHeight = parseInt(1.75 * bossData.modelScales[1] * Game.modelScale * imgUnitSize, 10);
     Splash.bossIntro({
       "canvasOverlay": canvasOverlay,
       "canvasOverlayCtx": canvasOverlayCtx,
