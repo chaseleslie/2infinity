@@ -440,6 +440,18 @@ var Splash = (function(glob) {
     "callback": null
   });
 
+  function bossIntroHandleKeyDown(e) {
+    switch (e.key || e.keyCode || e.which) {
+      case "F5":
+      case 116:
+      break;
+      default:
+        bossIntroState.state = BOSS_INTRO_CANCEL;
+        e.preventDefault();
+        return false;
+    }
+  }
+
   function preBossIntro(args) {
     bossIntroState.canvasOverlay = args.canvasOverlay;
     bossIntroState.canvasOverlayCtx = args.canvasOverlayCtx;
@@ -460,6 +472,9 @@ var Splash = (function(glob) {
     bossIntroState.focusFrameCount = bossIntroState.focusFrameCountMax;
     bossIntroState.focusLastTs = 0;
     bossIntroState.focusRingLast = 0;
+
+    doc.body.addEventListener("click", bossIntroHandleKeyDown, false);
+    doc.body.addEventListener("keydown", bossIntroHandleKeyDown, false);
 
     bossIntroState.canvasOverlayCtx.clearRect(
       0, 0,
@@ -630,6 +645,8 @@ var Splash = (function(glob) {
       0, 0,
       bossIntroState.canvasWidth, bossIntroState.canvasHeight
     );
+    doc.body.removeEventListener("click", bossIntroHandleKeyDown, false);
+    doc.body.removeEventListener("keydown", bossIntroHandleKeyDown, false);
     bossIntroState.callback();
   }
 
