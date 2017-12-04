@@ -353,6 +353,9 @@ function Boss(game, type, isActive) {
     [Action.ATTACK]: 20
   });
 
+  var bossActionState = Action.TRACK;
+  var bossActionFrame = ActionFrame[bossActionState];
+
   this.reset = function(eType, isActive) {
     const modelScale = game.modelScale;
     type = eType;
@@ -418,13 +421,6 @@ function Boss(game, type, isActive) {
     }
   };
 
-  // const BOSS_EVADE = 0;
-  // const BOSS_TRACK = 1;
-  // const BOSS_ATTACK = 2;
-  // const BOSS_NUM_STATES = 3;
-  // const bossActionFrameMax = 120;
-  var bossActionState = Action.TRACK;
-  var bossActionFrame = ActionFrame[bossActionState];
   this.update = function(dt) {
     var score = 0;
     if (hp <= 0) {
