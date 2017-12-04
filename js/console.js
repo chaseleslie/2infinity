@@ -42,6 +42,7 @@ const state = Object.seal({
     "F5":         116,
     "`":          192
   }),
+  "LevelState": null,
   "console": null,
   "consoleEntries": null,
   "consoleEntriesFilterDebug": null,
@@ -58,7 +59,8 @@ const state = Object.seal({
   "callbackArgs": Object.seal({
     "level": null,
     "hitpoints": null,
-    "score": null
+    "score": null,
+    "state": null
   })
 });
 
@@ -70,7 +72,8 @@ function Shell() {
   const Commands = Object.freeze({
     "level": level,
     "hp": hitpoints,
-    "score": score
+    "score": score,
+    "state": levelstate
   });
   const history = [];
   var historyIndex = 0;
@@ -158,9 +161,37 @@ function Shell() {
   function score(args) {
     if (args.length > 1) {
       setScore(args);
-      getScore();
+      getScore(args);
     } else {
       getScore(args);
+    }
+  }
+
+  function getState() {
+    let stat = state.callbackArgs.state;
+    if (stat === null) {
+      stat = state.game.levelState;
+    }
+    const statStr = state.LevelState.map(stat);
+    state.entryList.add(EntryType.PRINT, `state is ${stat} (${statStr})`);
+  }
+
+  function setState(args) {
+    let stat = parseInt(args[1], 10);
+    if (isFinite(stat) && !isNaN(stat)) {
+      stat = state.LevelState.map(stat);
+    } else {
+      stat = args[1];
+    }
+    state.callbackArgs.state = state.LevelState.map(stat);
+  }
+
+  function levelstate(args) {
+    if (args.length > 1) {
+      setState(args);
+      getState(args);
+    } else {
+      getState(args);
     }
   }
 
@@ -172,7 +203,7 @@ function Shell() {
     history.push(command);
     state.entryList.add(EntryType.ECHO, command);
     const args = command.split(" ");
-    const cmd = args[0];
+    const cmd = args.length && args[0].toLowerCase();
     if (Commands[cmd]) {
       Commands[cmd](args);
     }
@@ -313,6 +344,7 @@ function handleEntriesFilterChange() {
 @returns {undefined} Returns
 */
 function init(args) {
+  state.LevelState = args.LevelState;
   state.console = args.console;
   state.consoleEntriesFilterDebug = args.consoleEntriesFilterDebug;
   state.consoleEntriesFilterLog = args.consoleEntriesFilterLog;

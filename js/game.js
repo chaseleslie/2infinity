@@ -88,7 +88,26 @@ const LevelState = Object.freeze({
   "END":        2,
   "BOSS_INTRO": 3,
   "BOSS":       4,
-  "GAME_OVER":  5
+  "GAME_OVER":  5,
+  "map": function(arg) {
+    let val = null;
+    if (typeof arg === "number") {
+      for (let key of Object.keys(this)) {
+        if (this[key] === arg) {
+          val = key;
+          break;
+        }
+      }
+    } else if (typeof arg === "string") {
+      for (let key of Object.keys(this)) {
+        if (key === arg) {
+          val = this[key];
+          break;
+        }
+      }
+    }
+    return val;
+  }
 });
 
 const Difficulty = Object.freeze({
@@ -342,6 +361,7 @@ const Game = {
 };
 
 Console.init({
+  "LevelState": LevelState,
   "game": Game,
   "console": gameConsole,
   "consoleEntries": gameConsoleEntries,
@@ -538,6 +558,14 @@ function clearEnemies() {
   }
 }
 
+function clearBosses() {
+  const bosses = Game.bosses;
+  for (let k = 0, n = bosses.length; k < n; k += 1) {
+    const boss = bosses[k];
+    boss.reset(k, false);
+  }
+}
+
 function showConsole() {
   canvas.classList.add("inactive");
   canvasOverlay.classList.add("inactive");
@@ -551,6 +579,7 @@ function hideConsole(args) {
 
   if (args.level !== null) {
     clearEnemies();
+    clearBosses();
     game.level = args.level - 1;
     game.levelState = LevelState.INTRO;
     clearAllLevels();
@@ -566,7 +595,31 @@ function hideConsole(args) {
     game.overlayState.flag |= OverlayFlags.SCORE_DIRTY;
   }
 
-  start();
+  if (args.state !== null) {
+    const prevState = game.levelState;
+    game.levelState = args.state;
+    switch(prevState) {
+      case LevelState.INTRO:
+      case LevelState.PLAYING:
+      case LevelState.END:
+        clearAllLevels();
+        clearEnemies();
+      break;
+      case LevelState.BOSS_INTRO:
+      case LevelState.BOSS:
+        clearBosses();
+      break;
+    }
+
+    switch (game.levelState) {
+      case LevelState.BOSS_INTRO:
+      case LevelState.BOSS:
+        Game.bosses[Game.level].reset(Game.level, true);
+      break;
+    }
+  }
+
+  setTimeout(start, 0);
 }
 
 function onMenuScroll(e) {
@@ -970,7 +1023,7 @@ function updateLevel(Game, ts, enemies) {
     if (!enemiesActive) {
       Game.levelState = LevelState.BOSS_INTRO;
       Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.INCREMENT;
-      Game.bosses.push(new Boss(Game, Game.level, true));
+      Game.bosses[Game.level].reset(Game.level, true);
     }
   } else if (Game.levelState === LevelState.BOSS) {
     let bossActive = false;
@@ -1349,6 +1402,11 @@ function setup(Game, gl) {
   /* Create cache of weapons for enemies to reuse */
   for (let k = 0; k < 50; k += 1) {
     Game.enemyWeapons.push(new Weapon(Game, 0, 50, 0, 0, 0, false));
+  }
+
+  /* Create bosses */
+  for (let k = 0, n = Game.gameData.levels.length; k < n; k += 1) {
+    Game.bosses.push(new Boss(Game, k, false));
   }
 
   Splash.intro({
