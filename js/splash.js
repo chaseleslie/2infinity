@@ -308,21 +308,12 @@ var Splash = (function(glob) {
     splashState.animFrame = global.requestAnimationFrame(splash);
     const ctx = splashState.canvasOverlayCtx;
 
-    if (splashState.state <= SplashState.MOVE) {
-      ctx.clearRect(
-        splashState.left,
-        splashState.top,
-        splashState.width,
-        splashState.height
-      );
-    } else {
-      ctx.clearRect(
-        splashState.left,
-        splashState.top,
-        splashState.width,
-        splashState.height
-      );
-    }
+    ctx.clearRect(
+      splashState.left,
+      splashState.top,
+      splashState.width,
+      splashState.height
+    );
 
     switch (splashState.state) {
       case SplashState.CANCEL:
