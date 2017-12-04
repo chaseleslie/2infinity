@@ -371,7 +371,7 @@ function Boss(game, type, isActive) {
     active = isActive || false;
     texCoordsBufferIndexShip = enemyData.texType
     translateVec.x = enemyData.spawnPos[0];
-    translateVec.y = enemyData.spawnPos[0];
+    translateVec.y = enemyData.spawnPos[1];
 
     if (weapon) {
       const weaponData = game.gameData.weapons[weaponType];
