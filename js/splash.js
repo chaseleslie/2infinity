@@ -2,8 +2,8 @@
 /* global Utils */
 
 var Splash = (function(glob) {
-  var global = glob;
-  var doc = global.document;
+  const global = glob;
+  const doc = global.document;
   const ROOT_TWO_OVER_TWO = Utils.ROOT_TWO_OVER_TWO;
 
   /* Intro Display */
@@ -16,7 +16,7 @@ var Splash = (function(glob) {
 
   function handleIntroKey(e) {
     var keyHandled = true;
-    var key = introState.KEY_MAP[e.key];
+    const key = introState.KEY_MAP[e.key];
     switch (key || e.which || e.keyCode) {
       // F5 / Alt
       case 116:
@@ -74,12 +74,12 @@ var Splash = (function(glob) {
 
     const logoTextPrefix = "2";
     const logoTextSuffix = "Infinity";
-    var logoTextYOffset = height / 10;
+    const logoTextYOffset = height / 10;
     ctx.font = logoFontNormal;
-    var logoTextPrefixProps = ctx.measureText(logoTextPrefix);
+    const logoTextPrefixProps = ctx.measureText(logoTextPrefix);
     ctx.font = logoFontItalic;
-    var logoTextSuffixProps = ctx.measureText(logoTextSuffix);
-    var logoTextWidth = logoTextPrefixProps.width + logoTextSuffixProps.width;
+    const logoTextSuffixProps = ctx.measureText(logoTextSuffix);
+    const logoTextWidth = logoTextPrefixProps.width + logoTextSuffixProps.width;
 
     ctx.font = logoFontNormal;
     ctx.fillText(
@@ -126,16 +126,16 @@ var Splash = (function(glob) {
     ];
 
     for (let k = 0, n = keys.length; k < n; k += 1) {
-      let key = keys[k];
-      let xOff = width / 6 - 0.5 * (2 * keyHeight + spacing + 4 * ctx.lineWidth);
-      let yOff = keyMapYOffset + k * keyHeight + k * spacing;
+      const key = keys[k];
+      const xOff = width / 6 - 0.5 * (2 * keyHeight + spacing + 4 * ctx.lineWidth);
+      const yOff = keyMapYOffset + k * keyHeight + k * spacing;
 
       for (let iK = 0, iN = key.keys.length; iK < iN; iK += 1) {
-        let x = xOff + iK * keyHeight + iK * spacing;
-        let y = yOff;
-        let w = keyHeight;
-        let h = keyHeight;
-        let d = 10;
+        const x = xOff + iK * keyHeight + iK * spacing;
+        const y = yOff;
+        const w = keyHeight;
+        const h = keyHeight;
+        const d = 10;
         ctx.moveTo(x + d, y);
         ctx.lineTo(x + w - d, y);
         ctx.quadraticCurveTo(x + w, y, x + w, y + d);
@@ -147,7 +147,7 @@ var Splash = (function(glob) {
         ctx.quadraticCurveTo(x, y, x + d, y);
         ctx.stroke();
 
-        let chr = key.keys[iK];
+        const chr = key.keys[iK];
         ctx.fillStyle = "#FFF";
         ctx.fillText(chr, x + 0.5 * keyHeight, y + 0.5 * keyHeight + key.fixY);
       }
@@ -163,12 +163,12 @@ var Splash = (function(glob) {
     }
 
     /* Put border around keymap */
-    let margin = 20;
-    let x = width / 6 - 0.5 * (2 * keyHeight + spacing + 4 * ctx.lineWidth) - margin;
-    let y = 0.5 * ((logoTextYOffset + logoTextHeight) + keyMapYOffset) - 0.5 * keyTextHeight - margin;
-    let w = width - 2 * x;
-    let h = keys.length * (keyHeight + spacing + 2 * ctx.lineWidth) - spacing + keyTextHeight + 2 * margin;
-    let d = 10;
+    const margin = 20;
+    const x = width / 6 - 0.5 * (2 * keyHeight + spacing + 4 * ctx.lineWidth) - margin;
+    const y = 0.5 * ((logoTextYOffset + logoTextHeight) + keyMapYOffset) - 0.5 * keyTextHeight - margin;
+    const w = width - 2 * x;
+    const h = keys.length * (keyHeight + spacing + 2 * ctx.lineWidth) - spacing + keyTextHeight + 2 * margin;
+    const d = 10;
     ctx.moveTo(x + d, y);
     ctx.lineTo(x + w - d, y);
     ctx.quadraticCurveTo(x + w, y, x + w, y + d);
@@ -236,7 +236,7 @@ var Splash = (function(glob) {
     splashState.img = null;
     splashState.imgImageData = null;
     splashState.imgImageDataOpac = null;
-    var ctx = splashState.canvasOverlayCtx;
+    const ctx = splashState.canvasOverlayCtx;
     ctx.clearRect(0, 0, splashState.canvasWidth, splashState.canvasHeight);
     doc.body.removeEventListener("keydown", splashHandleKeyDown, false);
 
@@ -270,8 +270,8 @@ var Splash = (function(glob) {
     /* Prerender hyperspace bars */
     for (let k = 0, n = splashState.canvasOverlay.height; k < n; k += 1) {
       for (let iK = 0, iN = splashState.canvasOverlay.width; iK < iN; iK += 1) {
-        let buff = splashState.hyperspaceBarsImgData.data;
-        let pixel = k * splashState.canvasOverlay.width * 4 + iK * 4;
+        const buff = splashState.hyperspaceBarsImgData.data;
+        const pixel = k * splashState.canvasOverlay.width * 4 + iK * 4;
         buff[pixel] = 220;
         buff[pixel + 1] = 220;
         buff[pixel + 2] = 255;
@@ -280,12 +280,12 @@ var Splash = (function(glob) {
     }
 
     /* Get image data from prerendered image */
-    var offscreenCanvas = doc.createElement("canvas");
-    var width = splashState.width;
-    var height = splashState.height;
+    const offscreenCanvas = doc.createElement("canvas");
+    const width = splashState.width;
+    const height = splashState.height;
     offscreenCanvas.width = width;
     offscreenCanvas.height = height;
-    var ctx = offscreenCanvas.getContext("2d");
+    const ctx = offscreenCanvas.getContext("2d");
     ctx.drawImage(
       splashState.img, args.imgX, args.imgY,
       args.imgWidth, args.imgHeight,
@@ -293,21 +293,19 @@ var Splash = (function(glob) {
     );
     splashState.imgImageData = ctx.getImageData(0, 0, width, height);
     splashState.imgImageDataOpac = new Uint8Array(width * height);
-    var imageData = splashState.imgImageData.data;
-    var imgImageDataOpac = splashState.imgImageDataOpac;
+    const imageData = splashState.imgImageData.data;
+    const imgImageDataOpac = splashState.imgImageDataOpac;
     for (let k = 3, n = width*height*4, m = 0; k < n; k += 4, m += 1) {
       imgImageDataOpac[m] = imageData[k];
       imageData[k] = 0;
     }
-    offscreenCanvas = null;
-    ctx = null;
 
     splash();
   }
 
   function splash() {
     splashState.animFrame = global.requestAnimationFrame(splash);
-    var ctx = splashState.canvasOverlayCtx;
+    const ctx = splashState.canvasOverlayCtx;
 
     if (splashState.state <= SPLASH_SHIP_MOVE) {
       ctx.clearRect(
@@ -332,12 +330,12 @@ var Splash = (function(glob) {
         return splashEnd();
       case SPLASH_SHIP_MATERIALIZE: {
         // Part 1: Ship materializes
-        let imageData = splashState.imgImageData.data;
-        let width = splashState.width;
-        let height = splashState.height;
-        let frame = splashState.frame;
-        let imgImageDataOpac = splashState.imgImageDataOpac;
-        let materializeFrameCount = splashState.materializeFrameCount;
+        const imageData = splashState.imgImageData.data;
+        const width = splashState.width;
+        const height = splashState.height;
+        const frame = splashState.frame;
+        const imgImageDataOpac = splashState.imgImageDataOpac;
+        const materializeFrameCount = splashState.materializeFrameCount;
         for (let k = 0, n = width * height; k < n; k += 1) {
           if ((k - frame) % materializeFrameCount === 0) {
             imageData[k * 4 + 3] = imgImageDataOpac[k];
@@ -357,9 +355,9 @@ var Splash = (function(glob) {
           splashState.srcWidth = 1;
         }
 
-        let halfHeight = splashState.height / 2;
-        let aspect = splashState.aspect * ROOT_TWO_OVER_TWO;
-        let left = splashState.left;
+        const halfHeight = splashState.height / 2;
+        const aspect = splashState.aspect * ROOT_TWO_OVER_TWO;
+        const left = splashState.left;
 
         for (let k = 0, n = splashState.height; k < n; k += 8) {
           let x = 0;
@@ -371,7 +369,7 @@ var Splash = (function(glob) {
             x = parseInt(left + 1.25 * aspect * (splashState.height - k), 10);
           }
 
-          let y = splashState.top + k;
+          const y = splashState.top + k;
           ctx.putImageData(splashState.hyperspaceBarsImgData, x, y, 0, 0, splashState.canvasWidth, 1);
         }
       }
@@ -475,18 +473,18 @@ var Splash = (function(glob) {
     );
 
     /* Get image data from prerendered image */
-    var offscreenCanvas = doc.createElement("canvas");
-    var width = bossIntroState.width;
-    var height = bossIntroState.height;
+    const offscreenCanvas = doc.createElement("canvas");
+    const width = bossIntroState.width;
+    const height = bossIntroState.height;
     offscreenCanvas.width = width;
     offscreenCanvas.height = height;
-    var ctx = offscreenCanvas.getContext("2d");
-    var rot = args.imgRotation;
-    var cos = Math.cos;
-    var sin = Math.sin;
+    const ctx = offscreenCanvas.getContext("2d");
+    const rot = args.imgRotation;
+    const cos = Math.cos;
+    const sin = Math.sin;
     ctx.save();
-    let midX = 0.5 * width;
-    let midY = 0.5 * height;
+    const midX = 0.5 * width;
+    const midY = 0.5 * height;
     ctx.setTransform(
       cos(rot), sin(rot), -sin(rot), cos(rot), midX, midY
     );
@@ -504,14 +502,12 @@ var Splash = (function(glob) {
       imgImageDataOpac[m] = imageData[k];
       imageData[k] = 0;
     }
-    offscreenCanvas = null;
-    ctx = null;
 
     bossIntro();
   }
   function bossIntro(ts) {
     bossIntroState.animFrame = global.requestAnimationFrame(bossIntro);
-    var ctx = bossIntroState.canvasOverlayCtx;
+    const ctx = bossIntroState.canvasOverlayCtx;
 
     switch (bossIntroState.state) {
       case BOSS_INTRO_CANCEL:
@@ -521,27 +517,27 @@ var Splash = (function(glob) {
 
       case BOSS_INTRO_MATERIALIZE: {
         // Part 1: Ship materializes
-        let imageData = bossIntroState.imgImageData.data;
-        let width = bossIntroState.width;
-        let height = bossIntroState.height;
-        let frame = bossIntroState.frame;
-        let imgImageDataOpac = bossIntroState.imgImageDataOpac;
-        let materializeFrameCount = bossIntroState.materializeFrameCount;
-        let acos = Math.acos;
-        let sqrt = Math.sqrt;
-        let x = 0.5 * width;
-        let y = 0.5 * height;
-        let frac = frame / materializeFrameCount;
-        let TWOPI = 2 * Math.PI;
-        let angle = frac * TWOPI;
-        let vecX = -1;
-        let vecY = 0;
+        const imageData = bossIntroState.imgImageData.data;
+        const width = bossIntroState.width;
+        const height = bossIntroState.height;
+        const frame = bossIntroState.frame;
+        const imgImageDataOpac = bossIntroState.imgImageDataOpac;
+        const materializeFrameCount = bossIntroState.materializeFrameCount;
+        const acos = Math.acos;
+        const sqrt = Math.sqrt;
+        const x = 0.5 * width;
+        const y = 0.5 * height;
+        const frac = frame / materializeFrameCount;
+        const TWOPI = 2 * Math.PI;
+        const angle = frac * TWOPI;
+        const vecX = -1;
+        const vecY = 0;
 
         for (let k = 0, m = 0; k < height; k += 1) {
           for (let iK = 0; iK < width; iK += 1, m += 1) {
-            let px = iK - x;
-            let py = k - y;
-            let dot = vecX * px + vecY * py;
+            const px = iK - x;
+            const py = k - y;
+            const dot = vecX * px + vecY * py;
             let dAngle = acos(dot / sqrt(px * px + py * py)) || 0;
 
             if (py < 0) {
@@ -558,12 +554,12 @@ var Splash = (function(glob) {
         // Part 2: Draw focus around ship
         ctx.save();
         ctx.strokeStyle = "#400";
-        let width = bossIntroState.width;
-        let height = bossIntroState.height;
-        let x = bossIntroState.left + 0.5 * width;
-        let y = bossIntroState.top + 0.5 * height;
-        let r = parseInt(ROOT_TWO_OVER_TWO * Math.max(width, height), 10);
-        let numRings = bossIntroState.focusNumRings;
+        const width = bossIntroState.width;
+        const height = bossIntroState.height;
+        const x = bossIntroState.left + 0.5 * width;
+        const y = bossIntroState.top + 0.5 * height;
+        const r = parseInt(ROOT_TWO_OVER_TWO * Math.max(width, height), 10);
+        const numRings = bossIntroState.focusNumRings;
         let r2 = r + numRings;
         ctx.clearRect(x - 4 * width, y - 4 * height, 8 * width, 8 * height);
 
@@ -573,7 +569,7 @@ var Splash = (function(glob) {
           ctx.stroke();
         }
 
-        let rad = r + bossIntroState.focusRingLast;
+        const rad = r + bossIntroState.focusRingLast;
         ctx.strokeStyle = "#AAF";
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -586,7 +582,7 @@ var Splash = (function(glob) {
           bossIntroState.focusRingLast = 0;
         }
 
-        let frac = bossIntroState.focusFrameCount / bossIntroState.focusFrameCountMax;
+        const frac = bossIntroState.focusFrameCount / bossIntroState.focusFrameCountMax;
         r2 = r + numRings + parseInt(bossIntroState.focusOuterRingRadiusMult * (r + numRings) * frac, 10);
         ctx.beginPath();
         ctx.arc(x, y, r2, 0, 2 * Math.PI);
@@ -598,9 +594,9 @@ var Splash = (function(glob) {
       break;
     }
 
-    let frame = bossIntroState.frame;
-    let matFrameCount = bossIntroState.materializeFrameCount;
-    let focusFrameCount = bossIntroState.focusFrameCount;
+    const frame = bossIntroState.frame;
+    const matFrameCount = bossIntroState.materializeFrameCount;
+    const focusFrameCount = bossIntroState.focusFrameCount;
     if (frame >= matFrameCount) {
       bossIntroState.state = BOSS_INTRO_FOCUS;
     }
