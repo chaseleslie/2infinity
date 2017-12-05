@@ -4,9 +4,13 @@
 var Splash = (function(glob) {
   const global = glob;
   const doc = global.document;
-  const ROOT_TWO_OVER_TWO = Utils.ROOT_TWO_OVER_TWO;
 
   /* Intro Display */
+
+  const commonState = Object.seal({
+    "KEY_MAP": null,
+    "aspect": 0
+  });
 
   const introState = Object.seal({
     "canvasOverlayCtx": null,
@@ -14,9 +18,15 @@ var Splash = (function(glob) {
     "KEY_MAP": null
   });
 
+  function init(args) {
+    commonState.KEY_MAP = args.KEY_MAP;
+    commonState.aspect = args.aspect;
+  }
+
   function handleIntroKey(e) {
     var keyHandled = true;
-    const key = introState.KEY_MAP[e.key];
+    const key = commonState.KEY_MAP[e.key];
+
     switch (key || e.which || e.keyCode) {
       // F5 / Alt
       case 116:
@@ -51,7 +61,6 @@ var Splash = (function(glob) {
   function preIntro(args) {
     introState.canvasOverlayCtx = args.canvasOverlayCtx;
     introState.callback = args.callback;
-    introState.KEY_MAP = args.KEY_MAP;
     doc.body.addEventListener("keydown", handleIntroKey, false);
     doc.body.addEventListener("click", handleIntroKey, false);
     setupIntro();
@@ -164,10 +173,20 @@ var Splash = (function(glob) {
 
     /* Put border around keymap */
     const margin = 20;
-    const x = width / 6 - 0.5 * (2 * keyHeight + spacing + 4 * ctx.lineWidth) - margin;
-    const y = 0.5 * ((logoTextYOffset + logoTextHeight) + keyMapYOffset) - 0.5 * keyTextHeight - margin;
+    const x = (
+      width / 6 -
+      0.5 * (2 * keyHeight + spacing + 4 * ctx.lineWidth) -
+      margin
+    );
+    const y = (
+      0.5 * ((logoTextYOffset + logoTextHeight) + keyMapYOffset) -
+      0.5 * keyTextHeight - margin
+    );
     const w = width - 2 * x;
-    const h = keys.length * (keyHeight + spacing + 2 * ctx.lineWidth) - spacing + keyTextHeight + 2 * margin;
+    const h = (
+      keys.length * (keyHeight + spacing + 2 * ctx.lineWidth) -
+      spacing + keyTextHeight + 2 * margin
+    );
     const d = 10;
     ctx.moveTo(x + d, y);
     ctx.lineTo(x + w - d, y);
@@ -181,7 +200,8 @@ var Splash = (function(glob) {
     ctx.stroke();
 
     ctx.fillStyle = "#DDD";
-    ctx.fillText("Press any key to continue", 0.5 * width, height - 0.5 * keyTextHeight);
+    const msg = "Press any key to continue";
+    ctx.fillText(msg, 0.5 * width, height - 0.5 * keyTextHeight);
     ctx.restore();
   }
 
@@ -219,14 +239,30 @@ var Splash = (function(glob) {
   });
 
   function splashHandleKeyDown(e) {
-    switch (e.key || e.keyCode || e.which) {
-      case "F5":
+    var keyHandled = true;
+    const key = commonState.KEY_MAP[e.key];
+
+    switch (key || e.keyCode || e.which) {
+      // F5 / Alt
       case 116:
+      case 18:
+        keyHandled = false;
+      break;
+      // Tab
+      case 0x09:
+        if (e.altKey) {
+          keyHandled = false;
+        }
       break;
       default:
-        splashState.state = -1;
-        e.preventDefault();
-        return false;
+        keyHandled = true;
+      break;
+    }
+
+    if (keyHandled) {
+      splashState.state = SplashState.CANCEL;
+      e.preventDefault();
+      return false;
     }
   }
 
@@ -358,7 +394,11 @@ var Splash = (function(glob) {
           }
 
           const y = splashState.top + k;
-          ctx.putImageData(splashState.hyperspaceBarsImgData, x, y, 0, 0, splashState.canvasWidth, 1);
+          ctx.putImageData(
+            splashState.hyperspaceBarsImgData,
+            x, y, 0, 0,
+            splashState.canvasWidth, 1
+          );
         }
       }
       break;
@@ -386,6 +426,7 @@ var Splash = (function(glob) {
         splashState.canvasHeight
       );
       ctx.restore();
+      splashState.isTextDrawn = true;
     }
 
     ctx.putImageData(
@@ -419,10 +460,9 @@ var Splash = (function(glob) {
     "materializeFrameCount": 124,
     "focusFrameCountMax": 400,
     "focusFrameCount": 400,
-    "focusLastTs": 0,
     "focusRingLast": 0,
     "focusNumRings": 32,
-    "focusOuterRingRadiusMult": 2,
+    "focusOuterRingRadiusMult": 1,
     "text": null,
     "isTextDrawn": false,
     "left": 0,
@@ -436,14 +476,31 @@ var Splash = (function(glob) {
   });
 
   function bossIntroHandleKeyDown(e) {
-    switch (e.key || e.keyCode || e.which) {
+    var keyHandled = true;
+    const key = commonState.KEY_MAP[e.key];
+
+    switch (key || e.keyCode || e.which) {
+      // F5 / Alt
       case "F5":
       case 116:
+      case 18:
+        keyHandled = false;
+      break;
+      // Tab
+      case 0x09:
+        if (e.altKey) {
+          keyHandled = false;
+        }
       break;
       default:
-        bossIntroState.state = BossState.CANCEL;
-        e.preventDefault();
-        return false;
+        keyHandled = true;
+      break;
+    }
+
+    if (keyHandled) {
+      bossIntroState.state = BossState.CANCEL;
+      e.preventDefault();
+      return false;
     }
   }
 
@@ -465,7 +522,6 @@ var Splash = (function(glob) {
     bossIntroState.top = args.canvasY;
     bossIntroState.callback = args.callback;
     bossIntroState.focusFrameCount = bossIntroState.focusFrameCountMax;
-    bossIntroState.focusLastTs = 0;
     bossIntroState.focusRingLast = 0;
 
     doc.body.addEventListener("click", bossIntroHandleKeyDown, false);
@@ -510,10 +566,13 @@ var Splash = (function(glob) {
 
     bossIntro();
   }
-  function bossIntro(ts) {
+  function bossIntro() {
     bossIntroState.animFrame = global.requestAnimationFrame(bossIntro);
     const ctx = bossIntroState.canvasOverlayCtx;
-    const PI = Math.PI;
+    const TWO_PI = Utils.TWOPI;
+    const trunc = Math.trunc;
+    const acos = Math.acos;
+    const sqrt = Math.sqrt;
 
     switch (bossIntroState.state) {
       case BossState.CANCEL:
@@ -529,13 +588,10 @@ var Splash = (function(glob) {
         const frame = bossIntroState.frame;
         const imgImageDataOpac = bossIntroState.imgImageDataOpac;
         const materializeFrameCount = bossIntroState.materializeFrameCount;
-        const acos = Math.acos;
-        const sqrt = Math.sqrt;
         const x = 0.5 * width;
         const y = 0.5 * height;
         const frac = frame / materializeFrameCount;
-        const TWOPI = 2 * PI;
-        const angle = frac * TWOPI;
+        const angle = frac * TWO_PI;
         const vecX = -1;
         const vecY = 0;
 
@@ -547,7 +603,7 @@ var Splash = (function(glob) {
             let dAngle = acos(dot / sqrt(px * px + py * py)) || 0;
 
             if (py < 0) {
-              dAngle = TWOPI - dAngle;
+              dAngle = TWO_PI - dAngle;
             }
             if (0 <= dAngle && dAngle <= angle) {
               imageData[m * 4 + 3] = imgImageDataOpac[m];
@@ -564,34 +620,45 @@ var Splash = (function(glob) {
         const height = bossIntroState.height;
         const x = bossIntroState.left + 0.5 * width;
         const y = bossIntroState.top + 0.5 * height;
-        const r = parseInt(ROOT_TWO_OVER_TWO * Math.max(width, height), 10);
+        const windowAspect = global.innerWidth / global.innerHeight;
+        const aspect = bossIntroState.aspect;
+        const rx = 2 * trunc(width / aspect);
+        const ry = rx * windowAspect / aspect;
+        const rxry = ry / rx;
         const numRings = bossIntroState.focusNumRings;
-        let r2 = r + numRings;
-        ctx.clearRect(x - 4 * width, y - 4 * height, 8 * width, 8 * height);
+        const frac = bossIntroState.focusFrameCount / bossIntroState.focusFrameCountMax;
+        const offset = trunc(
+          bossIntroState.focusOuterRingRadiusMult * (rx + numRings) * frac
+        );
+        const rxOuter = rx + numRings + offset;
+        const ryOuter = trunc(rxOuter * rxry);
+        ctx.clearRect(
+          x - rxOuter - 10,
+          y - ryOuter - 10,
+          2 * rxOuter + 20,
+          2 * ryOuter + 20
+        );
 
-        for (let k = r; k < r2; k += 1) {
-          ctx.beginPath();
-          ctx.arc(x, y, k, 0, 2 * PI);
-          ctx.stroke();
-        }
+        ctx.lineWidth = numRings;
+        ctx.beginPath();
+        ctx.ellipse(x, y, rx, ry, 0, 0, TWO_PI, false);
+        ctx.stroke();
 
-        const rad = r + bossIntroState.focusRingLast;
         ctx.strokeStyle = "#AAF";
         ctx.lineWidth = 3;
+        const rxFocus = rx + bossIntroState.focusRingLast;
+        const ryFocus = trunc(rxFocus * rxry);
         ctx.beginPath();
-        ctx.arc(x, y, rad, 0, 2 * PI);
+        ctx.ellipse(x, y, rxFocus, ryFocus, 0, 0, TWO_PI, false);
         ctx.stroke();
-        bossIntroState.focusLastTs = ts;
         if (bossIntroState.focusRingLast < numRings) {
           bossIntroState.focusRingLast += 1;
         } else {
           bossIntroState.focusRingLast = 0;
         }
 
-        const frac = bossIntroState.focusFrameCount / bossIntroState.focusFrameCountMax;
-        r2 = r + numRings + parseInt(bossIntroState.focusOuterRingRadiusMult * (r + numRings) * frac, 10);
         ctx.beginPath();
-        ctx.arc(x, y, r2, 0, 2 * PI);
+        ctx.ellipse(x, y, rxOuter, ryOuter, 0, 0, TWO_PI, false);
         ctx.stroke();
 
         ctx.restore();
@@ -614,14 +681,15 @@ var Splash = (function(glob) {
       ctx.save();
       ctx.font = "36 monospace`";
       ctx.textBaseline = "bottom";
-      ctx.textAlign = "center";
+      ctx.textAlign = "left";
       ctx.fillStyle = "#FFF";
       ctx.fillText(
         bossIntroState.text,
-        0.5 * bossIntroState.canvasWidth,
-        bossIntroState.canvasHeight
+        5,
+        bossIntroState.canvasHeight - 5
       );
       ctx.restore();
+      bossIntroState.isTextDrawn = true;
     }
 
     ctx.putImageData(
@@ -647,6 +715,7 @@ var Splash = (function(glob) {
   }
 
   return {
+    "init": init,
     "intro": preIntro,
     "start": preSplash,
     "bossIntro": preBossIntro
