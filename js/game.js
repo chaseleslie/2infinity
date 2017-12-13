@@ -819,12 +819,10 @@ function stop() {
   Game.pauseTs = global.performance.now();
   Game.running = false;
   global.cancelAnimationFrame(Game.animFrame);
-  Game.keydownMap["ArrowLeft"] = 0;
-  Game.keydownMap["ArrowUp"] = 0;
-  Game.keydownMap["ArrowRight"] = 0;
-  Game.keydownMap["ArrowDown"] = 0;
-  Game.keydownMap["Shoot"] = 0;
-  Game.keydownMap["Dive"] = 0;
+  const keydownMap = Game.keydownMap;
+  for (const key of Object.keys(keydownMap)) {
+    keydownMap[key] = 0;
+  }
 }
 
 function restart() {
@@ -839,9 +837,9 @@ function restart() {
 
 function main(ts) {
   if (Game.levelState === LevelState.INTRO) {
+    stop();
     Game.levelState = LevelState.PLAYING;
     global.cancelAnimationFrame(Game.animFrame);
-    stop();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const img = doc.getElementById("img_ship");
     Splash.start({
@@ -857,10 +855,10 @@ function main(ts) {
     });
     return;
   } else if (Game.levelState === LevelState.BOSS_INTRO) {
+    stop();
     Game.levelState = LevelState.BOSS;
     Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY;
     global.cancelAnimationFrame(Game.animFrame);
-    stop();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const trunc = Math.trunc;
     const img = doc.getElementById("img_boss");
@@ -897,6 +895,7 @@ function main(ts) {
     return;
   } else if (Game.levelState === LevelState.GAME_OVER) {
     console.log("Game Over");
+    Console.log("Game Over");
     return;
   }
 
@@ -906,7 +905,7 @@ function main(ts) {
   Game.time += dt;
   const timestep = Game.timestep;
 
-  Game.averageFrameInterval.update((ts - Game.lastTs) || 0);
+  Game.averageFrameInterval.update(dt || 0);
 
   const overlayNeedsUpdating = Boolean(Game.displayFPS);
   if (overlayNeedsUpdating && (ts > Game.overlayLastTs + 1000)) {
