@@ -55,7 +55,7 @@ const KEY_MAP = Object.freeze({
 const defaultFontSize = 32;
 canvasOverlayCtx.fillStyle = "#FFF";
 canvasOverlayCtx.font = `${defaultFontSize}px sans-serif`;
-var canvasOverlayProps = Object.seal({
+const canvasOverlayProps = Object.seal({
   "canvasOverlayFont":      `${defaultFontSize}px monospace`,
   "scoreTemplateStr":       "Score: 000000",
   "scoreTemplateStrProps":  null,
@@ -416,10 +416,10 @@ Utils.fetchURL({
 });
 
 function handleKeyDown(e) {
+  const now = win.performance.now();
+  const keydownMap = Game.keydownMap;
+  const key = KEY_MAP[e.key];
   var ret;
-  var now = win.performance.now();
-  var keydownMap = Game.keydownMap;
-  var key = KEY_MAP[e.key];
 
   switch (key || e.which || e.keyCode) {
     // ArrowLeft / a
@@ -479,8 +479,10 @@ function handleKeyDown(e) {
   }
   return ret;
 }
+
 function handleKeyUp(e) {
-  var key = KEY_MAP[e.key];
+  const key = KEY_MAP[e.key];
+
   switch (key || e.which || e.keyCode) {
     // ArrowLeft / a
     case 37:
@@ -642,9 +644,9 @@ function hideConsole(args) {
 }
 
 function onMenuScroll(e) {
-  var menuItems = Array.prototype.slice.call(menu.querySelectorAll("menuitem.selectable"));
+  const menuItems = Array.prototype.slice.call(menu.querySelectorAll("menuitem.selectable"));
+  const key = KEY_MAP[e.key];
   var selectedIndex = -1;
-  var key = KEY_MAP[e.key];
 
   switch (key || e.which || e.keyCode) {
     // ArrowUp / ArrowDown / Enter
@@ -704,8 +706,8 @@ function onMenuScroll(e) {
 }
 
 function onMenuScrollWheel(e) {
-  var now = win.performance.now();
-  var lastTs = parseFloat(onMenuScrollWheel.lastTs) || 0;
+  const now = win.performance.now();
+  const lastTs = parseFloat(onMenuScrollWheel.lastTs) || 0;
 
   if (now < lastTs + 200) {
     e.preventDefault();
@@ -725,7 +727,7 @@ function onMenuScrollWheel(e) {
 }
 
 function showMenu() {
-  var menuItems = Array.prototype.slice.call(menu.querySelectorAll("menuitem.selectable"));
+  const menuItems = Array.prototype.slice.call(menu.querySelectorAll("menuitem.selectable"));
   menuItems.forEach((el) => {el.classList.remove("selected");});
   menuItems[0].classList.add("selected");
   window.addEventListener("keydown", onMenuScroll, false);
@@ -735,8 +737,8 @@ function showMenu() {
   canvasOverlay.classList.add("inactive");
   canvas.classList.add("inactive");
   menu.classList.remove("hidden");
-  var menuRect = menu.getBoundingClientRect();
-  var canvasRect = canvas.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
   menu.style.top = canvas.offsetTop + (canvasRect.height / 2) - (menuRect.height / 2) + "px";
   menu.style.left = canvas.offsetLeft + (canvasRect.width / 2) - (menuRect.width / 2) + "px";
 }
@@ -799,8 +801,8 @@ function start() {
 
 function preStart(Game, ts) {
   Game.lastTs = ts;
-  var levelEnemies = Game.levelEnemies[Game.level];
-  var pauseTs = Game.pauseTs;
+  const levelEnemies = Game.levelEnemies[Game.level];
+  const pauseTs = Game.pauseTs;
   for (let k = 0; k < levelEnemies.lastTs.length; k += 1) {
     if (pauseTs) {
       levelEnemies.lastTs[k] = ts - (pauseTs - levelEnemies.lastTs[k]);
@@ -900,19 +902,19 @@ function main(ts) {
 
   Game.animFrame = global.requestAnimationFrame(main);
 
-  var dt = ts - Game.lastTs;
+  const dt = ts - Game.lastTs;
   Game.time += dt;
-  var timestep = Game.timestep;
+  const timestep = Game.timestep;
 
   Game.averageFrameInterval.update((ts - Game.lastTs) || 0);
 
-  var overlayNeedsUpdating = Boolean(Game.displayFPS);
+  const overlayNeedsUpdating = Boolean(Game.displayFPS);
   if (overlayNeedsUpdating && (ts > Game.overlayLastTs + 1000)) {
     Game.overlayState.flag |= OverlayFlags.FPS_DIRTY;
     Game.overlayLastTs = ts;
   }
 
-  var frameTime = ts - Game.lastTs;
+  let frameTime = ts - Game.lastTs;
   if (frameTime > 250) {
     frameTime = 250;
   }
@@ -932,7 +934,7 @@ function main(ts) {
 }
 
 function update(Game, ts, dt) {
-  var player = Game.player;
+  const player = Game.player;
   var enemies = null;
   if (Game.levelState === LevelState.PLAYING || Game.levelState === LevelState.END) {
     enemies = Game.enemies;
@@ -944,8 +946,8 @@ function update(Game, ts, dt) {
 
   /* Update player */
   player.update(dt);
-  var score = 0;
-  var playerWeapons = player.weapons;
+  let score = 0;
+  const playerWeapons = player.weapons;
   for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
     score += playerWeapons[k].update(dt, enemies);
     if (score && Game.levelState === LevelState.BOSS) {
@@ -955,29 +957,29 @@ function update(Game, ts, dt) {
   if (score) {
     updateScore(Game, score);
   }
-  var playerHitbox = player.hitbox;
+  const playerHitbox = player.hitbox;
 
   /* Update enemies */
   score = 0;
   for (let k = enemies.length - 1; k >= 0; k -= 1) {
-    let enemy = enemies[k];
+    const enemy = enemies[k];
     if (!enemy.active) {
       continue;
     }
-    let hitScore = -enemy.update(dt);
+    const hitScore = -enemy.update(dt);
     if (hitScore) {
       Game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
       score += hitScore;
     }
-    let hitbox = enemy.hitbox;
-    let enemyPrune = enemy.prune;
-    let enemyOffscreen = hitbox.right < -1.0;
+    const hitbox = enemy.hitbox;
+    const enemyPrune = enemy.prune;
+    const enemyOffscreen = hitbox.right < -1.0;
     if (enemyOffscreen || enemyPrune) {
       if (enemyOffscreen) {
         score -= enemy.points;
       }
 
-      let enemyType = 0;
+      const enemyType = 0;
       enemy.reset(enemyType, false);
     }
   }
@@ -989,18 +991,18 @@ function update(Game, ts, dt) {
   if (!playerHitbox.depth && Game.levelState === LevelState.PLAYING) {
     for (let k = 0; k < enemies.length; k += 1) {
       let keepLooping = true;
-      let enemy = enemies[k];
+      const enemy = enemies[k];
       if (enemy.active && enemy.hitpoints > 0 && enemy.intersectsWith(playerHitbox)) {
-        let playerPos = player.position;
+        const playerPos = player.position;
         for (let iK = 0; iK < playerPos.length; iK += 1) {
-          let vert = playerPos[iK];
+          const vert = playerPos[iK];
           point.x = vert[0];
           point.y = vert[1];
           point.z = vert[2];
-          let directHit = enemy.containsPoint(point);
+          const directHit = enemy.containsPoint(point);
           if (directHit ) {
             enemy.takeHit(enemy.hitpoints);
-            let hp = player.takeHit(enemy.points);
+            const hp = player.takeHit(enemy.points);
             if (hp <= 0) {
               restart();
               keepLooping = false;
@@ -1076,8 +1078,8 @@ function updateScore(Game, score) {
 }
 
 function updateWeapon(Game) {
-  var level = Game.gameData.levels[Game.level];
-  var weapons = level.playerWeapons;
+  const level = Game.gameData.levels[Game.level];
+  const weapons = level.playerWeapons;
   for (let k = weapons.length; k; k -= 1) {
     if (Game.score >= level.playerWeaponsScoreThreshold[k]) {
       Game.player.selectWeapon(weapons[k]);
@@ -1087,7 +1089,7 @@ function updateWeapon(Game) {
 }
 
 function fireWeapon(Game, ts, dt) {
-  var fired = Game.player.fireWeapon(ts, dt);
+  const fired = Game.player.fireWeapon(ts, dt);
   Game.projectileLastTs = ts;
   if (!Game.muted && fired) {
     gameAudio.currentTime = 0;
@@ -1096,19 +1098,19 @@ function fireWeapon(Game, ts, dt) {
 }
 
 function spawnEnemies(Game, ts, dt) {
-  let gameData = Game.gameData;
-  let level = gameData.levels[Game.level];
-  let levelEnemies = Game.levelEnemies[Game.level];
-  let enemyTypes = level.enemies;
+  const gameData = Game.gameData;
+  const level = gameData.levels[Game.level];
+  const levelEnemies = Game.levelEnemies[Game.level];
+  const enemyTypes = level.enemies;
   for (let k = 0, n = enemyTypes.length; k < n; k += 1) {
-    let type = enemyTypes[k];
-    let enemyType = gameData.enemies[type];
-    let timeInterval = level.baseSpawnInterval * enemyType.spawnIntervalMult * difficultyMap.spawnIntervalMult[Game.difficulty];
+    const type = enemyTypes[k];
+    const enemyType = gameData.enemies[type];
+    const timeInterval = level.baseSpawnInterval * enemyType.spawnIntervalMult * difficultyMap.spawnIntervalMult[Game.difficulty];
 
     if (ts - levelEnemies.lastTs[k] > timeInterval) {
       let foundEnemy = false;
       for (let iK = 0; iK < Game.enemies.length; iK += 1) {
-        let enemy = Game.enemies[iK];
+        const enemy = Game.enemies[iK];
         if (!enemy.active) {
           foundEnemy = true;
           enemy.reset(type, true);
@@ -1371,9 +1373,9 @@ function setup(Game, gl) {
   gl.enableVertexAttribArray(Game.textures.texCoordAttrib);
   gl.vertexAttribPointer(Game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
 
-  Game.projectileTexCoords = Game.gameData.projectileTexCoords.map((el) => {
-    return new Float32Array(el.coords);
-  });
+  Game.projectileTexCoords = Game.gameData.projectileTexCoords.map(
+    (el) => new Float32Array(el.coords)
+  );
 
   function loadTexture(texObj, img, texCoords, texIdIndex) {
     texObj.tex = gl.createTexture();
@@ -1431,11 +1433,11 @@ function setup(Game, gl) {
   Game.starMap = new StarMap(Game, Game.numStars);
 
   /* Create arrays to hold enemy last spawn ts per level */
-  let levels = Game.gameData.levels;
-  let levelEnemies = Game.levelEnemies;
+  const levels = Game.gameData.levels;
+  const levelEnemies = Game.levelEnemies;
   for (let k = 0, n = levels.length; k < n; k += 1) {
-    let lastTs = [];
-    let level = levels[k];
+    const lastTs = [];
+    const level = levels[k];
     for (let iK = 0, iN = level.enemies.length; iK < iN; iK += 1) {
       lastTs.push(0);
     }
