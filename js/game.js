@@ -1306,6 +1306,7 @@ function findEnemyWeapon(Game) {
 }
 
 function setup(Game, gl) {
+  var err = 0;
   gl.clearColor(0.0, 0.0, 0.3, 1.0);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
@@ -1321,11 +1322,16 @@ function setup(Game, gl) {
   if (!gl.getProgramParameter(Game.shaderProg, gl.LINK_STATUS)) {
     console.log(gl.getProgramInfoLog(Game.shaderProg));
     Console.error("Error: linking WebGL program");
+    Console.show();
+    return;
+  }
+  err = gl.getError();
+  if (err) {
+    Console.error(`Error: ${err}: Initializing shaders`);
+    Console.show();
     return;
   }
 
-  Game.player = new Player(Game);
-  Game.players.push(Game.player);
   gl.useProgram(Game.shaderProg);
 
   gl.bindAttribLocation(Game.shaderProg, Game.vertexPositionAttrib, "aVertexPosition");
@@ -1369,7 +1375,7 @@ function setup(Game, gl) {
     gl.generateMipmap(gl.TEXTURE_2D);
 
     for (let k = 0, n = texCoords.length; k < n; k += 1) {
-      let buff = gl.createBuffer();
+      const buff = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, buff);
       gl.bufferData(gl.ARRAY_BUFFER, texCoords[k], gl.STATIC_DRAW);
       texObj.coordBuffers.push(buff);
@@ -1398,6 +1404,18 @@ function setup(Game, gl) {
 
   loadTexture(Game.textures.star, "img_star", Game.textures.star.coords, Game.textures.numTextures);
   Game.textures.numTextures += 1;
+
+  err = gl.getError();
+  if (err) {
+    Console.error(`Error: ${err}: Initializing textures`);
+    Console.show();
+    return;
+  }
+
+  Console.debug("Initializing game assets");
+
+  Game.player = new Player(Game);
+  Game.players.push(Game.player);
 
   Game.starMap = new StarMap(Game, Game.numStars);
 
