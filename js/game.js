@@ -378,7 +378,21 @@ Console.init({
   "consoleInputEnter": gameConsoleInputEnter
 });
 
-var circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
+global.addEventListener("beforeunload", saveSettings, false, Game);
+menuResume.addEventListener("click", onMenuResume, false);
+menuRestart.addEventListener("click", onMenuRestart, false);
+menuDisplayFPS.addEventListener("click", onMenuDisplayFPS, false);
+menuResume.addEventListener("mousedown", onMenuMousedown, false);
+menuResume.addEventListener("mouseup", onMenuMouseup, false);
+menuResume.addEventListener("mouseleave", onMenuMouseleave, false);
+menuRestart.addEventListener("mousedown", onMenuMousedown, false);
+menuRestart.addEventListener("mouseup", onMenuMouseup, false);
+menuRestart.addEventListener("mouseleave", onMenuMouseleave, false);
+menuDisplayFPS.addEventListener("mousedown", onMenuMousedown, false);
+menuDisplayFPS.addEventListener("mouseup", onMenuMouseup, false);
+menuDisplayFPS.addEventListener("mouseleave", onMenuMouseleave, false);
+
+const circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
 Game.verticesCircle = circleCoords.vertices;
 Game.textures.circle.coords = [circleCoords.tex];
 
@@ -500,7 +514,7 @@ function handleKeyUp(e) {
   }
 }
 
-function loadSettings(Game) {
+function loadSettings(game) {
   var settings = null;
   try {
     settings = global.localStorage.getItem("settings");
@@ -511,21 +525,25 @@ function loadSettings(Game) {
 
   if (settings) {
     if ("muted" in settings) {
-      Game.muted = settings.muted;
+      game.muted = settings.muted;
     }
     if ("displayFPS" in settings) {
-      Game.displayFPS = settings.displayFPS;
+      game.displayFPS = settings.displayFPS;
       if (settings.displayFPS) {
         menuDisplayFPS.classList.add("checked");
         menuDisplayFPS.classList.remove("unchecked");
       }
     }
+    Console.log("Loaded saved game settings");
+  } else {
+    Console.log("Unable to load saved game settings");
   }
 }
-function saveSettings(Game) {
-  var settings = {
-    "muted": Game.muted,
-    "displayFPS": Game.displayFPS
+
+function saveSettings(game) {
+  const settings = {
+    "muted": game.muted,
+    "displayFPS": game.displayFPS
   };
   try {
     global.localStorage.setItem(
@@ -534,10 +552,6 @@ function saveSettings(Game) {
     );
   } catch (e) {}
 }
-loadSettings(Game);
-global.onbeforeunload = function() {
-  saveSettings(Game);
-};
 
 function clearAllLevels() {
   const levels = Game.gameData.levels;
@@ -688,6 +702,7 @@ function onMenuScroll(e) {
     break;
   }
 }
+
 function onMenuScrollWheel(e) {
   var now = win.performance.now();
   var lastTs = parseFloat(onMenuScrollWheel.lastTs) || 0;
@@ -725,6 +740,7 @@ function showMenu() {
   menu.style.top = canvas.offsetTop + (canvasRect.height / 2) - (menuRect.height / 2) + "px";
   menu.style.left = canvas.offsetLeft + (canvasRect.width / 2) - (menuRect.width / 2) + "px";
 }
+
 function hideMenu() {
   Game.isMenuShown = false;
   menu.classList.add("hidden");
@@ -734,16 +750,19 @@ function hideMenu() {
   window.removeEventListener("keydown", onMenuScroll, false);
   window.removeEventListener("wheel", onMenuScrollWheel, false);
 }
+
 function onMenuResume() {
   hideMenu();
   start();
 }
+
 function onMenuRestart() {
   hideMenu();
   stop();
   start();
   restart();
 }
+
 function onMenuDisplayFPS(e) {
   e.target.classList.toggle("checked");
   e.target.classList.toggle("unchecked");
@@ -752,31 +771,22 @@ function onMenuDisplayFPS(e) {
   hideMenu();
   start();
 }
+
 function onMenuMousedown(e) {
   e.target.classList.add("clicked");
 }
+
 function onMenuMouseup(e) {
   e.target.classList.remove("clicked");
 }
+
 function onMenuMouseleave(e) {
   e.target.classList.remove("clicked");
 }
 
-menuResume.addEventListener("click", onMenuResume, false);
-menuRestart.addEventListener("click", onMenuRestart, false);
-menuDisplayFPS.addEventListener("click", onMenuDisplayFPS, false);
-menuResume.addEventListener("mousedown", onMenuMousedown, false);
-menuResume.addEventListener("mouseup", onMenuMouseup, false);
-menuResume.addEventListener("mouseleave", onMenuMouseleave, false);
-menuRestart.addEventListener("mousedown", onMenuMousedown, false);
-menuRestart.addEventListener("mouseup", onMenuMouseup, false);
-menuRestart.addEventListener("mouseleave", onMenuMouseleave, false);
-menuDisplayFPS.addEventListener("mousedown", onMenuMousedown, false);
-menuDisplayFPS.addEventListener("mouseup", onMenuMouseup, false);
-menuDisplayFPS.addEventListener("mouseleave", onMenuMouseleave, false);
-
 function start() {
   if (!Game.running) {
+    Console.log(`Starting game (state=${LevelState.map(Game.levelState)})`);
     Game.overlayState.flag |= OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
     doc.body.addEventListener("keydown", handleKeyDown, false);
     doc.body.addEventListener("keyup", handleKeyUp, false);
@@ -801,6 +811,7 @@ function preStart(Game, ts) {
 }
 
 function stop() {
+  Console.log(`Stopping game (state=${LevelState.map(Game.levelState)})`);
   doc.body.removeEventListener("keydown", handleKeyDown, false);
   doc.body.removeEventListener("keyup", handleKeyUp, false);
   Game.pauseTs = global.performance.now();
@@ -815,6 +826,7 @@ function stop() {
 }
 
 function restart() {
+  Console.log("Restarting game");
   Game.player.resetGame(global.performance.now());
   Game.projectiles = [];
   Game.enemies = [];
@@ -1112,12 +1124,18 @@ function spawnEnemies(Game, ts, dt) {
 }
 
 function drawOverlay(Game) {
-  var ctx = canvasOverlayCtx;
-  var width = ctx.canvas.width;
-  var height = ctx.canvas.height;
-  var hpWidth = canvasOverlayProps.hpWidthScale * width;
-  var hpHeight = canvasOverlayProps.hpHeightScale * height;
-  var canvasOverlayFont = canvasOverlayProps.canvasOverlayFont;
+  const floor = Math.floor;
+  const max = Math.max;
+  const round = Math.round;
+  const sin = Math.sin;
+  const trunc = Math.trunc;
+  const TWO_PI = Utils.TWOPI;
+  const ctx = canvasOverlayCtx;
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
+  const hpWidth = canvasOverlayProps.hpWidthScale * width;
+  const hpHeight = canvasOverlayProps.hpHeightScale * height;
+  const canvasOverlayFont = canvasOverlayProps.canvasOverlayFont;
   var keepDirtyFlags = 0;
 
   ctx.save();
@@ -1125,18 +1143,15 @@ function drawOverlay(Game) {
 
   /* Update score display */
   if (Game.overlayState.flag & OverlayFlags.SCORE_DIRTY) {
-    let scoreTemplateStrProps = canvasOverlayProps.scoreTemplateStrProps;
-    let scoreTemplateNumDigits = canvasOverlayProps.scoreTemplateNumDigits;
+    const scoreTemplateStrProps = canvasOverlayProps.scoreTemplateStrProps;
+    const scoreNumDigits = canvasOverlayProps.scoreTemplateNumDigits;
     ctx.save();
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    let scoreNumStr = Game.score.toString();
-    while (scoreNumStr.length < scoreTemplateNumDigits) {
-      scoreNumStr = " " + scoreNumStr;
-    }
-    let scoreStr = `Score: ${scoreNumStr}`;
-    let x = 1.25 * hpWidth + ctx.lineWidth;
-    let y = 0;
+    const scoreNumStr = `        ${Game.score}`.substr(-scoreNumDigits);
+    const scoreStr = `Score: ${scoreNumStr}`;
+    const x = 1.25 * hpWidth + ctx.lineWidth;
+    const y = 0;
     ctx.clearRect(x, y, scoreTemplateStrProps.width, defaultFontSize);
     ctx.fillText(scoreStr, x, y);
     ctx.restore();
@@ -1144,19 +1159,16 @@ function drawOverlay(Game) {
 
   /* Update fps display */
   if (Game.displayFPS && Game.overlayState.flag & OverlayFlags.FPS_DIRTY) {
-    let fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
-    let fpsTemplateNumDigits = canvasOverlayProps.fpsTemplateNumDigits;
+    const fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
+    const fpsNumDigits = canvasOverlayProps.fpsTemplateNumDigits;
     ctx.save();
     ctx.textAlign = "right";
     ctx.textBaseline = "bottom";
-    let fps = Math.round(1000 / Game.averageFrameInterval.average);
+    let fps = round(1000 / Game.averageFrameInterval.average);
     fps = isFinite(fps) ? fps : 0;
     fps = (fps <= 9999) ? fps : 9999;
-    let fpsNumStr = fps.toString();
-    while (fpsNumStr.length < fpsTemplateNumDigits) {
-      fpsNumStr = " " + fpsNumStr;
-    }
-    let fpsStr = `fps: ${fpsNumStr}`;
+    const fpsNumStr = `        ${fps}`.substr(-fpsNumDigits);
+    const fpsStr = `fps: ${fpsNumStr}`;
     ctx.clearRect(
       width - fpsTemplateStrProps.width, height - defaultFontSize,
       width, height
@@ -1215,14 +1227,14 @@ function drawOverlay(Game) {
       }
 
       if (frameCount > 0) {
-        if (Math.floor(Math.sin(2*Math.PI*(60/1000)*frameCount)) >= 0) {
+        if (floor(sin(TWO_PI * (60 / 1000) * frameCount)) >= 0) {
           ctx.strokeStyle = "#4F4";
         } else {
           ctx.strokeStyle = "#FFF";
         }
 
       } else if (frameCount < 0) {
-        if (Math.floor(Math.sin(2*Math.PI*(60/1000)*frameCount)) >= 0) {
+        if (floor(sin(TWO_PI * (60 / 1000) * frameCount)) >= 0) {
           ctx.strokeStyle = "#F44";
         } else {
           ctx.strokeStyle = "#FFF";
@@ -1231,18 +1243,17 @@ function drawOverlay(Game) {
         ctx.strokeStyle = "#FFF";
       }
 
-      let percentage = Math.max(0, player.hitpoints / player.maxHitpoints);
+      const percentage = max(0, player.hitpoints / player.maxHitpoints);
 
-      let y = ctx.lineWidth;
-      let w = hpWidth;
-      w = (w % 8) ? (w + 8 - w % 8) : w;
-      let h = hpHeight;
-      h = (h % 8) ? (h + 8 - h % 8) : h;
-      let d = 10;
-      let d2 = 0.5 * d;
-      let red = parseInt((1 - percentage) * 0xFF, 10).toString(16);
-      let green = parseInt(percentage * 0xFF, 10).toString(16);
-      let color = `#${("0" + red).substr(-2)}${("0" + green).substr(-2)}88`;
+      // Keep width/height multiples of 8
+      const w = (hpWidth + 8 - 1) & -8;
+      const h = (hpHeight + 8 - 1) & -8;
+      const y = ctx.lineWidth;
+      const d = 10;
+      const d2 = 0.5 * d;
+      const red = `0${trunc((1 - percentage) * 0xFF).toString(16)}`;
+      const green = `0${trunc(percentage * 0xFF).toString(16)}`;
+      const color = `#${red.substr(-2)}${green.substr(-2)}88`;
 
       ctx.clearRect(x, y, w, h);
       ctx.beginPath();
@@ -1294,7 +1305,7 @@ function draw(Game) {
 }
 
 function findEnemyWeapon(Game) {
-  var enemyWeapons = Game.enemyWeapons;
+  const enemyWeapons = Game.enemyWeapons;
   for (let k = 0, n = enemyWeapons.length; k < n; k += 1) {
     let weapon = enemyWeapons[k];
     if (!weapon.active) {
@@ -1440,6 +1451,8 @@ function setup(Game, gl) {
   for (let k = 0, n = Game.gameData.levels.length; k < n; k += 1) {
     Game.bosses.push(new Boss(Game, k, false));
   }
+
+  loadSettings(Game);
 
   Splash.intro({
     "canvasOverlayCtx": canvasOverlayCtx,
