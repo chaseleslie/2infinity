@@ -228,6 +228,11 @@ function Shell() {
     return history[historyIndex];
   }
 
+  function parseArgs(command) {
+    // TODO handle quoting, var expansion
+    return command.split(" ");
+  }
+
   function serializeArgs(args, padding = "  ") {
     var msg = "";
     for (let k = 0, n = args.length; k < n; k += 1) {
@@ -267,7 +272,7 @@ function Shell() {
       return;
     }
 
-    const args = command.split(" ");
+    const args = parseArgs(command);
     if (args.length > 1) {
       if (state.tabCount || args[args.length - 1]) {
         const cmd = args[0].toLowerCase();
