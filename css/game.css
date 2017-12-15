@@ -147,11 +147,11 @@ input, textarea, select, button {
 }
 
 .console_entry_debug {
-  color: inherit;
+  color: #88A;
 }
 
 .console_entry_log {
-  color: inherit;
+  color: #9C9CBC;
 }
 
 .console_entry_warn {

@@ -35,10 +35,11 @@ const state = Object.seal({
     "ArrowDown":  40,
     "Down":       40,
 
-    "Enter":      13,
-    "Escape":     27,
     "Tab":        9,
+    "Enter":      13,
     "Alt":        18,
+    "Escape":     27,
+    "c":          99,
     "F5":         116,
     "`":          192
   }),
@@ -55,6 +56,7 @@ const state = Object.seal({
   "shell": null,
   "entryList": null,
   "entryFilterFlags": 0,
+  "tabCount": 0,
   "callback": null,
   "callbackArgs": Object.seal({
     "level": null,
@@ -70,10 +72,144 @@ function noop() {
 
 function Shell() {
   const Commands = Object.freeze({
-    "level": level,
-    "hp": hitpoints,
-    "score": score,
-    "state": levelstate
+    "level": Object.freeze({
+      "get": function() {
+        let lvl = state.callbackArgs.level;
+        if (lvl === null) {
+          lvl = state.game.level + 1;
+        }
+        state.entryList.add(EntryType.PRINT, `lvl is ${lvl}`);
+      },
+      "set": function(args) {
+        const lvl = parseInt(args[1], 10);
+        if (!isFinite(lvl) || isNaN(lvl) || lvl < 1 || lvl > state.game.gameData.levels.length) {
+          return;
+        }
+        state.callbackArgs.level = lvl;
+      },
+      "interpret": function(args) {
+        if (args.length > 1) {
+          this.set(args);
+          this.get(args);
+        } else {
+          this.get(args);
+        }
+      },
+      "auto": function() {
+        //
+      }
+    }),
+    "hp": Object.freeze({
+      "get": function() {
+        let hp = state.callbackArgs.hitpoints;
+        if (hp === null) {
+          hp = state.game.player.hitpoints;
+        }
+        state.entryList.add(EntryType.PRINT, `hp is ${hp}`);
+      },
+      "set": function(args) {
+        const hp = parseInt(args[1], 10);
+        if (!isFinite(hp) || isNaN(hp)) {
+          return;
+        }
+        state.callbackArgs.hitpoints = hp;
+      },
+      "interpret": function(args) {
+        if (args.length > 1) {
+          this.set(args);
+          this.get(args);
+        } else {
+          this.get(args);
+        }
+      },
+      "auto": function() {
+        //
+      }
+    }),
+    "score": Object.freeze({
+      "get": function() {
+        let score = state.callbackArgs.score;
+        if (score === null) {
+          score = state.game.score;
+        }
+        state.entryList.add(EntryType.PRINT, `score is ${score}`);
+      },
+      "set": function(args) {
+        const score = parseInt(args[1], 10);
+        if (!isFinite(score) || isNaN(score)) {
+          return;
+        }
+        state.callbackArgs.score = score;
+      },
+      "interpret": function(args) {
+        if (args.length > 1) {
+          this.set(args);
+          this.get(args);
+        } else {
+          this.get(args);
+        }
+      },
+      "auto": function() {
+        //
+      }
+    }),
+    "state": Object.freeze({
+      "get": function() {
+        let state = state.callbackArgs.state;
+        if (state === null) {
+          state = state.game.levelState;
+        }
+        const statStr = state.LevelState.map(state);
+        state.entryList.add(EntryType.PRINT, `state is ${state} (${statStr})`);
+      },
+      "set": function(args) {
+        let state = parseInt(args[1], 10);
+        if (isFinite(state) && !isNaN(state)) {
+          state = state.LevelState.map(state);
+        } else {
+          state = args[1].toUpperCase();
+        }
+        state.callbackArgs.state = state.LevelState.map(state);
+      },
+      "interpret": function(args) {
+        if (args.length > 1) {
+          this.set(args);
+          this.get(args);
+        } else {
+          this.get(args);
+        }
+      },
+      "auto": function(args) {
+        if (args.length > 2) {
+          return;
+        }
+
+        const LevelState = state.LevelState;
+        const states = Object.keys(LevelState).filter((el) => typeof LevelState[el] === "number");
+        const arg = args[1].toUpperCase();
+
+        if (arg) {
+          const matched = states.filter((el) => el.indexOf(arg) === 0).sort();
+          if (matched.length > 1) {
+            const first = matched[0];
+            const last = matched[matched.length - 1];
+            let len = 0;
+            while (first[len] === last[len]) {
+              len += 1;
+            }
+            const common = first.substr(0, len);
+            state.consoleInput.value = `${args[0]} ${common}`;
+            state.entryList.add(EntryType.PRINT, serializeArgs(matched));
+          } else if (matched.length === 1) {
+            state.consoleInput.value = `${args[0]} ${matched[0]} `;
+            state.tabCount = 0;
+          }
+        } else if (state.tabCount > 0) {
+          const msg = serializeArgs(states);
+          state.entryList.add(EntryType.PRINT, msg);
+        }
+      }
+    })
   });
   const history = [];
   var historyIndex = 0;
@@ -92,107 +228,20 @@ function Shell() {
     return history[historyIndex];
   }
 
-  function getLevel() {
-    let lvl = state.callbackArgs.level;
-    if (lvl === null) {
-      lvl = state.game.level + 1;
-    }
-    state.entryList.add(EntryType.PRINT, `lvl is ${lvl}`);
+  function parseArgs(command) {
+    // TODO handle quoting, var expansion
+    return command.split(" ");
   }
 
-  function setLevel(args) {
-    const lvl = parseInt(args[1], 10);
-    if (!isFinite(lvl) || isNaN(lvl) || lvl < 1 || lvl > state.game.gameData.levels.length) {
-      return;
+  function serializeArgs(args, padding = "  ") {
+    var msg = "";
+    for (let k = 0, n = args.length; k < n; k += 1) {
+      msg += args[k];
+      if (k < n - 1) {
+        msg += padding;
+      }
     }
-    state.callbackArgs.level = lvl;
-  }
-
-  function level(args) {
-    if (args.length > 1) {
-      setLevel(args);
-      getLevel(args);
-    } else {
-      getLevel(args);
-    }
-  }
-
-  function getHitpoints() {
-    let hp = state.callbackArgs.hitpoints;
-    if (hp === null) {
-      hp = state.game.player.hitpoints;
-    }
-    state.entryList.add(EntryType.PRINT, `hp is ${hp}`);
-  }
-
-  function setHitpoints(args) {
-    const hp = parseInt(args[1], 10);
-    if (!isFinite(hp) || isNaN(hp)) {
-      return;
-    }
-    state.callbackArgs.hitpoints = hp;
-  }
-
-  function hitpoints(args) {
-    if (args.length > 1) {
-      setHitpoints(args);
-      getHitpoints(args);
-    } else {
-      getHitpoints(args);
-    }
-  }
-
-  function getScore() {
-    let scor = state.callbackArgs.score;
-    if (scor === null) {
-      scor = state.game.score;
-    }
-    state.entryList.add(EntryType.PRINT, `score is ${scor}`);
-  }
-
-  function setScore(args) {
-    const scor = parseInt(args[1], 10);
-    if (!isFinite(scor) || isNaN(scor)) {
-      return;
-    }
-    state.callbackArgs.score = scor;
-  }
-
-  function score(args) {
-    if (args.length > 1) {
-      setScore(args);
-      getScore(args);
-    } else {
-      getScore(args);
-    }
-  }
-
-  function getState() {
-    let stat = state.callbackArgs.state;
-    if (stat === null) {
-      stat = state.game.levelState;
-    }
-    const statStr = state.LevelState.map(stat);
-    state.entryList.add(EntryType.PRINT, `state is ${stat} (${statStr})`);
-  }
-
-  function setState(args) {
-    let stat = parseInt(args[1], 10);
-    if (isFinite(stat) && !isNaN(stat)) {
-      stat = state.LevelState.map(stat);
-    } else {
-      stat = args[1];
-    }
-    state.callbackArgs.state = state.LevelState.map(stat);
-  }
-
-  function levelstate(args) {
-    if (args.length > 1) {
-      setState(args);
-      getState(args);
-    } else {
-      getState(args);
-    }
+    return msg;
   }
 
   function interpret(command = "") {
@@ -205,16 +254,64 @@ function Shell() {
     const args = command.split(" ");
     const cmd = args.length && args[0].toLowerCase();
     if (Commands[cmd]) {
-      Commands[cmd](args);
+      Commands[cmd].interpret(args);
     }
     historyIndex = history.length;
   }
 
-  return {
+  function autocomplete(command = "") {
+    if (!command) {
+      if (state.tabCount) {
+        let msg = "";
+        for (const key of Object.keys(Commands)) {
+          msg += `${key}  `;
+        }
+        state.entryList.add(EntryType.PRINT, msg);
+      }
+      state.tabCount += 1;
+      return;
+    }
+
+    const args = parseArgs(command);
+    if (args.length > 1) {
+      if (state.tabCount || args[args.length - 1]) {
+        const cmd = args[0].toLowerCase();
+        if (Commands[cmd]) {
+          Commands[cmd].auto(args);
+        }
+      }
+      state.tabCount += 1;
+    } else {
+      const cmd = args[0].toLowerCase();
+      const matched = Object.keys(Commands).filter((el) => el.indexOf(cmd) === 0);
+      const msg = serializeArgs(matched);
+
+      if (state.tabCount > 0) {
+        state.entryList.add(EntryType.PRINT, msg);
+      } else if (matched.length > 1) {
+        matched.sort();
+        const first = matched[0];
+        const last = matched[matched.length - 1];
+        let len = 0;
+        while (first[len] === last[len]) {
+          len += 1;
+        }
+        const common = first.substr(0, len);
+        state.consoleInput.value = `${common}`;
+      } else if (matched.length === 1) {
+        state.consoleInput.value = `${matched[0]} `;
+        state.tabCount = 0;
+      }
+    }
+
+  }
+
+  return Object.freeze({
     "interpret": interpret,
+    "autocomplete": autocomplete,
     "historyBack": historyBack,
     "historyForward": historyForward
-  };
+  });
 }
 
 function EntryList() {
@@ -384,6 +481,7 @@ function show(args = {"callback": noop}) {
   state.console.classList.remove("hidden");
   state.consoleInput.value = "";
   state.consoleInput.focus();
+  state.tabCount = 0;
   for (let key of Object.keys(state.callbackArgs)) {
     state.callbackArgs[key] = null;
   }
@@ -414,8 +512,16 @@ function handleWindowKeyDown(evt) {
 
 function handleInputKeyDown(evt) {
   const key = state.KEY_MAP[evt.key];
+  var wasTab = false;
+  var preventDefault = false;
 
   switch (key || evt.which || evt.keyCode) {
+    // Tab
+    case 0x09:
+      state.shell.autocomplete(state.consoleInput.value);
+      wasTab = true;
+      preventDefault = true;
+    break;
     // Enter
     case 13:
       handleInputEnter();
@@ -423,11 +529,27 @@ function handleInputKeyDown(evt) {
     // ArrowUp
     case 38:
       state.consoleInput.value = state.shell.historyBack() || "";
+      preventDefault = true;
     break;
     // ArrowDown
     case 40:
       state.consoleInput.value = state.shell.historyForward() || "";
+      preventDefault = true;
     break;
+    // c
+    case 99:
+      if (evt.ctrlKey) {
+        state.consoleInput.value = "";
+      }
+    break;
+  }
+
+  if (!wasTab) {
+    state.tabCount = 0;
+  }
+
+  if (preventDefault) {
+    evt.preventDefault();
   }
 }
 
