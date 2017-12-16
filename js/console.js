@@ -155,21 +155,21 @@ function Shell() {
     }),
     "state": Object.freeze({
       "get": function() {
-        let state = state.callbackArgs.state;
-        if (state === null) {
-          state = state.game.levelState;
+        let stat = state.callbackArgs.state;
+        if (stat === null) {
+          stat = state.game.levelState;
         }
-        const statStr = state.LevelState.map(state);
-        state.entryList.add(EntryType.PRINT, `state is ${state} (${statStr})`);
+        const statStr = state.LevelState.map(stat);
+        state.entryList.add(EntryType.PRINT, `state is ${stat} (${statStr})`);
       },
       "set": function(args) {
-        let state = parseInt(args[1], 10);
-        if (isFinite(state) && !isNaN(state)) {
-          state = state.LevelState.map(state);
+        let stat = parseInt(args[1], 10);
+        if (isFinite(stat) && !isNaN(stat)) {
+          stat = state.LevelState.map(stat);
         } else {
-          state = args[1].toUpperCase();
+          stat = args[1].toUpperCase();
         }
-        state.callbackArgs.state = state.LevelState.map(state);
+        state.callbackArgs.state = state.LevelState.map(stat);
       },
       "interpret": function(args) {
         if (args.length > 1) {
@@ -209,9 +209,22 @@ function Shell() {
           state.entryList.add(EntryType.PRINT, msg);
         }
       }
+    }),
+    "echo": Object.freeze({
+      "interpret": function(args) {
+        const msg = serializeArgs(args.slice(1), " ");
+        state.entryList.add(EntryType.PRINT, msg);
+      },
+      "auto": function() {
+        //
+      }
     })
   });
+  const variables = Object.create(null);
   const history = [];
+  const varCharRegex = new RegExp("[a-zA-Z_]");
+  const hexEscapeRegex = new RegExp("\\\\x([0-9A-Fa-f]{1,2})", "g");
+  const uniEscapeRegex = new RegExp("\\\\u([0-9A-Fa-f]{1,4})", "g");
   var historyIndex = 0;
 
   function historyBack() {
@@ -228,9 +241,145 @@ function Shell() {
     return history[historyIndex];
   }
 
-  function parseArgs(command) {
-    // TODO handle quoting, var expansion
-    return command.split(" ");
+  function parseArgs(cmd) {
+    cmd = cmd.trim();
+    const args = [];
+    var current = "";
+    for (let k = 0, n = cmd.length; k < n; k += 1) {
+      if (cmd[k] === " " && (!k || (k && cmd[k - 1] !== "\\"))) {
+        while (k < n - 1 && cmd[k + 1] === " ") {
+          k += 1;
+        }
+        args.push(current);
+        current = "";
+      } else if (cmd[k] === "\\" && (k < n - 1) && cmd[k + 1] === " ") {
+        // continue
+      } else if (cmd[k] === "\"" && (!k || (k && cmd[k - 1] !== "\\"))) {
+        k += 1;
+        while (k < n) {
+          if (cmd[k] === "\"" && cmd[k - 1] !== "\\") {
+            break;
+          } else if (cmd[k] === "\\" && (k < n - 1) && cmd[k + 1] === "\"") {
+            k += 1;
+          } else {
+            current += cmd[k];
+            k += 1;
+          }
+        }
+      } else if (cmd[k] === "'" && (!k || (k && (cmd[k - 1] !== "\\") && (cmd[k - 1] !== "$")))) {
+        k += 1;
+        while (k < n) {
+          if (cmd[k] === "'" && cmd[k - 1] !== "\\") {
+            break;
+          } else if (cmd[k] === "\\" && (k < n - 1) && cmd[k + 1] === "'") {
+            k += 1;
+          } else {
+            current += cmd[k];
+            k += 1;
+          }
+        }
+      } else {
+        current += cmd[k];
+      }
+    }
+    if (current) {
+      args.push(current);
+    }
+    return args;
+  }
+
+  function substituteCQuotes(args) {
+    const replaceHexEscape = (m, p1) => String.fromCodePoint(parseInt(p1, 16));
+    const replaceUniEscape = (m, p1) => String.fromCodePoint(parseInt(p1, 16));
+
+    return args.map(function(arg) {
+      if (arg.indexOf("$") > -1) {
+        let out = "";
+        for (let k = 0, n = arg.length; k < n; k += 1) {
+          const prev = arg[k - 1];
+          const chr = arg[k];
+          const next = arg[k + 1];
+          if (chr === "$" && prev !== "\\" && next === "'") {
+            k += 2;
+            const startPos = k;
+            while (k < n && arg[k] !== "'") {
+              k += 1;
+            }
+            const sub = arg.substring(startPos, k);
+            const repl = sub.replace(hexEscapeRegex, replaceHexEscape)
+              .replace(uniEscapeRegex, replaceUniEscape);
+            out += repl;
+          } else {
+            out += chr;
+          }
+        }
+        return out;
+      }
+
+      return arg;
+    });
+  }
+
+  function substituteParameters(args) {
+    const isVarChar = (chr) => varCharRegex.test(chr);
+
+    return args.map(function(arg) {
+      if (arg.indexOf("$") > -1) {
+        let out = "";
+        for (let k = 0, n = arg.length; k < n; k += 1) {
+          const prev = arg[k - 1];
+          const chr = arg[k];
+          const next = arg[k + 1];
+          if (chr === "$" && prev === "\\") {
+            out += chr;
+          } else if (chr === "$" && next === "{") {
+            k += 2;
+            const startPos = k;
+            while (k < n && arg[k] !== "}") {
+              k += 1;
+            }
+            const va = variables[arg.substring(startPos, k)];
+            if (va) {
+              out += va;
+            } else {
+              out += chr;
+              k = startPos - 2;
+            }
+          } else if (chr === "$") {
+            k += 1;
+            const startPos = k;
+            while (k < n && isVarChar(arg[k])) {
+              k += 1;
+            }
+            const va = variables[arg.substring(startPos, k)];
+            if (va) {
+              out += va;
+              k -= 1;
+            } else {
+              out += chr;
+              k = startPos - 1;
+            }
+          } else {
+            out += chr;
+          }
+        }
+        return out;
+      }
+
+      return arg;
+    });
+  }
+
+  function setVariables(args) {
+    for (let k = 0, n = args.length; k < n; k += 1) {
+      const arg = args[k];
+      const eqPos = arg.indexOf("=");
+      if (eqPos > 0) {
+        const key = arg.substr(0, eqPos);
+        const val = arg.substr(eqPos + 1);
+        variables[key] = val;
+      }
+    }
   }
 
   function serializeArgs(args, padding = "  ") {
@@ -248,10 +397,18 @@ function Shell() {
     if (!command) {
       return;
     }
-
     history.push(command);
     state.entryList.add(EntryType.ECHO, command);
-    const args = command.split(" ");
+    const args = substituteParameters(substituteCQuotes(parseArgs(command)));
+    console.log(parseArgs(command));
+    console.log(args);
+
+    if (args[0].indexOf("=") > -1) {
+      setVariables(args);
+      historyIndex = history.length;
+      return;
+    }
+
     const cmd = args.length && args[0].toLowerCase();
     if (Commands[cmd]) {
       Commands[cmd].interpret(args);
@@ -262,10 +419,7 @@ function Shell() {
   function autocomplete(command = "") {
     if (!command) {
       if (state.tabCount) {
-        let msg = "";
-        for (const key of Object.keys(Commands)) {
-          msg += `${key}  `;
-        }
+        const msg = serializeArgs(Object.keys(Commands).sort());
         state.entryList.add(EntryType.PRINT, msg);
       }
       state.tabCount += 1;
