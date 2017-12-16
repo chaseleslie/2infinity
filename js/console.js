@@ -57,6 +57,7 @@ const state = Object.seal({
   "entryList": null,
   "entryFilterFlags": 0,
   "tabCount": 0,
+  "textMeasureCanvas": null,
   "callback": null,
   "callbackArgs": Object.seal({
     "level": null,
@@ -225,6 +226,7 @@ function Shell() {
   const varCharRegex = new RegExp("[a-zA-Z_]");
   const hexEscapeRegex = new RegExp("\\\\x([0-9A-Fa-f]{1,2})", "g");
   const uniEscapeRegex = new RegExp("\\\\u([0-9A-Fa-f]{1,4})", "g");
+  const uniLongEscapeRegex = new RegExp("\\\\U([0-9A-Fa-f]{1,8})", "g");
   var historyIndex = 0;
 
   function historyBack() {
@@ -290,7 +292,6 @@ function Shell() {
 
   function substituteCQuotes(args) {
     const replaceHexEscape = (m, p1) => String.fromCodePoint(parseInt(p1, 16));
-    const replaceUniEscape = (m, p1) => String.fromCodePoint(parseInt(p1, 16));
 
     return args.map(function(arg) {
       if (arg.indexOf("$") > -1) {
@@ -307,7 +308,8 @@ function Shell() {
             }
             const sub = arg.substring(startPos, k);
             const repl = sub.replace(hexEscapeRegex, replaceHexEscape)
-              .replace(uniEscapeRegex, replaceUniEscape);
+              .replace(uniEscapeRegex, replaceHexEscape)
+              .replace(uniLongEscapeRegex, replaceHexEscape);
             out += repl;
           } else {
             out += chr;
@@ -419,7 +421,8 @@ function Shell() {
   function autocomplete(command = "") {
     if (!command) {
       if (state.tabCount) {
-        const msg = serializeArgs(Object.keys(Commands).sort());
+        // const msg = serializeArgs(Object.keys(Commands).sort());
+        const msg = columnizeArgs(Object.keys(Commands).sort());
         state.entryList.add(EntryType.PRINT, msg);
       }
       state.tabCount += 1;
@@ -457,7 +460,30 @@ function Shell() {
         state.tabCount = 0;
       }
     }
+  }
 
+  function columnizeArgs(args) {
+    const maxTextWidth = state.entryList.maxTextWidth;
+    var out = "";
+
+    if (args.some((el) => el.length > maxTextWidth)) {
+      for (let k = 0, n = args.length; k < n; k += 1) {
+        out += args[k];
+        if (k < n - 1) {
+          out += "\n";
+        }
+      }
+    } else {
+      // TODO output in columns
+      for (let k = 0, n = args.length; k < n; k += 1) {
+        out += args[k];
+        if (k < n - 1) {
+          out += "\n";
+        }
+      }
+    }
+
+    return out;
   }
 
   return Object.freeze({
@@ -480,6 +506,7 @@ function EntryList() {
   const entries = [];
   const nodes = [];
   var queuePos = -1;
+  var maxTextWidth = 0;
 
   function addNode(entry) {
     const node = doc.createElement("div");
@@ -521,6 +548,18 @@ function EntryList() {
     }
 
     return `${header}${entry.msg}`;
+  }
+
+  function getMaxTextWidth() {
+    const ctx = state.textMeasureCanvas.getContext("2d");
+    const width = ctx.canvas.width;
+    var str = "x";
+    var metrics = ctx.measureText(str);
+    while (metrics.width < width) {
+      str += "x";
+      metrics = ctx.measureText(str);
+    }
+    return str.length - 1;
   }
 
   return {
@@ -569,6 +608,12 @@ function EntryList() {
         }
       }
       state.consoleEntries.appendChild(docFrag);
+    },
+    "calcMaxTextWidth": function() {
+      maxTextWidth = getMaxTextWidth();
+    },
+    get maxTextWidth() {
+      return maxTextWidth;
     }
   };
 }
@@ -604,9 +649,11 @@ function init(args) {
   state.consoleEntries = args.consoleEntries;
   state.consoleInput = args.consoleInput;
   state.consoleInputEnter = args.consoleInputEnter;
+  state.textMeasureCanvas = doc.createElement("canvas");
   state.game = args.game;
   state.shell = new Shell();
   state.entryList = new EntryList();
+  state.entryList.calcMaxTextWidth();
   state.consoleInputEnter.addEventListener("click", handleInputEnter, false);
   state.consoleInput.addEventListener("keydown", handleInputKeyDown, false);
   state.consoleEntriesFilterDebug.addEventListener("change", handleEntriesFilterChange, false);
@@ -632,18 +679,21 @@ function init(args) {
 function show(args = {"callback": noop}) {
   state.callback = args.callback;
   global.addEventListener("keydown", handleWindowKeyDown, false);
+  global.addEventListener("resize", handleWindowResize, false);
   state.console.classList.remove("hidden");
   state.consoleInput.value = "";
   state.consoleInput.focus();
   state.tabCount = 0;
-  for (let key of Object.keys(state.callbackArgs)) {
+  for (const key of Object.keys(state.callbackArgs)) {
     state.callbackArgs[key] = null;
   }
+  handleWindowResize();
   state.entryList.processQueue();
 }
 
 function hide() {
   global.removeEventListener("keydown", handleWindowKeyDown, false);
+  global.removeEventListener("resize", handleWindowResize, false);
   state.console.classList.add("hidden");
   state.callback(state.callbackArgs);
 }
@@ -652,6 +702,13 @@ function handleInputEnter() {
   state.shell.interpret(state.consoleInput.value);
   state.consoleInput.value = "";
   state.consoleInput.focus();
+}
+
+function handleWindowResize() {
+  const rect = state.consoleEntries.getBoundingClientRect();
+  state.textMeasureCanvas.width = rect.width;
+  state.textMeasureCanvas.height = rect.height;
+  state.entryList.calcMaxTextWidth();
 }
 
 function handleWindowKeyDown(evt) {
