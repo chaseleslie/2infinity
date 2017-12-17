@@ -12,7 +12,8 @@ const EntryType = Object.freeze({
   "WARN":  4,
   "ERROR": 8,
   "PRINT": 16,
-  "ECHO":  32
+  "ECHO":  32,
+  "HELP":  64
 });
 
 const EntryTypeString = Object.freeze({
@@ -98,6 +99,11 @@ function Shell() {
       },
       "auto": function() {
         //
+      },
+      "help": function() {
+        var msg = "level: level [number]\n";
+        msg += "    Gets or sets the game level.";
+        state.entryList.add(EntryType.HELP, msg);
       }
     }),
     "hp": Object.freeze({
@@ -125,6 +131,11 @@ function Shell() {
       },
       "auto": function() {
         //
+      },
+      "help": function() {
+        var msg = "hp: hp [number]\n";
+        msg += "    Gets or sets the player hitpoints.";
+        state.entryList.add(EntryType.HELP, msg);
       }
     }),
     "score": Object.freeze({
@@ -152,6 +163,11 @@ function Shell() {
       },
       "auto": function() {
         //
+      },
+      "help": function() {
+        var msg = "score: score [number]\n";
+        msg += "    Gets or sets the game score.";
+        state.entryList.add(EntryType.HELP, msg);
       }
     }),
     "state": Object.freeze({
@@ -187,7 +203,7 @@ function Shell() {
 
         const LevelState = state.LevelState;
         const states = Object.keys(LevelState).filter((el) => typeof LevelState[el] === "number");
-        const arg = args[1].toUpperCase();
+        const arg = (args[1] && args[1].toUpperCase()) || null;
 
         if (arg) {
           const matched = states.filter((el) => el.indexOf(arg) === 0).sort();
@@ -200,15 +216,25 @@ function Shell() {
             }
             const common = first.substr(0, len);
             state.consoleInput.value = `${args[0]} ${common}`;
-            state.entryList.add(EntryType.PRINT, serializeArgs(matched));
+            state.entryList.add(EntryType.HELP, serializeArgs(matched));
           } else if (matched.length === 1) {
             state.consoleInput.value = `${args[0]} ${matched[0]} `;
             state.tabCount = 0;
           }
         } else if (state.tabCount > 0) {
           const msg = serializeArgs(states);
-          state.entryList.add(EntryType.PRINT, msg);
+          state.entryList.add(EntryType.HELP, msg);
         }
+      },
+      "help": function() {
+        const indent = 4;
+        const LevelState = state.LevelState;
+        const states = Object.keys(LevelState).filter((el) => typeof LevelState[el] === "number");
+        var msg = "state: state [levelstate]\n";
+        msg += "    Gets or sets the level state.\n\n";
+        msg += "    The available level states are:\n";
+        msg += columnizeArgs(states, indent);
+        state.entryList.add(EntryType.HELP, msg);
       }
     }),
     "echo": Object.freeze({
@@ -218,15 +244,107 @@ function Shell() {
       },
       "auto": function() {
         //
+      },
+      "help": function() {
+        var msg = "echo: echo [arg ...]\n";
+        msg += "    Prints all given arguments.";
+        state.entryList.add(EntryType.HELP, msg);
+      }
+    }),
+    "env": Object.freeze({
+      "interpret": function() {
+        const vars = Object.keys(variables).sort();
+        var msg = "";
+        for (let k = 0, n = vars.length; k < n; k += 1) {
+          const key = vars[k];
+          const val = variables[key];
+          if (k < n - 1) {
+            msg += `${key}=${val}\n`;
+          } else {
+            msg += `${key}=${val}`;
+          }
+        }
+        state.entryList.add(EntryType.PRINT, msg);
+      },
+      "auto": function() {
+        //
+      },
+      "help": function() {
+        var msg = "env: env\n";
+        msg += "    Dumps all assigned variables.";
+        state.entryList.add(EntryType.HELP, msg);
+      }
+    }),
+    "unset": Object.freeze({
+      "interpret": function(args) {
+        const vars = args.slice(1);
+        for (const key of vars) {
+          if (key in variables) {
+            delete variables[key];
+          }
+        }
+      },
+      "auto": function() {
+        // TODO autocomplete var names
+        const msg = columnizeArgs(Object.keys(variables));
+        state.entryList.add(EntryType.HELP, msg);
+      },
+      "help": function() {
+        var msg = "unset: unset [name ...]\n";
+        msg += "    Unsets the variables passed as arguments.";
+        state.entryList.add(EntryType.HELP, msg);
+      }
+    }),
+    "help": Object.freeze({
+      "interpret": function(args) {
+        if (args.length > 1) {
+          const cmd = args[1];
+          if (cmd in Commands) {
+            Commands[cmd].help();
+          }
+        } else {
+          this.help();
+        }
+      },
+      "auto": function() {
+        // TODO add tab completion
+      },
+      "help": function() {
+        const indent = 4;
+        const cmds = columnizeArgs(Object.keys(Commands).sort(), indent);
+        var msg = `${state.game.name}\n`;
+        msg += "    Enter a command into the console to run it.\n";
+        msg += "    Use `help command` to get help with a command.\n";
+        msg += "    Use `name=value` to set variables.\n";
+        msg += "    Variables can be substituted using the syntax `$name` or `${name}`.\n";
+        msg += "    Arguments can be quoted as \"argument\" or 'argument', in addition to the form\n";
+        msg += "    $'argument' which accepts escape sequences as ASCII hexadecimal \\xHH\n";
+        msg += "    or Unicode hexadecimal \\uHHHH or \\UHHHHHHHH, in addition to the\n";
+        msg += "    ANSI C short escape codes for tabs and newlines.\n\n";
+        msg += "    The available commands are:\n";
+        msg += `    ${cmds}`;
+        state.entryList.add(EntryType.HELP, msg);
       }
     })
   });
+
   const variables = Object.create(null);
   const history = [];
   const varCharRegex = new RegExp("[a-zA-Z_]");
   const hexEscapeRegex = new RegExp("\\\\x([0-9A-Fa-f]{1,2})", "g");
   const uniEscapeRegex = new RegExp("\\\\u([0-9A-Fa-f]{1,4})", "g");
   const uniLongEscapeRegex = new RegExp("\\\\U([0-9A-Fa-f]{1,8})", "g");
+  const shortEscapeRegex = new RegExp("\\\\([abfnrtv\\\\])", "g");
+  const shortEscapeMap = Object.freeze({
+    "a":  "\x07",
+    "b":  "\x08",
+    "f":  "\x0C",
+    "n":  "\x0A",
+    "r":  "\x0D",
+    "t":  "\x09",
+    "v":  "\x0B",
+    "\\": "\\"
+  });
   var historyIndex = 0;
 
   function historyBack() {
@@ -244,7 +362,7 @@ function Shell() {
   }
 
   function parseArgs(cmd) {
-    cmd = cmd.trim();
+    cmd = cmd.trimLeft();
     const args = [];
     var current = "";
     for (let k = 0, n = cmd.length; k < n; k += 1) {
@@ -284,7 +402,7 @@ function Shell() {
         current += cmd[k];
       }
     }
-    if (current) {
+    if (current || cmd[cmd.length - 1] === " ") {
       args.push(current);
     }
     return args;
@@ -292,6 +410,7 @@ function Shell() {
 
   function substituteCQuotes(args) {
     const replaceHexEscape = (m, p1) => String.fromCodePoint(parseInt(p1, 16));
+    const replaceShortEscape = (m, p1) => shortEscapeMap[p1];
 
     return args.map(function(arg) {
       if (arg.indexOf("$") > -1) {
@@ -308,6 +427,7 @@ function Shell() {
             }
             const sub = arg.substring(startPos, k);
             const repl = sub.replace(hexEscapeRegex, replaceHexEscape)
+              .replace(shortEscapeRegex, replaceShortEscape)
               .replace(uniEscapeRegex, replaceHexEscape)
               .replace(uniLongEscapeRegex, replaceHexEscape);
             out += repl;
@@ -402,8 +522,6 @@ function Shell() {
     history.push(command);
     state.entryList.add(EntryType.ECHO, command);
     const args = substituteParameters(substituteCQuotes(parseArgs(command)));
-    console.log(parseArgs(command));
-    console.log(args);
 
     if (args[0].indexOf("=") > -1) {
       setVariables(args);
@@ -421,9 +539,8 @@ function Shell() {
   function autocomplete(command = "") {
     if (!command) {
       if (state.tabCount) {
-        // const msg = serializeArgs(Object.keys(Commands).sort());
         const msg = columnizeArgs(Object.keys(Commands).sort());
-        state.entryList.add(EntryType.PRINT, msg);
+        state.entryList.add(EntryType.HELP, msg);
       }
       state.tabCount += 1;
       return;
@@ -441,10 +558,10 @@ function Shell() {
     } else {
       const cmd = args[0].toLowerCase();
       const matched = Object.keys(Commands).filter((el) => el.indexOf(cmd) === 0);
-      const msg = serializeArgs(matched);
 
       if (state.tabCount > 0) {
-        state.entryList.add(EntryType.PRINT, msg);
+        const msg = serializeArgs(matched);
+        state.entryList.add(EntryType.HELP, msg);
       } else if (matched.length > 1) {
         matched.sort();
         const first = matched[0];
@@ -455,6 +572,7 @@ function Shell() {
         }
         const common = first.substr(0, len);
         state.consoleInput.value = `${common}`;
+        state.tabCount += 1;
       } else if (matched.length === 1) {
         state.consoleInput.value = `${matched[0]} `;
         state.tabCount = 0;
@@ -462,9 +580,10 @@ function Shell() {
     }
   }
 
-  function columnizeArgs(args) {
+  function columnizeArgs(args, indent = 2) {
     const maxTextWidth = state.entryList.maxTextWidth;
     var out = "";
+    console.log(maxTextWidth);
 
     if (args.some((el) => el.length > maxTextWidth)) {
       for (let k = 0, n = args.length; k < n; k += 1) {
@@ -475,6 +594,8 @@ function Shell() {
       }
     } else {
       // TODO output in columns
+      const longestLength = args.reduce((len, el) => Math.max(len, el.length), 0);
+      console.log(longestLength);
       for (let k = 0, n = args.length; k < n; k += 1) {
         out += args[k];
         if (k < n - 1) {
@@ -501,7 +622,8 @@ function EntryList() {
     [EntryType.WARN]:  "console_entry_warn",
     [EntryType.ERROR]: "console_entry_error",
     [EntryType.PRINT]: "console_entry_print",
-    [EntryType.ECHO]:  "console_entry_echo"
+    [EntryType.ECHO]:  "console_entry_echo",
+    [EntryType.HELP]:  "console_entry_help"
   });
   const entries = [];
   const nodes = [];
@@ -630,7 +752,10 @@ function handleEntriesFilterChange() {
   const warn = state.consoleEntriesFilterWarn.checked && EntryType.WARN;
   const error = state.consoleEntriesFilterError.checked && EntryType.ERROR;
 
-  state.entryFilterFlags = debug | log | warn | error | EntryType.PRINT | EntryType.ECHO;
+  state.entryFilterFlags = (
+    debug | log | warn | error |
+    EntryType.PRINT | EntryType.ECHO | EntryType.HELP
+  );
   state.entryList.refresh();
 }
 
@@ -668,7 +793,7 @@ function init(args) {
     state.consoleEntriesFilterError.checked = true;
     state.entryFilterFlags = (
       EntryType.DEBUG | EntryType.LOG | EntryType.WARN | EntryType.ERROR |
-      EntryType.PRINT | EntryType.ECHO
+      EntryType.PRINT | EntryType.ECHO | EntryType.HELP
     );
     state.entryList.refresh();
   } else {
