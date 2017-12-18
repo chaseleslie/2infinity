@@ -170,6 +170,10 @@ input, textarea, select, button {
   color: #AAF;
 }
 
+.console_entry_help {
+  color: #228884;
+}
+
 .middle_centered {
   display: flex;
   align-items: center;

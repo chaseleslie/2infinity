@@ -130,6 +130,7 @@ const difficultyMap = Object.freeze({
 });
 
 const Game = {
+  "name": "2Infinity",
   "devMode": devMode,
   "difficulty": Difficulty.EASY,
   "difficultyMap": difficultyMap,
