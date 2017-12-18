@@ -201,6 +201,9 @@ function Shell() {
           return;
         }
 
+        const indent = 0;
+        const numCols = 3;
+        const maxWidth = 80;
         const LevelState = state.LevelState;
         const states = Object.keys(LevelState).filter((el) => typeof LevelState[el] === "number");
         const arg = (args[1] && args[1].toUpperCase()) || null;
@@ -216,30 +219,36 @@ function Shell() {
             }
             const common = first.substr(0, len);
             state.consoleInput.value = `${args[0]} ${common}`;
-            state.entryList.add(EntryType.HELP, serializeArgs(matched));
+            const msg = columnizeArgs(matched, indent, numCols, maxWidth);
+            state.entryList.add(EntryType.HELP, msg);
           } else if (matched.length === 1) {
             state.consoleInput.value = `${args[0]} ${matched[0]} `;
             state.tabCount = 0;
           }
         } else if (state.tabCount > 0) {
-          const msg = serializeArgs(states);
+          const msg = columnizeArgs(states, indent, numCols, maxWidth);
           state.entryList.add(EntryType.HELP, msg);
         }
       },
       "help": function() {
         const indent = 4;
+        const numCols = 3;
+        const maxWidth = 80;
         const LevelState = state.LevelState;
         const states = Object.keys(LevelState).filter((el) => typeof LevelState[el] === "number");
         var msg = "state: state [levelstate]\n";
         msg += "    Gets or sets the level state.\n\n";
         msg += "    The available level states are:\n";
-        msg += columnizeArgs(states, indent);
+        msg += columnizeArgs(states, indent, numCols, maxWidth);
         state.entryList.add(EntryType.HELP, msg);
       }
     }),
     "echo": Object.freeze({
       "interpret": function(args) {
-        const msg = serializeArgs(args.slice(1), " ");
+        const indent = 0;
+        const numCols = 3;
+        const maxWidth = 80;
+        const msg = columnizeArgs(args.slice(1), indent, numCols, maxWidth);
         state.entryList.add(EntryType.PRINT, msg);
       },
       "auto": function() {
@@ -286,7 +295,11 @@ function Shell() {
       },
       "auto": function() {
         // TODO autocomplete var names
-        const msg = columnizeArgs(Object.keys(variables));
+        const vars = Object.keys(variables);
+        const indent = 0;
+        const numCols = 3;
+        const maxWidth = 80;
+        const msg = columnizeArgs(vars, indent, numCols, maxWidth);
         state.entryList.add(EntryType.HELP, msg);
       },
       "help": function() {
@@ -311,7 +324,9 @@ function Shell() {
       },
       "help": function() {
         const indent = 4;
-        const cmds = columnizeArgs(Object.keys(Commands).sort(), indent);
+        const numCols = 3;
+        const maxWidth = 80;
+        const cmds = Object.keys(Commands).sort();
         var msg = `${state.game.name}\n`;
         msg += "    Enter a command into the console to run it.\n";
         msg += "    Use `help command` to get help with a command.\n";
@@ -319,10 +334,10 @@ function Shell() {
         msg += "    Variables can be substituted using the syntax `$name` or `${name}`.\n";
         msg += "    Arguments can be quoted as \"argument\" or 'argument', in addition to the form\n";
         msg += "    $'argument' which accepts escape sequences as ASCII hexadecimal \\xHH\n";
-        msg += "    or Unicode hexadecimal \\uHHHH or \\UHHHHHHHH, in addition to the\n";
+        msg += "    or Unicode hexadecimal \\uHHHH or \\UHHHHHHHH, as well as the\n";
         msg += "    ANSI C short escape codes for tabs and newlines.\n\n";
         msg += "    The available commands are:\n";
-        msg += `    ${cmds}`;
+        msg += columnizeArgs(cmds, indent, numCols, maxWidth);
         state.entryList.add(EntryType.HELP, msg);
       }
     })
@@ -504,17 +519,6 @@ function Shell() {
     }
   }
 
-  function serializeArgs(args, padding = "  ") {
-    var msg = "";
-    for (let k = 0, n = args.length; k < n; k += 1) {
-      msg += args[k];
-      if (k < n - 1) {
-        msg += padding;
-      }
-    }
-    return msg;
-  }
-
   function interpret(command = "") {
     if (!command) {
       return;
@@ -537,9 +541,13 @@ function Shell() {
   }
 
   function autocomplete(command = "") {
+    const indent = 0;
+    const numCols = 3;
+    const maxWidth = 80;
+
     if (!command) {
       if (state.tabCount) {
-        const msg = columnizeArgs(Object.keys(Commands).sort());
+        const msg = columnizeArgs(Object.keys(Commands).sort(), indent, numCols, maxWidth);
         state.entryList.add(EntryType.HELP, msg);
       }
       state.tabCount += 1;
@@ -560,7 +568,7 @@ function Shell() {
       const matched = Object.keys(Commands).filter((el) => el.indexOf(cmd) === 0);
 
       if (state.tabCount > 0) {
-        const msg = serializeArgs(matched);
+        const msg = columnizeArgs(matched, indent, numCols, maxWidth);
         state.entryList.add(EntryType.HELP, msg);
       } else if (matched.length > 1) {
         matched.sort();
@@ -580,12 +588,16 @@ function Shell() {
     }
   }
 
-  function columnizeArgs(args, indent = 2) {
-    const maxTextWidth = state.entryList.maxTextWidth;
+  function columnizeArgs(args, indent = 0, numColumns = Infinity, maxWidth = Infinity) {
+    const floor = Math.floor;
+    const max = Math.max;
+    const min = Math.min;
+    const maxTextWidth = min(state.entryList.maxTextWidth, maxWidth);
+    const spaces = " ".repeat(64);
     var out = "";
-    console.log(maxTextWidth);
+    const longestLength = args.reduce((len, el) => max(len, el.length), 0);
 
-    if (args.some((el) => el.length > maxTextWidth)) {
+    if (longestLength > maxTextWidth) {
       for (let k = 0, n = args.length; k < n; k += 1) {
         out += args[k];
         if (k < n - 1) {
@@ -593,14 +605,22 @@ function Shell() {
         }
       }
     } else {
-      // TODO output in columns
-      const longestLength = args.reduce((len, el) => Math.max(len, el.length), 0);
-      console.log(longestLength);
-      for (let k = 0, n = args.length; k < n; k += 1) {
-        out += args[k];
-        if (k < n - 1) {
-          out += "\n";
+      let maxCols = floor((maxTextWidth - indent) / longestLength);
+      maxCols = floor((maxTextWidth - indent - maxCols + 1) / longestLength);
+      maxCols = min(numColumns, maxCols);
+      const colWidth = floor((maxTextWidth - indent) / maxCols);
+
+      for (let k = 0, n = args.length; k < n; k += maxCols) {
+        out += spaces.slice(0, indent);
+        const numCols = min(n - k, maxCols);
+        for (let iK = k, iN = k + numCols; iK < iN; iK += 1) {
+          const arg = args[iK];
+          out += arg;
+          if (iK < iN - 1) {
+            out += spaces.slice(0, colWidth - arg.length);
+          }
         }
+        out += "\n";
       }
     }
 
