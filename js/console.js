@@ -440,12 +440,12 @@ function Shell() {
             while (k < n && arg[k] !== "'") {
               k += 1;
             }
-            const sub = arg.substring(startPos, k);
-            const repl = sub.replace(hexEscapeRegex, replaceHexEscape)
+            const sub = arg.substring(startPos, k)
+              .replace(hexEscapeRegex, replaceHexEscape)
               .replace(shortEscapeRegex, replaceShortEscape)
               .replace(uniEscapeRegex, replaceHexEscape)
               .replace(uniLongEscapeRegex, replaceHexEscape);
-            out += repl;
+            out += sub;
           } else {
             out += chr;
           }
