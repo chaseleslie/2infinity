@@ -2,7 +2,7 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg version="1.1" width="512" height="512" xmlns="http://www.w3.org/2000/svg">
 	<!-- Main ship outline -->
-	<path d="M0,0 L362,256 L0,512 L60,352 L0,256 L60,160 Z" stroke="black" fill="#2E2E2E" />
+	<path d="M0,0 L300,212 L300,300 L0,512 L60,352 L0,256 L60,160 Z" stroke="#2E2E2E" fill="#2E2E2E" />
 
 	<!-- Wing traces -->
 	<path d="M0,0 L280,198 L220,180 Z" stroke="white" fill="gray" />
@@ -13,8 +13,11 @@
 	<path d="M0,512 L60,352 L10,424 Z" stroke="#77BBEE" fill="#77BBEE" />
 
 	<!-- Fuselage -->
-	<path d="M100,160 L220,256 L220,256 L100,352 Z" stroke="blue" fill="blue" />
+	<path d="M100,160 L220,256 L100,352 Z" stroke="#AAC" fill="gray" />
+	<path d="M110,170 Q160,256 110,342 Q140,256 110,170" stroke="blue" fill="blue" />
+	<path d="M130,190 Q180,256 130,322 Q160,256 130,190" stroke="blue" fill="blue" />
+	<path d="M152,210 Q200,256 152,302 Q176,256 152,210" stroke="blue" fill="blue" />
 
 	<!-- Nose shape -->
-	<path d="M300,210 C382,230 382,284 300,302" stroke="blue" fill="#2E2E2E" />
+	<path d="M300,212 Q370,256 300,300" stroke="blue" fill="#1E1E1E" />
 </svg>

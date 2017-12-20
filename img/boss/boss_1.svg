@@ -9,7 +9,7 @@
 	</defs>
 
   <!-- Main ship outline -->
-	<path d="M0,0 L362,256 L0,512 L60,352 L0,256 L60,160 Z" stroke="black" fill="#002929" />
+	<path d="M0,0 L300,212 L300,300 L0,512 L60,352 L0,256 L60,160 Z" stroke="#002929" fill="#002929" />
 
 	<!-- Wing traces -->
 	<path d="M0,0 L280,198 L220,180 Z" stroke="#400" fill="url(#gradient)" />
@@ -28,5 +28,5 @@
 	<path d="M100,392 L160,344 L150,332 L220,296 L160,344 L170,356 Z" stroke="#400" fill="#400" />
 
 	<!-- Nose shape -->
-	<path d="M300,210 C382,230 382,284 300,302" stroke="#400" fill="#002929" />
+	<path d="M300,212 Q370,256 300,300" stroke="#1E1E1E" fill="#1E1E1E" />
 </svg>
