@@ -694,14 +694,16 @@ function EntryList() {
 
   function getMaxTextWidth() {
     const ctx = state.textMeasureCanvas.getContext("2d");
-    const width = ctx.canvas.width;
+    const width = Math.min(1024, ctx.canvas.width);
     var str = "x";
+    var k = 1;
     var metrics = ctx.measureText(str);
-    while (metrics.width < width) {
+    while (metrics.width < width && k < width) {
       str += "x";
+      k += 1;
       metrics = ctx.measureText(str);
     }
-    return str.length - 1;
+    return k - 1;
   }
 
   return {
