@@ -411,6 +411,7 @@ Utils.fetchURL({
       setup(Game, gl);
     } else {
       Console.error(`Error: fetching game data failed with status ${xhr.status}`);
+      Console.show();
       console.error(xhr);
     }
   }
