@@ -289,6 +289,14 @@ const Game = {
       "coords": null,
       "coordBuffers": []
     },
+    "powerup": {
+      "tex": null,
+      "texId": 0,
+      "texIdIndex": 0,
+      "img": null,
+      "coords": null,
+      "coordBuffers": []
+    },
     "texCoordAttrib": null,
     "numTextures": 0
   },
@@ -1380,6 +1388,10 @@ function setup(Game, gl) {
     (el) => new Float32Array(el.coords)
   );
 
+  Game.powerupTexCoords = Game.gameData.powerupTexCoords.map(
+    (el) => new Float32Array(el.coords)
+  );
+
   function loadTexture(texObj, img, texCoords, texIdIndex) {
     texObj.tex = gl.createTexture();
     texObj.img = doc.getElementById(img);
@@ -1419,6 +1431,9 @@ function setup(Game, gl) {
   Game.textures.numTextures += 1;
 
   loadTexture(Game.textures.star, "img_star", Game.textures.star.coords, Game.textures.numTextures);
+  Game.textures.numTextures += 1;
+
+  loadTexture(Game.textures.powerup, "img_powerups_sprite", Game.powerupTexCoords, Game.textures.numTextures);
   Game.textures.numTextures += 1;
 
   err = gl.getError();
