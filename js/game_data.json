@@ -77,7 +77,7 @@
       "texType": 2,
       "projectileCount": 3,
       "projectileType": 2,
-      "projectileDeltaAngle": 0.04908738521234052
+      "projectileDeltaAngle": 0.09817477042468103
     }
   ],
 
@@ -156,7 +156,7 @@
   "levels": [
     {
       "enemies": [0, 1, 2],
-      "scoreGoal": 100,
+      "scoreGoal": 5000,
       "playerWeapons": [0, 1, 2],
       "playerWeaponsScoreThreshold": [0, 2000, 5000],
       "baseSpawnInterval": 5000,
@@ -165,7 +165,7 @@
     },
     {
       "enemies": [0, 1, 2],
-      "scoreGoal": 200,
+      "scoreGoal": 10000,
       "playerWeapons": [0, 1, 2],
       "playerWeaponsScoreThreshold": [0, 2000, 5000],
       "baseSpawnInterval": 2000,
