@@ -528,6 +528,7 @@ function loadSettings(game) {
   }
 
   if (settings) {
+    Console.debug(`Loading settings: ${JSON.stringify(settings)}`);
     if ("muted" in settings) {
       game.muted = settings.muted;
     }
@@ -544,10 +545,10 @@ function loadSettings(game) {
   }
 }
 
-function saveSettings(game) {
+function saveSettings() {
   const settings = {
-    "muted": game.muted,
-    "displayFPS": game.displayFPS
+    "muted": Game.muted,
+    "displayFPS": Game.displayFPS
   };
   try {
     global.localStorage.setItem(
@@ -898,6 +899,7 @@ function main(ts) {
   } else if (Game.levelState === LevelState.GAME_OVER) {
     console.log("Game Over");
     Console.log("Game Over");
+    Console.show();
     return;
   }
 
