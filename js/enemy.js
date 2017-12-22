@@ -130,7 +130,7 @@ function Enemy(game, type, isActive) {
   this.update = function(dt) {
     const now = global.performance.now();
     if (hp <= 0) {
-      if (prune > showDestroyedFrames) {
+      if (prune >= showDestroyedFrames) {
         active = false;
         return 0;
       }

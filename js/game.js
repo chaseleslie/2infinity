@@ -983,13 +983,9 @@ function update(Game, ts, dt) {
       score += hitScore;
     }
     const hitbox = enemy.hitbox;
-    const enemyPrune = enemy.prune;
     const enemyOffscreen = hitbox.right < -1.0;
-    if (enemyOffscreen || enemyPrune) {
-      if (enemyOffscreen) {
-        score -= enemy.points;
-      }
-
+    if (enemyOffscreen) {
+      score -= enemy.points;
       const enemyType = 0;
       enemy.reset(enemyType, false);
     }
@@ -1304,7 +1300,10 @@ function draw(Game) {
 
   if (Game.levelState === LevelState.PLAYING || Game.levelState === LevelState.END) {
     for (let k = 0, n = Game.enemies.length; k < n; k += 1) {
-      Game.enemies[k].draw(gl);
+      const enemy = Game.enemies[k];
+      if (enemy.active) {
+        enemy.draw(gl);
+      }
     }
   } else if (Game.levelState === LevelState.BOSS) {
     Game.bosses[Game.level].draw(gl);
