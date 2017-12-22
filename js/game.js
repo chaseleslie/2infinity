@@ -1397,9 +1397,17 @@ function setup(game, gl) {
     (el) => new Float32Array(el.coords)
   );
 
-  game.powerupTexCoords = game.gameData.powerupTexCoords.map(
-    (el) => new Float32Array(el.coords)
-  );
+  game.powerupTexCoords = [];
+  for (const key of Object.keys(game.gameData.powerups)) {
+    const powerup = game.gameData.powerups[key];
+    game.powerupTexCoords.push(powerup);
+  }
+  game.powerupTexCoords.sort((a, b) => {
+    const a1 = a.texCoordsBufferIndex;
+    const b1 = b.texCoordsBufferIndex;
+    return (a1 > b1) - (a1 < b1);
+  });
+  game.powerupTexCoords = game.powerupTexCoords.map((el) => new Float32Array(el.texCoords));
 
   function loadTexture(texObj, img, texCoords, texIdIndex) {
     texObj.tex = gl.createTexture();

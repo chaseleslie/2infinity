@@ -153,9 +153,13 @@
     }
   ],
 
-  "powerupTexCoords": [
-    {
-      "coords": [
+  "powerups": {
+    "Health": {
+      "value": 500,
+      "modelScales": [2, 2, 1],
+      "speed": 0.0001,
+      "texCoordsBufferIndex": 0,
+      "texCoords": [
         0.0, 0.25,
         0.25, 0.25,
         0.25, 0.0,
@@ -166,8 +170,12 @@
       ],
       "spritePos": {"x": 0, "y": 0}
     },
-    {
-      "coords": [
+    "Shield": {
+      "value": 500,
+      "modelScales": [2, 2, 1],
+      "speed": 0.0001,
+      "texCoordsBufferIndex": 1,
+      "texCoords": [
         0.25, 0.25,
         0.5, 0.25,
         0.5, 0.0,
@@ -178,7 +186,7 @@
       ],
       "spritePos": {"x": 1, "y": 0}
     }
-  ],
+  },
 
   "levels": [
     {
