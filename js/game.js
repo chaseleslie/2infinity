@@ -1146,17 +1146,13 @@ function spawnPowerups(game, ts) {
     if (Object.prototype.hasOwnProperty.call(powerups, key)) {
       const powerup = powerups[key];
       const interval = game.gameData.powerups[key].spawnInterval;
-      if (interval > powerup.lastTs + ts) {
+      if (ts - powerup.lastTs > interval) {
         let found = false;
         const items = powerup.items;
         for (let k = 0, n = items.length; k < n; k += 1) {
           const item = items[k];
           if (!item.active) {
             found = true;
-            console.log("reset");
-            console.log(ts);
-            console.log(powerup.lastTs);
-            console.log(interval);
             item.reset();
             break;
           }
