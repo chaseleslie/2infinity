@@ -92,14 +92,14 @@ const LevelState = Object.freeze({
   "map": function(arg) {
     let val = null;
     if (typeof arg === "number") {
-      for (let key of Object.keys(this)) {
+      for (const key of Object.keys(this)) {
         if (this[key] === arg) {
           val = key;
           break;
         }
       }
     } else if (typeof arg === "string") {
-      for (let key of Object.keys(this)) {
+      for (const key of Object.keys(this)) {
         if (key === arg) {
           val = this[key];
           break;
@@ -157,6 +157,7 @@ const Game = Object.seal({
     "playerIndicatorFrameCount": 0,
     "bossIndicatorFrameCount": 0
   }),
+  "OverlayFlags": OverlayFlags,
   "overlayLastTs": 0,
   "displayFPS": false,
   "muted": false,
@@ -633,6 +634,11 @@ function hideConsole(args) {
 
   if (args.hitpoints !== null) {
     game.player.hitpoints = args.hitpoints;
+    game.overlayState.flag |= OverlayFlags.HP_DIRTY;
+  }
+
+  if (args.shield !== null) {
+    game.player.shield = args.shield;
     game.overlayState.flag |= OverlayFlags.HP_DIRTY;
   }
 
@@ -1129,9 +1135,10 @@ function updatePowerups(game, dt) {
         const item = powerup.items[k];
         if (item.active) {
           item.update(dt);
-          const hitbox = item.hitbox;
+          const hitbox = item.getHitbox();
           if (player.intersectsWith(hitbox)) {
-            // accept powerup
+            const flags = player.acceptPowerup(item) || 0;
+            game.overlayState.flag |= flags;
           }
         }
       }
@@ -1331,6 +1338,7 @@ function drawOverlay(game) {
       }
 
       const percentage = max(0, player.hitpoints / player.maxHitpoints);
+      const shieldPercentage = max(0, (player.shield / player.maxShield) || 0);
 
       // Keep width/height multiples of 8
       const w = (hpWidth + 8 - 1) & -8;
@@ -1341,6 +1349,7 @@ function drawOverlay(game) {
       const red = `0${trunc((1 - percentage) * 0xFF).toString(16)}`;
       const green = `0${trunc(percentage * 0xFF).toString(16)}`;
       const color = `#${red.substr(-2)}${green.substr(-2)}88`;
+      const shieldColor = "#4444CC";
 
       ctx.clearRect(x, y, w, h);
       ctx.beginPath();
@@ -1356,6 +1365,8 @@ function drawOverlay(game) {
       ctx.quadraticCurveTo(x, y + h, x, y + h - d);
       ctx.lineTo(x, y + d);
       ctx.quadraticCurveTo(x, y, x + d, y);
+      ctx.fillStyle = shieldColor;
+      ctx.fillRect(x, y, shieldPercentage * w, h);
       ctx.stroke();
     }
 

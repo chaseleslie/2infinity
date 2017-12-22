@@ -131,6 +131,10 @@ Powerup.prototype.getHitbox = function() {
   return hitbox;
 };
 
+Powerup.prototype.deactivate = function() {
+  this.active = false;
+};
+
 Object.defineProperty(Powerup.prototype, "offScreen", {
   "get": function() {
     return this.getPositionRight() < -1.0;
@@ -144,6 +148,7 @@ function HealthPowerup(game) {
   const state = this.state;
   state.velocity[0] = -data.speed;
   this.type = type;
+  this.value = data.value;
   this.texCoordsBufferIndex = data.texCoordsBufferIndex;
 }
 
@@ -165,6 +170,7 @@ function ShieldPowerup(game) {
   const state = this.state;
   state.velocity[0] = -data.speed;
   this.type = type;
+  this.value = data.value;
   this.texCoordsBufferIndex = data.texCoordsBufferIndex;
 }
 

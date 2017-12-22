@@ -186,7 +186,7 @@
         0.25, 0.25
       ],
       "spritePos": {"x": 1, "y": 0},
-      "spawnInterval": 2000
+      "spawnInterval": 50000
     }
   },
 
