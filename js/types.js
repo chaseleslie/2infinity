@@ -42,12 +42,12 @@ function Star(game) {
     [0, 0, depthPos],
     [-speed, 0, 0]
   );
-  var texCoordsBufferIndex = 0;
+  const texCoordsBufferIndex = 0;
 
   const translations = Object.seal({"x": 0, "y": 0, "z": depthPos});
   const rotations = Object.freeze({"x": 0, "y": 0, "z": 0});
   const scales = Object.freeze({
-    "x": game.modelScale / (scale * 2),
+    "x": game.modelScale / (scale * game.aspect),
     "y": game.modelScale / scale,
     "z": game.modelScale / scale
   });

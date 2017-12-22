@@ -1,4 +1,4 @@
-/* global Console Utils Splash Weapon Player Enemy Boss StarMap */
+/* global Console Utils Splash Weapon Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
 
 "use strict";
 
@@ -129,7 +129,7 @@ const difficultyMap = Object.freeze({
   })
 });
 
-const Game = {
+const Game = Object.seal({
   "name": "2Infinity",
   "devMode": devMode,
   "difficulty": Difficulty.EASY,
@@ -289,6 +289,14 @@ const Game = {
       "coords": null,
       "coordBuffers": []
     },
+    "powerup": {
+      "tex": null,
+      "texId": 0,
+      "texIdIndex": 0,
+      "img": null,
+      "coords": null,
+      "coordBuffers": []
+    },
     "texCoordAttrib": null,
     "numTextures": 0
   },
@@ -337,6 +345,9 @@ const Game = {
     new Float32Array([-1.0, -1.0, 0.0])
   ],
 
+  "projectileTexCoords": null,
+  "powerupTexCoords": null,
+
   "pUniform": null,
   "mvUniform": null,
 
@@ -347,6 +358,7 @@ const Game = {
     0.0, 0.0, 0.0, 1.0
   ]),
 
+  "gameData": null,
   "player": null,
   "players": [],
   "levelEnemies": [],
@@ -358,8 +370,18 @@ const Game = {
   "starMap": null,
   "numStars": 256,
   "projectiles": [],
-  "projectileLastTs": 0
-};
+  "projectileLastTs": 0,
+  "powerups": Object.seal({
+    "Health": Object.seal({
+      "lastTs": 0,
+      "items": []
+    }),
+    "Shield": Object.seal({
+      "lastTs": 0,
+      "items": []
+    })
+  })
+});
 
 Splash.init({
   "KEY_MAP": KEY_MAP,
@@ -638,7 +660,7 @@ function hideConsole(args) {
     switch (game.levelState) {
       case LevelState.BOSS_INTRO:
       case LevelState.BOSS:
-        Game.bosses[Game.level].reset(Game.level, true);
+        game.bosses[game.level].reset(game.level, true);
       break;
     }
   }
@@ -790,22 +812,23 @@ function onMenuMouseleave(e) {
 }
 
 function start() {
-  if (!Game.running) {
-    Console.log(`Starting game (state=${LevelState.map(Game.levelState)})`);
-    Game.overlayState.flag |= OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
+  const game = Game;
+  if (!game.running) {
+    Console.log(`Starting game (state=${LevelState.map(game.levelState)})`);
+    game.overlayState.flag |= OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
     doc.body.addEventListener("keydown", handleKeyDown, false);
     doc.body.addEventListener("keyup", handleKeyUp, false);
-    Game.startTs = global.performance.now();
-    Game.running = true;
-    preStart(Game, Game.startTs);
-    main(Game.startTs);
+    game.startTs = global.performance.now();
+    game.running = true;
+    preStart(game, game.startTs);
+    main(game.startTs);
   }
 }
 
-function preStart(Game, ts) {
-  Game.lastTs = ts;
-  const levelEnemies = Game.levelEnemies[Game.level];
-  const pauseTs = Game.pauseTs;
+function preStart(game, ts) {
+  game.lastTs = ts;
+  const levelEnemies = game.levelEnemies[game.level];
+  const pauseTs = game.pauseTs;
   for (let k = 0; k < levelEnemies.lastTs.length; k += 1) {
     if (pauseTs) {
       levelEnemies.lastTs[k] = ts - (pauseTs - levelEnemies.lastTs[k]);
@@ -816,33 +839,37 @@ function preStart(Game, ts) {
 }
 
 function stop() {
-  Console.log(`Stopping game (state=${LevelState.map(Game.levelState)})`);
+  const game = Game;
+  Console.log(`Stopping game (state=${LevelState.map(game.levelState)})`);
   doc.body.removeEventListener("keydown", handleKeyDown, false);
   doc.body.removeEventListener("keyup", handleKeyUp, false);
-  Game.pauseTs = global.performance.now();
-  Game.running = false;
-  global.cancelAnimationFrame(Game.animFrame);
-  const keydownMap = Game.keydownMap;
+  game.pauseTs = global.performance.now();
+  game.running = false;
+  global.cancelAnimationFrame(game.animFrame);
+  const keydownMap = game.keydownMap;
   for (const key of Object.keys(keydownMap)) {
     keydownMap[key] = 0;
   }
 }
 
 function restart() {
+  const game = Game;
   Console.log("Restarting game");
-  Game.player.resetGame(global.performance.now());
-  Game.projectiles = [];
-  Game.enemies = [];
-  Game.score = 0;
-  Game.pauseTs = 0;
+  game.player.resetGame(global.performance.now());
+  game.projectiles = [];
+  game.enemies = [];
+  game.score = 0;
+  game.pauseTs = 0;
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 }
 
 function main(ts) {
-  if (Game.levelState === LevelState.INTRO) {
+  const game = Game;
+
+  if (game.levelState === LevelState.INTRO) {
     stop();
-    Game.levelState = LevelState.PLAYING;
-    global.cancelAnimationFrame(Game.animFrame);
+    game.levelState = LevelState.PLAYING;
+    global.cancelAnimationFrame(game.animFrame);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const img = doc.getElementById("img_ship");
     Splash.start({
@@ -854,30 +881,30 @@ function main(ts) {
       "imgY": 0,
       "imgWidth": parseInt(img.dataset.unitSize, 10),
       "imgHeight": parseInt(img.dataset.unitSize, 10),
-      "text": Game.gameData.levels[Game.level].introText
+      "text": game.gameData.levels[game.level].introText
     });
     return;
-  } else if (Game.levelState === LevelState.BOSS_INTRO) {
+  } else if (game.levelState === LevelState.BOSS_INTRO) {
     stop();
-    Game.levelState = LevelState.BOSS;
-    Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY;
-    global.cancelAnimationFrame(Game.animFrame);
+    game.levelState = LevelState.BOSS;
+    game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY;
+    global.cancelAnimationFrame(game.animFrame);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const trunc = Math.trunc;
     const img = doc.getElementById("img_boss");
     const imgUnitSize = parseInt(img.dataset.unitSize, 10);
-    const bossData = Game.gameData.bosses[Game.level];
+    const bossData = game.gameData.bosses[game.level];
     const imgSpritePos = bossData.spritePos;
     const ROOT_TWO = Math.sqrt(2);
-    const aspect = Game.aspect;
+    const aspect = game.aspect;
     const canvasWidth = canvasOverlay.width;
     const canvasHeight = canvasOverlay.height;
     const destWidth = trunc(
-      bossData.modelScales[0] * Game.modelScale *
+      bossData.modelScales[0] * game.modelScale *
       (canvasWidth / aspect) / ROOT_TWO / aspect
     );
     const destHeight = trunc(
-      bossData.modelScales[1] * Game.modelScale * canvasHeight
+      bossData.modelScales[1] * game.modelScale * canvasHeight
     );
     Splash.bossIntro({
       "canvasOverlay": canvasOverlay,
@@ -893,56 +920,56 @@ function main(ts) {
       "destHeight": destHeight,
       "canvasX": 0.5 * (bossData.spawnPos[0] + 1) * canvasWidth - destWidth * ROOT_TWO,
       "canvasY": 0.5 * (bossData.spawnPos[1] + 1) * canvasHeight - 0.5 * destHeight,
-      "text": Game.gameData.levels[Game.level].bossText
+      "text": game.gameData.levels[game.level].bossText
     });
     return;
-  } else if (Game.levelState === LevelState.GAME_OVER) {
+  } else if (game.levelState === LevelState.GAME_OVER) {
     console.log("Game Over");
     Console.log("Game Over");
     Console.show();
     return;
   }
 
-  Game.animFrame = global.requestAnimationFrame(main);
+  game.animFrame = global.requestAnimationFrame(main);
 
-  const dt = ts - Game.lastTs;
-  Game.time += dt;
-  const timestep = Game.timestep;
+  const dt = ts - game.lastTs;
+  game.time += dt;
+  const timestep = game.timestep;
 
-  Game.averageFrameInterval.update(dt || 0);
+  game.averageFrameInterval.update(dt || 0);
 
-  const overlayNeedsUpdating = Boolean(Game.displayFPS);
-  if (overlayNeedsUpdating && (ts > Game.overlayLastTs + 1000)) {
-    Game.overlayState.flag |= OverlayFlags.FPS_DIRTY;
-    Game.overlayLastTs = ts;
+  const overlayNeedsUpdating = Boolean(game.displayFPS);
+  if (overlayNeedsUpdating && (ts > game.overlayLastTs + 1000)) {
+    game.overlayState.flag |= OverlayFlags.FPS_DIRTY;
+    game.overlayLastTs = ts;
   }
 
-  let frameTime = ts - Game.lastTs;
+  let frameTime = ts - game.lastTs;
   if (frameTime > 250) {
     frameTime = 250;
   }
   // var accumulator = frameTime;
-  Game.accumulator += frameTime;
-  while (Game.accumulator >= timestep) {
-    update(Game, ts, timestep);
-    Game.time += timestep;
-    Game.accumulator -= timestep;
+  game.accumulator += frameTime;
+  while (game.accumulator >= timestep) {
+    update(game, ts, timestep);
+    game.time += timestep;
+    game.accumulator -= timestep;
   }
 
-  Game.lastTs = ts;
+  game.lastTs = ts;
 
-  draw(Game);
+  draw(game);
 
-  Game.frame += 1;
+  game.frame += 1;
 }
 
-function update(Game, ts, dt) {
-  const player = Game.player;
+function update(game, ts, dt) {
+  const player = game.player;
   var enemies = null;
-  if (Game.levelState === LevelState.PLAYING || Game.levelState === LevelState.END) {
-    enemies = Game.enemies;
-  } else if (Game.levelState === LevelState.BOSS) {
-    enemies = Game.bosses;
+  if (game.levelState === LevelState.PLAYING || game.levelState === LevelState.END) {
+    enemies = game.enemies;
+  } else if (game.levelState === LevelState.BOSS) {
+    enemies = game.bosses;
   } else {
     return;
   }
@@ -953,12 +980,12 @@ function update(Game, ts, dt) {
   const playerWeapons = player.weapons;
   for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
     score += playerWeapons[k].update(dt, enemies);
-    if (score && Game.levelState === LevelState.BOSS) {
-      Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.DECREMENT;
+    if (score && game.levelState === LevelState.BOSS) {
+      game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.DECREMENT;
     }
   }
   if (score) {
-    updateScore(Game, score);
+    updateScore(game, score);
   }
   const playerHitbox = player.hitbox;
 
@@ -971,27 +998,23 @@ function update(Game, ts, dt) {
     }
     const hitScore = -enemy.update(dt);
     if (hitScore) {
-      Game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
+      game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
       score += hitScore;
     }
     const hitbox = enemy.hitbox;
-    const enemyPrune = enemy.prune;
     const enemyOffscreen = hitbox.right < -1.0;
-    if (enemyOffscreen || enemyPrune) {
-      if (enemyOffscreen) {
-        score -= enemy.points;
-      }
-
+    if (enemyOffscreen) {
+      score -= enemy.points;
       const enemyType = 0;
       enemy.reset(enemyType, false);
     }
   }
   if (score) {
-    updateScore(Game, score);
+    updateScore(game, score);
   }
 
   /* Check for player collisions with enemies */
-  if (!playerHitbox.depth && Game.levelState === LevelState.PLAYING) {
+  if (!playerHitbox.depth && game.levelState === LevelState.PLAYING) {
     for (let k = 0; k < enemies.length; k += 1) {
       let keepLooping = true;
       const enemy = enemies[k];
@@ -1009,12 +1032,12 @@ function update(Game, ts, dt) {
             if (hp <= 0) {
               restart();
               keepLooping = false;
-              Game.overlayState.flag = OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY | OverlayFlags.FPS_DIRTY;
+              game.overlayState.flag = OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY | OverlayFlags.FPS_DIRTY;
               break;
             } else {
-              Game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
+              game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
             }
-            updateScore(Game, -enemy.points);
+            updateScore(game, -enemy.points);
           }
         }
         if (!keepLooping) {
@@ -1024,25 +1047,30 @@ function update(Game, ts, dt) {
     }
   }
 
-  updateLevel(Game, ts, enemies);
+  updatePowerups(game, dt);
 
-  if (Game.keydownMap["Shoot"]) {
-    fireWeapon(Game, ts, dt);
+  updateLevel(game, ts, enemies);
+
+  if (game.keydownMap["Shoot"]) {
+    fireWeapon(game, ts, dt);
   }
 
-  Game.starMap.update(dt);
+  game.starMap.update(dt);
 }
 
-function updateLevel(Game, ts, enemies) {
-  if (Game.levelState === LevelState.PLAYING) {
-    spawnEnemies(Game, ts);
-    if (Game.overlayState.flag) {
-      updateWeapon(Game);
+function updateLevel(game, ts, enemies) {
+  if (game.levelState === LevelState.PLAYING) {
+    spawnEnemies(game, ts);
+    if (game.overlayState.flag) {
+      updateWeapon(game);
     }
-    if (Game.score >= Game.gameData.levels[Game.level].scoreGoal) {
-      Game.levelState = LevelState.END;
+
+    spawnPowerups(game, ts);
+
+    if (game.score >= game.gameData.levels[game.level].scoreGoal) {
+      game.levelState = LevelState.END;
     }
-  } else if (Game.levelState === LevelState.END) {
+  } else if (game.levelState === LevelState.END) {
     let enemiesActive = false;
     for (let k = 0, n = enemies.length; k < n; k += 1) {
       if (enemies[k].active) {
@@ -1052,11 +1080,11 @@ function updateLevel(Game, ts, enemies) {
     }
 
     if (!enemiesActive) {
-      Game.levelState = LevelState.BOSS_INTRO;
-      Game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.INCREMENT;
-      Game.bosses[Game.level].reset(Game.level, true);
+      game.levelState = LevelState.BOSS_INTRO;
+      game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.INCREMENT;
+      game.bosses[game.level].reset(game.level, true);
     }
-  } else if (Game.levelState === LevelState.BOSS) {
+  } else if (game.levelState === LevelState.BOSS) {
     let bossActive = false;
     for (let k = 0, n = enemies.length; k < n; k += 1) {
       if (enemies[k].active) {
@@ -1064,56 +1092,114 @@ function updateLevel(Game, ts, enemies) {
       }
     }
     if (!bossActive) {
-      if (Game.level < Game.gameData.levels.length - 1) {
-        Game.level += 1;
-        Game.levelState = LevelState.INTRO;
-        Game.overlayState.flag = OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
+      if (game.level < game.gameData.levels.length - 1) {
+        game.level += 1;
+        game.levelState = LevelState.INTRO;
+        game.overlayState.flag = OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
       } else {
-        Game.levelState = LevelState.GAME_OVER;
+        game.levelState = LevelState.GAME_OVER;
       }
     }
   }
 }
 
-function updateScore(Game, score) {
-  Game.score += score;
-  Game.overlayState.flag |= OverlayFlags.SCORE_DIRTY;
+function updateScore(game, score) {
+  game.score += score;
+  game.overlayState.flag |= OverlayFlags.SCORE_DIRTY;
 }
 
-function updateWeapon(Game) {
-  const level = Game.gameData.levels[Game.level];
+function updateWeapon(game) {
+  const level = game.gameData.levels[game.level];
   const weapons = level.playerWeapons;
   for (let k = weapons.length; k; k -= 1) {
-    if (Game.score >= level.playerWeaponsScoreThreshold[k]) {
-      Game.player.selectWeapon(weapons[k]);
+    if (game.score >= level.playerWeaponsScoreThreshold[k]) {
+      game.player.selectWeapon(weapons[k]);
       break;
     }
   }
 }
 
-function fireWeapon(Game, ts, dt) {
-  const fired = Game.player.fireWeapon(ts, dt);
-  Game.projectileLastTs = ts;
-  if (!Game.muted && fired) {
+function updatePowerups(game, dt) {
+  const player = game.player;
+  const powerups = game.powerups;
+  for (let key in powerups) {
+    if (Object.prototype.hasOwnProperty.call(powerups, key)) {
+      const powerup = powerups[key];
+      for (let k = 0, n = powerup.items.length; k < n; k += 1) {
+        const item = powerup.items[k];
+        if (item.active) {
+          item.update(dt);
+          const hitbox = item.hitbox;
+          if (player.intersectsWith(hitbox)) {
+            // accept powerup
+          }
+        }
+      }
+    }
+  }
+}
+
+// TODO use dt/timestep here
+function spawnPowerups(game, ts) {
+  const powerups = game.powerups;
+  for (let key in powerups) {
+    if (Object.prototype.hasOwnProperty.call(powerups, key)) {
+      const powerup = powerups[key];
+      const interval = game.gameData.powerups[key].spawnInterval;
+      if (interval > powerup.lastTs + ts) {
+        let found = false;
+        const items = powerup.items;
+        for (let k = 0, n = items.length; k < n; k += 1) {
+          const item = items[k];
+          if (!item.active) {
+            found = true;
+            console.log("reset");
+            console.log(ts);
+            console.log(powerup.lastTs);
+            console.log(interval);
+            item.reset();
+            break;
+          }
+        }
+        if (!found) {
+          const Ctor = items[0].constructor;
+          const item = new Ctor(game);
+          item.reset();
+        }
+        powerup.lastTs = ts;
+      }
+    }
+  }
+}
+
+function fireWeapon(game, ts, dt) {
+  const fired = game.player.fireWeapon(ts, dt);
+  game.projectileLastTs = ts;
+  if (!game.muted && fired) {
     gameAudio.currentTime = 0;
     gameAudio.play();
   }
 }
 
-function spawnEnemies(Game, ts, dt) {
-  const gameData = Game.gameData;
-  const level = gameData.levels[Game.level];
-  const levelEnemies = Game.levelEnemies[Game.level];
+// TODO use dt/timestep here
+function spawnEnemies(game, ts) {
+  const gameData = game.gameData;
+  const level = gameData.levels[game.level];
+  const levelEnemies = game.levelEnemies[game.level];
   const enemyTypes = level.enemies;
   for (let k = 0, n = enemyTypes.length; k < n; k += 1) {
     const type = enemyTypes[k];
     const enemyType = gameData.enemies[type];
-    const timeInterval = level.baseSpawnInterval * enemyType.spawnIntervalMult * difficultyMap.spawnIntervalMult[Game.difficulty];
+    const timeInterval = (
+      level.baseSpawnInterval *
+      enemyType.spawnIntervalMult *
+      difficultyMap.spawnIntervalMult[game.difficulty]
+    );
 
     if (ts - levelEnemies.lastTs[k] > timeInterval) {
       let foundEnemy = false;
-      for (let iK = 0; iK < Game.enemies.length; iK += 1) {
-        const enemy = Game.enemies[iK];
+      for (let iK = 0; iK < game.enemies.length; iK += 1) {
+        const enemy = game.enemies[iK];
         if (!enemy.active) {
           foundEnemy = true;
           enemy.reset(type, true);
@@ -1121,14 +1207,14 @@ function spawnEnemies(Game, ts, dt) {
         }
       }
       if (!foundEnemy) {
-        Game.enemies.push(new Enemy(Game, type, true));
+        game.enemies.push(new Enemy(game, type, true));
       }
       levelEnemies.lastTs[k] = ts;
     }
   }
 }
 
-function drawOverlay(Game) {
+function drawOverlay(game) {
   const floor = Math.floor;
   const max = Math.max;
   const round = Math.round;
@@ -1147,13 +1233,13 @@ function drawOverlay(Game) {
   ctx.font = canvasOverlayFont;
 
   /* Update score display */
-  if (Game.overlayState.flag & OverlayFlags.SCORE_DIRTY) {
+  if (game.overlayState.flag & OverlayFlags.SCORE_DIRTY) {
     const scoreTemplateStrProps = canvasOverlayProps.scoreTemplateStrProps;
     const scoreNumDigits = canvasOverlayProps.scoreTemplateNumDigits;
     ctx.save();
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    const scoreNumStr = `        ${Game.score}`.substr(-scoreNumDigits);
+    const scoreNumStr = `        ${game.score}`.substr(-scoreNumDigits);
     const scoreStr = `Score: ${scoreNumStr}`;
     const x = 1.25 * hpWidth + ctx.lineWidth;
     const y = 0;
@@ -1163,13 +1249,13 @@ function drawOverlay(Game) {
   }
 
   /* Update fps display */
-  if (Game.displayFPS && Game.overlayState.flag & OverlayFlags.FPS_DIRTY) {
+  if (game.displayFPS && game.overlayState.flag & OverlayFlags.FPS_DIRTY) {
     const fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
     const fpsNumDigits = canvasOverlayProps.fpsTemplateNumDigits;
     ctx.save();
     ctx.textAlign = "right";
     ctx.textBaseline = "bottom";
-    let fps = round(1000 / Game.averageFrameInterval.average);
+    let fps = round(1000 / game.averageFrameInterval.average);
     fps = isFinite(fps) ? fps : 0;
     fps = (fps <= 9999) ? fps : 9999;
     const fpsNumStr = `        ${fps}`.substr(-fpsNumDigits);
@@ -1183,49 +1269,49 @@ function drawOverlay(Game) {
   }
 
   /* Update hitpoints indicator */
-  if (Game.overlayState.flag & OverlayFlags.HP_DIRTY || Game.overlayState.flag & OverlayFlags.BOSS_HP_DIRTY) {
+  if (game.overlayState.flag & OverlayFlags.HP_DIRTY || game.overlayState.flag & OverlayFlags.BOSS_HP_DIRTY) {
     ctx.save();
     let player = null;
     let x = 0;
-    let flag = Game.overlayState.flag & (OverlayFlags.HP_DIRTY | OverlayFlags.BOSS_HP_DIRTY);
+    let flag = game.overlayState.flag & (OverlayFlags.HP_DIRTY | OverlayFlags.BOSS_HP_DIRTY);
 
     while (flag) {
       let frameCount = 0;
       if (flag & OverlayFlags.HP_DIRTY) {
         x = ctx.lineWidth;
-        player = Game.player;
+        player = game.player;
         flag &= ~OverlayFlags.HP_DIRTY;
 
-        if (Game.overlayState.flag & OverlayFlags.INCREMENT) {
-          Game.overlayState.playerIndicatorFrameCount = Game.overlayState.indicatorFrameCountMax;
-        } else if (Game.overlayState.flag & OverlayFlags.DECREMENT) {
-          Game.overlayState.playerIndicatorFrameCount = -Game.overlayState.indicatorFrameCountMax;
-        } else if (Game.overlayState.playerIndicatorFrameCount > 0) {
-          Game.overlayState.playerIndicatorFrameCount -= 1;
-        } else if (Game.overlayState.playerIndicatorFrameCount < 0) {
-          Game.overlayState.playerIndicatorFrameCount += 1;
+        if (game.overlayState.flag & OverlayFlags.INCREMENT) {
+          game.overlayState.playerIndicatorFrameCount = game.overlayState.indicatorFrameCountMax;
+        } else if (game.overlayState.flag & OverlayFlags.DECREMENT) {
+          game.overlayState.playerIndicatorFrameCount = -game.overlayState.indicatorFrameCountMax;
+        } else if (game.overlayState.playerIndicatorFrameCount > 0) {
+          game.overlayState.playerIndicatorFrameCount -= 1;
+        } else if (game.overlayState.playerIndicatorFrameCount < 0) {
+          game.overlayState.playerIndicatorFrameCount += 1;
         }
 
-        frameCount = Game.overlayState.playerIndicatorFrameCount;
+        frameCount = game.overlayState.playerIndicatorFrameCount;
         if (frameCount) {
           keepDirtyFlags |= OverlayFlags.HP_DIRTY;
         }
       } else if (flag & OverlayFlags.BOSS_HP_DIRTY) {
         x = ctx.canvas.width - 8 - hpWidth;
-        player = Game.bosses[Game.level];
+        player = game.bosses[game.level];
         flag &= ~OverlayFlags.BOSS_HP_DIRTY;
 
-        if (Game.overlayState.flag & OverlayFlags.INCREMENT) {
-          Game.overlayState.bossIndicatorFrameCount = Game.overlayState.indicatorFrameCountMax;
-        } else if (Game.overlayState.flag & OverlayFlags.DECREMENT) {
-          Game.overlayState.bossIndicatorFrameCount = -Game.overlayState.indicatorFrameCountMax;
-        } else if (Game.overlayState.bossIndicatorFrameCount > 0) {
-          Game.overlayState.bossIndicatorFrameCount -= 1;
-        } else if (Game.overlayState.bossIndicatorFrameCount < 0) {
-          Game.overlayState.bossIndicatorFrameCount += 1;
+        if (game.overlayState.flag & OverlayFlags.INCREMENT) {
+          game.overlayState.bossIndicatorFrameCount = game.overlayState.indicatorFrameCountMax;
+        } else if (game.overlayState.flag & OverlayFlags.DECREMENT) {
+          game.overlayState.bossIndicatorFrameCount = -game.overlayState.indicatorFrameCountMax;
+        } else if (game.overlayState.bossIndicatorFrameCount > 0) {
+          game.overlayState.bossIndicatorFrameCount -= 1;
+        } else if (game.overlayState.bossIndicatorFrameCount < 0) {
+          game.overlayState.bossIndicatorFrameCount += 1;
         }
 
-        frameCount = Game.overlayState.bossIndicatorFrameCount;
+        frameCount = game.overlayState.bossIndicatorFrameCount;
         if (frameCount) {
           keepDirtyFlags |= OverlayFlags.BOSS_HP_DIRTY;
         }
@@ -1280,37 +1366,54 @@ function drawOverlay(Game) {
     ctx.restore();
   }
 
-  // if (Game.overlayState.flag & OverlayFlags.BOSS_NAME_DIRTY) {
+  // if (game.overlayState.flag & OverlayFlags.BOSS_NAME_DIRTY) {
   //
   // }
 
   ctx.restore();
 
-  Game.overlayState.flag = keepDirtyFlags;
+  game.overlayState.flag = keepDirtyFlags;
 }
 
-function draw(Game) {
+function draw(game) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  Game.player.draw(gl);
+  game.player.draw(gl);
 
-  if (Game.levelState === LevelState.PLAYING || Game.levelState === LevelState.END) {
-    for (let k = 0, n = Game.enemies.length; k < n; k += 1) {
-      Game.enemies[k].draw(gl);
+  const levelState = game.levelState;
+  if (levelState === LevelState.PLAYING || levelState === LevelState.END) {
+    for (let k = 0, n = game.enemies.length; k < n; k += 1) {
+      const enemy = game.enemies[k];
+      if (enemy.active) {
+        enemy.draw(gl);
+      }
     }
-  } else if (Game.levelState === LevelState.BOSS) {
-    Game.bosses[Game.level].draw(gl);
+  } else if (levelState === LevelState.BOSS) {
+    game.bosses[game.level].draw(gl);
   }
 
-  Game.starMap.draw(gl);
+  game.starMap.draw(gl);
 
-  if (Game.overlayState.flag) {
-    drawOverlay(Game);
+  const powerups = game.powerups;
+  for (let key in powerups) {
+    if (Object.prototype.hasOwnProperty.call(powerups, key)) {
+      const items = powerups[key].items;
+      for (let k = 0, n = items.length; k < n; k += 1) {
+        const item = items[k];
+        if (item.active) {
+          item.draw(gl);
+        }
+      }
+    }
+  }
+
+  if (game.overlayState.flag) {
+    drawOverlay(game);
   }
 }
 
-function findEnemyWeapon(Game) {
-  const enemyWeapons = Game.enemyWeapons;
+function findEnemyWeapon(game) {
+  const enemyWeapons = game.enemyWeapons;
   for (let k = 0, n = enemyWeapons.length; k < n; k += 1) {
     let weapon = enemyWeapons[k];
     if (!weapon.active) {
@@ -1318,10 +1421,10 @@ function findEnemyWeapon(Game) {
     }
   }
 
-  return new Weapon(Game, 0, 50, 0, 0, 0, false);
+  return new Weapon(game, 0, 50, 0, 0, 0, false);
 }
 
-function setup(Game, gl) {
+function setup(game, gl) {
   var err = 0;
   gl.clearColor(0.0, 0.0, 0.3, 1.0);
   gl.enable(gl.DEPTH_TEST);
@@ -1329,14 +1432,14 @@ function setup(Game, gl) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   Console.debug("Initializing shaders");
-  Game.fragShader = Utils.getShader(gl, "gl_shader_frag");
-  Game.vertShader = Utils.getShader(gl, "gl_shader_vert");
-  Game.shaderProg = gl.createProgram();
-  gl.attachShader(Game.shaderProg, Game.fragShader);
-  gl.attachShader(Game.shaderProg, Game.vertShader);
-  gl.linkProgram(Game.shaderProg);
-  if (!gl.getProgramParameter(Game.shaderProg, gl.LINK_STATUS)) {
-    console.log(gl.getProgramInfoLog(Game.shaderProg));
+  game.fragShader = Utils.getShader(gl, "gl_shader_frag");
+  game.vertShader = Utils.getShader(gl, "gl_shader_vert");
+  game.shaderProg = gl.createProgram();
+  gl.attachShader(game.shaderProg, game.fragShader);
+  gl.attachShader(game.shaderProg, game.vertShader);
+  gl.linkProgram(game.shaderProg);
+  if (!gl.getProgramParameter(game.shaderProg, gl.LINK_STATUS)) {
+    console.log(gl.getProgramInfoLog(game.shaderProg));
     Console.error("Error: linking WebGL program");
     Console.show();
     return;
@@ -1348,37 +1451,49 @@ function setup(Game, gl) {
     return;
   }
 
-  gl.useProgram(Game.shaderProg);
+  gl.useProgram(game.shaderProg);
 
-  gl.bindAttribLocation(Game.shaderProg, Game.vertexPositionAttrib, "aVertexPosition");
-  gl.enableVertexAttribArray(Game.vertexPositionAttrib);
+  gl.bindAttribLocation(game.shaderProg, game.vertexPositionAttrib, "aVertexPosition");
+  gl.enableVertexAttribArray(game.vertexPositionAttrib);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, Game.vertexTriangleBufferObject);
-  gl.bufferData(gl.ARRAY_BUFFER, Game.verticesTriangle, gl.STATIC_DRAW);
-  gl.vertexAttribPointer(Game.vertexPositionAttrib, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, game.vertexTriangleBufferObject);
+  gl.bufferData(gl.ARRAY_BUFFER, game.verticesTriangle, gl.STATIC_DRAW);
+  gl.vertexAttribPointer(game.vertexPositionAttrib, 3, gl.FLOAT, false, 0, 0);
 
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, Game.vertexCircleBufferObject);
-  gl.bufferData(gl.ARRAY_BUFFER, Game.verticesCircle, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, game.vertexCircleBufferObject);
+  gl.bufferData(gl.ARRAY_BUFFER, game.verticesCircle, gl.STATIC_DRAW);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, Game.vertexRectangleBufferObject);
-  gl.bufferData(gl.ARRAY_BUFFER, Game.verticesRectangle, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, game.vertexRectangleBufferObject);
+  gl.bufferData(gl.ARRAY_BUFFER, game.verticesRectangle, gl.STATIC_DRAW);
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  Game.pUniform = gl.getUniformLocation(Game.shaderProg, "uPMatrix");
-  Game.mvUniform = gl.getUniformLocation(Game.shaderProg, "uMVMatrix");
-  gl.uniformMatrix4fv(Game.pUniform, false, Game.pUniformMatrix);
+  game.pUniform = gl.getUniformLocation(game.shaderProg, "uPMatrix");
+  game.mvUniform = gl.getUniformLocation(game.shaderProg, "uMVMatrix");
+  gl.uniformMatrix4fv(game.pUniform, false, game.pUniformMatrix);
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  Game.textureUniform = gl.getUniformLocation(Game.shaderProg, "uSampler");
-  Game.textures.texCoordAttrib = gl.getAttribLocation(Game.shaderProg, "aTextureCoord");
-  gl.enableVertexAttribArray(Game.textures.texCoordAttrib);
-  gl.vertexAttribPointer(Game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
+  game.textureUniform = gl.getUniformLocation(game.shaderProg, "uSampler");
+  game.textures.texCoordAttrib = gl.getAttribLocation(game.shaderProg, "aTextureCoord");
+  gl.enableVertexAttribArray(game.textures.texCoordAttrib);
+  gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
 
-  Game.projectileTexCoords = Game.gameData.projectileTexCoords.map(
+  game.projectileTexCoords = game.gameData.projectileTexCoords.map(
     (el) => new Float32Array(el.coords)
   );
+
+  game.powerupTexCoords = [];
+  for (const key of Object.keys(game.gameData.powerups)) {
+    const powerup = game.gameData.powerups[key];
+    game.powerupTexCoords.push(powerup);
+  }
+  game.powerupTexCoords.sort((a, b) => {
+    const a1 = a.texCoordsBufferIndex;
+    const b1 = b.texCoordsBufferIndex;
+    return (a1 > b1) - (a1 < b1);
+  });
+  game.powerupTexCoords = game.powerupTexCoords.map((el) => new Float32Array(el.texCoords));
 
   function loadTexture(texObj, img, texCoords, texIdIndex) {
     texObj.tex = gl.createTexture();
@@ -1403,23 +1518,26 @@ function setup(Game, gl) {
 
   Console.debug("Initializing textures");
 
-  loadTexture(Game.textures.ship, "img_ship", Game.textures.ship.coords, Game.textures.numTextures);
-  Game.textures.numTextures += 1;
+  loadTexture(game.textures.ship, "img_ship", game.textures.ship.coords, game.textures.numTextures);
+  game.textures.numTextures += 1;
 
-  loadTexture(Game.textures.enemyShip, "img_enemy_ship", Game.textures.enemyShip.coords, Game.textures.numTextures);
-  Game.textures.numTextures += 1;
+  loadTexture(game.textures.enemyShip, "img_enemy_ship", game.textures.enemyShip.coords, game.textures.numTextures);
+  game.textures.numTextures += 1;
 
-  loadTexture(Game.textures.boss, "img_boss", Game.textures.boss.coords, Game.textures.numTextures);
-  Game.textures.numTextures += 1;
+  loadTexture(game.textures.boss, "img_boss", game.textures.boss.coords, game.textures.numTextures);
+  game.textures.numTextures += 1;
 
-  loadTexture(Game.textures.explosion, "img_explosion", Game.textures.explosion.coords, Game.textures.numTextures);
-  Game.textures.numTextures += 1;
+  loadTexture(game.textures.explosion, "img_explosion", game.textures.explosion.coords, game.textures.numTextures);
+  game.textures.numTextures += 1;
 
-  loadTexture(Game.textures.projectile, "img_projectiles_sprite", Game.projectileTexCoords, Game.textures.numTextures);
-  Game.textures.numTextures += 1;
+  loadTexture(game.textures.projectile, "img_projectiles_sprite", game.projectileTexCoords, game.textures.numTextures);
+  game.textures.numTextures += 1;
 
-  loadTexture(Game.textures.star, "img_star", Game.textures.star.coords, Game.textures.numTextures);
-  Game.textures.numTextures += 1;
+  loadTexture(game.textures.star, "img_star", game.textures.star.coords, game.textures.numTextures);
+  game.textures.numTextures += 1;
+
+  loadTexture(game.textures.powerup, "img_powerups_sprite", game.powerupTexCoords, game.textures.numTextures);
+  game.textures.numTextures += 1;
 
   err = gl.getError();
   if (err) {
@@ -1430,14 +1548,14 @@ function setup(Game, gl) {
 
   Console.debug("Initializing game assets");
 
-  Game.player = new Player(Game);
-  Game.players.push(Game.player);
+  game.player = new Player(game);
+  game.players.push(game.player);
 
-  Game.starMap = new StarMap(Game, Game.numStars);
+  game.starMap = new StarMap(game, game.numStars);
 
   /* Create arrays to hold enemy last spawn ts per level */
-  const levels = Game.gameData.levels;
-  const levelEnemies = Game.levelEnemies;
+  const levels = game.gameData.levels;
+  const levelEnemies = game.levelEnemies;
   for (let k = 0, n = levels.length; k < n; k += 1) {
     const lastTs = [];
     const level = levels[k];
@@ -1449,15 +1567,21 @@ function setup(Game, gl) {
 
   /* Create cache of weapons for enemies to reuse */
   for (let k = 0; k < 50; k += 1) {
-    Game.enemyWeapons.push(new Weapon(Game, 0, 50, 0, 0, 0, false));
+    game.enemyWeapons.push(new Weapon(game, 0, 50, 0, 0, 0, false));
   }
 
   /* Create bosses */
-  for (let k = 0, n = Game.gameData.levels.length; k < n; k += 1) {
-    Game.bosses.push(new Boss(Game, k, false));
+  for (let k = 0, n = game.gameData.levels.length; k < n; k += 1) {
+    game.bosses.push(new Boss(game, k, false));
   }
 
-  loadSettings(Game);
+  /* Create powerups */
+  for (let k = 0, n = 50; k < n; k += 1) {
+    game.powerups.Health.items.push(new HealthPowerup(game));
+    game.powerups.Shield.items.push(new ShieldPowerup(game));
+  }
+
+  loadSettings(game);
 
   Splash.intro({
     "canvasOverlayCtx": canvasOverlayCtx,
