@@ -129,7 +129,7 @@ const difficultyMap = Object.freeze({
   })
 });
 
-const Game = {
+const Game = Object.seal({
   "name": "2Infinity",
   "devMode": devMode,
   "difficulty": Difficulty.EASY,
@@ -345,6 +345,9 @@ const Game = {
     new Float32Array([-1.0, -1.0, 0.0])
   ],
 
+  "projectileTexCoords": null,
+  "powerupTexCoords": null,
+
   "pUniform": null,
   "mvUniform": null,
 
@@ -355,6 +358,7 @@ const Game = {
     0.0, 0.0, 0.0, 1.0
   ]),
 
+  "gameData": null,
   "player": null,
   "players": [],
   "levelEnemies": [],
@@ -367,7 +371,7 @@ const Game = {
   "numStars": 256,
   "projectiles": [],
   "projectileLastTs": 0
-};
+});
 
 Splash.init({
   "KEY_MAP": KEY_MAP,
