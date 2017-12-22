@@ -1,4 +1,4 @@
-/* global Console Utils Splash Weapon Player Enemy Boss StarMap */
+/* global Console Utils Splash Weapon Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
 
 "use strict";
 
@@ -370,7 +370,17 @@ const Game = Object.seal({
   "starMap": null,
   "numStars": 256,
   "projectiles": [],
-  "projectileLastTs": 0
+  "projectileLastTs": 0,
+  "powerups": Object.seal({
+    "Health": Object.seal({
+      "lastTs": 0,
+      "items": []
+    }),
+    "Shield": Object.seal({
+      "lastTs": 0,
+      "items": []
+    })
+  })
 });
 
 Splash.init({
@@ -1037,6 +1047,8 @@ function update(game, ts, dt) {
     }
   }
 
+  updatePowerups(game, dt);
+
   updateLevel(game, ts, enemies);
 
   if (game.keydownMap["Shoot"]) {
@@ -1052,6 +1064,9 @@ function updateLevel(game, ts, enemies) {
     if (game.overlayState.flag) {
       updateWeapon(game);
     }
+
+    spawnPowerups(game, ts);
+
     if (game.score >= game.gameData.levels[game.level].scoreGoal) {
       game.levelState = LevelState.END;
     }
@@ -1104,6 +1119,59 @@ function updateWeapon(game) {
   }
 }
 
+function updatePowerups(game, dt) {
+  const player = game.player;
+  const powerups = game.powerups;
+  for (let key in powerups) {
+    if (Object.prototype.hasOwnProperty.call(powerups, key)) {
+      const powerup = powerups[key];
+      for (let k = 0, n = powerup.items.length; k < n; k += 1) {
+        const item = powerup.items[k];
+        if (item.active) {
+          item.update(dt);
+          const hitbox = item.hitbox;
+          if (player.intersectsWith(hitbox)) {
+            // accept powerup
+          }
+        }
+      }
+    }
+  }
+}
+
+// TODO use dt/timestep here
+function spawnPowerups(game, ts) {
+  const powerups = game.powerups;
+  for (let key in powerups) {
+    if (Object.prototype.hasOwnProperty.call(powerups, key)) {
+      const powerup = powerups[key];
+      const interval = game.gameData.powerups[key].spawnInterval;
+      if (interval > powerup.lastTs + ts) {
+        let found = false;
+        const items = powerup.items;
+        for (let k = 0, n = items.length; k < n; k += 1) {
+          const item = items[k];
+          if (!item.active) {
+            found = true;
+            console.log("reset");
+            console.log(ts);
+            console.log(powerup.lastTs);
+            console.log(interval);
+            item.reset();
+            break;
+          }
+        }
+        if (!found) {
+          const Ctor = items[0].constructor;
+          const item = new Ctor(game);
+          item.reset();
+        }
+        powerup.lastTs = ts;
+      }
+    }
+  }
+}
+
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
   game.projectileLastTs = ts;
@@ -1113,7 +1181,8 @@ function fireWeapon(game, ts, dt) {
   }
 }
 
-function spawnEnemies(game, ts, dt) {
+// TODO use dt/timestep here
+function spawnEnemies(game, ts) {
   const gameData = game.gameData;
   const level = gameData.levels[game.level];
   const levelEnemies = game.levelEnemies[game.level];
@@ -1325,6 +1394,19 @@ function draw(game) {
 
   game.starMap.draw(gl);
 
+  const powerups = game.powerups;
+  for (let key in powerups) {
+    if (Object.prototype.hasOwnProperty.call(powerups, key)) {
+      const items = powerups[key].items;
+      for (let k = 0, n = items.length; k < n; k += 1) {
+        const item = items[k];
+        if (item.active) {
+          item.draw(gl);
+        }
+      }
+    }
+  }
+
   if (game.overlayState.flag) {
     drawOverlay(game);
   }
@@ -1491,6 +1573,12 @@ function setup(game, gl) {
   /* Create bosses */
   for (let k = 0, n = game.gameData.levels.length; k < n; k += 1) {
     game.bosses.push(new Boss(game, k, false));
+  }
+
+  /* Create powerups */
+  for (let k = 0, n = 50; k < n; k += 1) {
+    game.powerups.Health.items.push(new HealthPowerup(game));
+    game.powerups.Shield.items.push(new ShieldPowerup(game));
   }
 
   loadSettings(game);

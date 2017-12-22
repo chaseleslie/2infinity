@@ -1,5 +1,5 @@
 /* global Physics Utils */
-/* exported Powerup HealthPowerup */
+/* exported Powerup HealthPowerup ShieldPowerup */
 
 function Powerup(game) {
   this.game = game;
@@ -56,14 +56,15 @@ Powerup.prototype.reset = function(data) {
   const mvUniformMatrix = this.mvUniformMatrix;
   const translations = this.translations;
   const scales = this.scales;
+  const gameScale = game.modelScale;
   const rotations = this.rotations;
   const spawnX = this.spawnX;
   translations.x = spawnX;
   translations.y = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
   translations.z = 0;
-  scales.x = data.modelScales[0];
-  scales.y = data.modelScales[1];
-  scales.z = data.modelScales[2];
+  scales.x = data.modelScales[0] * gameScale * game.recipAspect;
+  scales.y = data.modelScales[1] * gameScale;
+  scales.z = data.modelScales[2] * gameScale;
   rotations.x = 0;
   rotations.y = 0;
   rotations.z = 0;
@@ -140,8 +141,30 @@ function HealthPowerup(game) {
 }
 
 HealthPowerup.prototype = Object.create(Powerup.prototype);
+HealthPowerup.prototype.constructor = HealthPowerup;
 
 HealthPowerup.prototype.reset = function() {
+  const game = this.game;
+  const type = this.type;
+  const data = game.gameData.powerups[type];
+  Powerup.prototype.reset.call(this, data);
+  this.active = true;
+};
+
+function ShieldPowerup(game) {
+  Powerup.call(this, game);
+  const type = "Shield";
+  const data = game.gameData.powerups[type];
+  const state = this.state;
+  state.velocity[0] = -data.speed;
+  this.type = type;
+  this.texCoordsBufferIndex = data.texCoordsBufferIndex;
+}
+
+ShieldPowerup.prototype = Object.create(Powerup.prototype);
+ShieldPowerup.prototype.constructor = ShieldPowerup;
+
+ShieldPowerup.prototype.reset = function() {
   const game = this.game;
   const type = this.type;
   const data = game.gameData.powerups[type];
