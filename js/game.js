@@ -842,6 +842,18 @@ function preStart(game, ts) {
       levelEnemies.lastTs[k] = ts;
     }
   }
+
+  const powerups = game.powerups;
+  for (let key in powerups) {
+    if (Object.prototype.hasOwnProperty.call(powerups, key)) {
+      const powerup = powerups[key];
+      if (pauseTs) {
+        powerup.lastTs = ts - (pauseTs - powerup.lastTs);
+      } else {
+        powerup.lastTs = ts;
+      }
+    }
+  }
 }
 
 function stop() {
