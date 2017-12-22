@@ -59,6 +59,7 @@ Powerup.prototype.reset = function(data) {
   const gameScale = game.modelScale;
   const rotations = this.rotations;
   const spawnX = this.spawnX;
+  const state = this.state;
   translations.x = spawnX;
   translations.y = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
   translations.z = 0;
@@ -68,6 +69,12 @@ Powerup.prototype.reset = function(data) {
   rotations.x = 0;
   rotations.y = 0;
   rotations.z = 0;
+  state.position[0] = translations.x;
+  state.position[1] = translations.y;
+  state.position[2] = translations.z;
+  state.velocity[0] = -data.speed;
+  state.velocity[1] = 0;
+  state.velocity[2] = 0;
   Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
 };
 
@@ -124,6 +131,10 @@ Powerup.prototype.getHitbox = function() {
   return hitbox;
 };
 
+Powerup.prototype.deactivate = function() {
+  this.active = false;
+};
+
 Object.defineProperty(Powerup.prototype, "offScreen", {
   "get": function() {
     return this.getPositionRight() < -1.0;
@@ -137,6 +148,7 @@ function HealthPowerup(game) {
   const state = this.state;
   state.velocity[0] = -data.speed;
   this.type = type;
+  this.value = data.value;
   this.texCoordsBufferIndex = data.texCoordsBufferIndex;
 }
 
@@ -158,6 +170,7 @@ function ShieldPowerup(game) {
   const state = this.state;
   state.velocity[0] = -data.speed;
   this.type = type;
+  this.value = data.value;
   this.texCoordsBufferIndex = data.texCoordsBufferIndex;
 }
 

@@ -63,6 +63,7 @@ const state = Object.seal({
   "callbackArgs": Object.seal({
     "level": null,
     "hitpoints": null,
+    "shield": null,
     "score": null,
     "state": null
   })
@@ -135,6 +136,38 @@ function Shell() {
       "help": function() {
         var msg = "hp: hp [number]\n";
         msg += "    Gets or sets the player hitpoints.";
+        state.entryList.add(EntryType.HELP, msg);
+      }
+    }),
+    "shield": Object.freeze({
+      "get": function() {
+        let sh = state.callbackArgs.shield;
+        if (sh === null) {
+          sh = state.game.player.shield;
+        }
+        state.entryList.add(EntryType.PRINT, `shield is ${sh}`);
+      },
+      "set": function(args) {
+        const sh = parseInt(args[1], 10);
+        if (!isFinite(sh) || isNaN(sh)) {
+          return;
+        }
+        state.callbackArgs.shield = sh;
+      },
+      "interpret": function(args) {
+        if (args.length > 1) {
+          this.set(args);
+          this.get(args);
+        } else {
+          this.get(args);
+        }
+      },
+      "auto": function() {
+        //
+      },
+      "help": function() {
+        var msg = "shield: shield [number]\n";
+        msg += "    Gets or sets the player shield.";
         state.entryList.add(EntryType.HELP, msg);
       }
     }),

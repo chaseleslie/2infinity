@@ -1,4 +1,4 @@
-/* global Physics Utils Weapon */
+/* global Physics Utils Weapon HealthPowerup ShieldPowerup */
 /* exported Player */
 
 "use strict";
@@ -7,6 +7,8 @@ function Player(game) {
   const maxHp = 1000;
   var hp = maxHp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
+  var shield = 0;
+  const maxShield = 1000;
   const velocityDefault = 0.0006;
   var velocity = velocityDefault;
 
@@ -81,6 +83,7 @@ function Player(game) {
 
     Utils.modelViewMatrix(mvUniformMatrix, trans, rotations, scales);
   };
+
   this.resetGame = function() {
     hp = maxHp;
 
@@ -96,6 +99,7 @@ function Player(game) {
 
     Utils.modelViewMatrix(mvUniformMatrix, startPos, rotations, scales);
   };
+
   this.draw = function(gl) {
     gl.activeTexture(game.textures.ship.texId);
     gl.bindTexture(gl.TEXTURE_2D, game.textures.ship.tex);
@@ -115,6 +119,7 @@ function Player(game) {
       weapon.draw(gl);
     }
   };
+
   this.update = function(dt) {
     const cos = Math.cos;
     const sin = Math.sin;
@@ -257,8 +262,34 @@ function Player(game) {
     }
   };
 
+  this.acceptPowerup = function(powerup) {
+    if (powerup instanceof HealthPowerup) {
+      return this.acceptHealthPowerup(powerup);
+    } else if (powerup instanceof ShieldPowerup) {
+      return this.acceptShieldPowerup(powerup);
+    }
+  };
+
+  this.acceptHealthPowerup = function(powerup) {
+    hp += powerup.value;
+    hp = Math.min(hp, maxHp);
+    powerup.deactivate();
+    return game.OverlayFlags.INCREMENT | game.OverlayFlags.HP_DIRTY;
+  };
+
+  this.acceptShieldPowerup = function(powerup) {
+    shield += powerup.value;
+    shield = Math.min(shield, maxShield);
+    powerup.deactivate();
+    return game.OverlayFlags.INCREMENT | game.OverlayFlags.HP_DIRTY;
+  };
+
   this.takeHit = function(points) {
-    hp -= dmgRate * points;
+    shield -= dmgRate * points;
+    if (shield < 0) {
+      hp += shield;
+      shield = 0;
+    }
     return points;
   };
 
@@ -391,6 +422,8 @@ function Player(game) {
 
   Object.defineProperty(this, "hitpoints", {get: function () {return hp;}, set: function(hp_) {hp = hp_;}});
   Object.defineProperty(this, "maxHitpoints", {get: function () {return maxHp;}});
+  Object.defineProperty(this, "shield", {get: function () {return shield;}, set: function(sh) {shield = sh;}});
+  Object.defineProperty(this, "maxShield", {get: function () {return maxShield;}});
   Object.defineProperty(this, "weapons", {get: function() {return weapons;}});
   Object.defineProperty(this, "position", {get: getPosition});
   Object.defineProperty(this, "positionLeft", {get: getPositionLeft});
