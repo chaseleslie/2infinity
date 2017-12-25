@@ -5,6 +5,7 @@
 (function(win, doc) {
 
 const global = win;
+const docElem = document.documentElement;
 const canvas = doc.getElementById("glcanvas");
 const canvasOverlay = doc.getElementById("glcanvas_overlay");
 const canvasOverlayCtx = canvasOverlay.getContext("2d");
@@ -136,6 +137,8 @@ const Game = Object.seal({
   "difficultyMap": difficultyMap,
   "aspect": aspect,
   "recipAspect": 1 / aspect,
+  "windowAspect": docElem.clientWidth / docElem.clientHeight,
+  "recipWindowAspect": docElem.clientHeight / docElem.clientWidth,
   "zProjection": zProjection,
   "level": 0,
   "score": 0,
@@ -410,6 +413,7 @@ Console.init({
 });
 
 global.addEventListener("beforeunload", saveSettings, false, Game);
+global.addEventListener("resize", handleWindowResize, false, Game);
 menuResume.addEventListener("click", onMenuResume, false);
 menuRestart.addEventListener("click", onMenuRestart, false);
 menuDisplayFPS.addEventListener("click", onMenuDisplayFPS, false);
@@ -446,6 +450,13 @@ Utils.fetchURL({
     }
   }
 });
+
+function handleWindowResize() {
+  const game = Game;
+  const winAspect = docElem.clientWidth / docElem.clientHeight;
+  game.windowAspect = winAspect;
+  game.recipWindowAspect = 1 / winAspect;
+}
 
 function handleTouchStart(e) {
   let x = 0;
