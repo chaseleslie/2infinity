@@ -5,6 +5,7 @@
 (function(win, doc) {
 
 const global = win;
+const docElem = document.documentElement;
 const canvas = doc.getElementById("glcanvas");
 const canvasOverlay = doc.getElementById("glcanvas_overlay");
 const canvasOverlayCtx = canvasOverlay.getContext("2d");
@@ -136,6 +137,8 @@ const Game = Object.seal({
   "difficultyMap": difficultyMap,
   "aspect": aspect,
   "recipAspect": 1 / aspect,
+  "windowAspect": docElem.clientWidth / docElem.clientHeight,
+  "recipWindowAspect": docElem.clientHeight / docElem.clientWidth,
   "zProjection": zProjection,
   "level": 0,
   "score": 0,
@@ -384,6 +387,13 @@ const Game = Object.seal({
   })
 });
 
+const touchState = Object.seal({
+  "startX": 0,
+  "startY": 0,
+  "startTs": 0,
+  "clear": false
+});
+
 Splash.init({
   "KEY_MAP": KEY_MAP,
   "aspect": aspect
@@ -403,6 +413,7 @@ Console.init({
 });
 
 global.addEventListener("beforeunload", saveSettings, false, Game);
+global.addEventListener("resize", handleWindowResize, false, Game);
 menuResume.addEventListener("click", onMenuResume, false);
 menuRestart.addEventListener("click", onMenuRestart, false);
 menuDisplayFPS.addEventListener("click", onMenuDisplayFPS, false);
@@ -439,6 +450,96 @@ Utils.fetchURL({
     }
   }
 });
+
+function handleWindowResize() {
+  const game = Game;
+  const winAspect = docElem.clientWidth / docElem.clientHeight;
+  game.windowAspect = winAspect;
+  game.recipWindowAspect = 1 / winAspect;
+}
+
+function handleTouchStart(e) {
+  let x = 0;
+  let y = 0;
+  const touches = e.touches;
+
+  for (let k = 0, n = touches.length; k < n; k += 1) {
+    const touch = touches[k];
+    x += touch.clientX;
+    y += touch.clientY;
+  }
+
+  x /= touches.length;
+  y /= touches.length;
+  touchState.startX = x;
+  touchState.startY = y;
+  touchState.startTs = win.performance.now();
+}
+
+function handleTouchMove(e) {
+  const keydownMap = Game.keydownMap;
+  const touches = e.changedTouches;
+  let x = 0;
+  let y = 0;
+
+  for (let k = 0, n = touches.length; k < n; k += 1) {
+    const touch = touches[k];
+    x += touch.clientX;
+    y += touch.clientY;
+  }
+
+  x /= touches.length;
+  y /= touches.length;
+  const startX = touchState.startX;
+  const startY = touchState.startY;
+  const deltaX = x - startX;
+  const deltaY = y - startY;
+  const now = win.performance.now();
+
+  if (deltaX > 0) {
+    keydownMap["ArrowRight"] = keydownMap["ArrowRight"] || now;
+  }
+  if (deltaX < 0) {
+    keydownMap["ArrowLeft"] = keydownMap["ArrowLeft"] || now;
+  }
+  if (deltaY > 0) {
+    keydownMap["ArrowDown"] = keydownMap["ArrowDown"] || now;
+  }
+  if (deltaY < 0) {
+    keydownMap["ArrowUp"] = keydownMap["ArrowUp"] || now;
+  }
+
+  touchState.clear = true;
+}
+
+function handleTouchEnd(e) {
+  const keydownMap = Game.keydownMap;
+  const sqrt = Math.sqrt;
+  const abs = Math.abs;
+  const touches = e.changedTouches;
+  let x = 0;
+  let y = 0;
+
+  for (let k = 0, n = touches.length; k < n; k += 1) {
+    const touch = touches[k];
+    x += touch.clientX;
+    y += touch.clientY;
+  }
+
+  x /= touches.length;
+  y /= touches.length;
+  const startX = touchState.startX;
+  const startY = touchState.startY;
+  const deltaX = x - startX;
+  const deltaY = y - startY;
+  const dist = sqrt(deltaX * deltaX + deltaY * deltaY);
+  const now = win.performance.now();
+
+  if (dist < 15 && abs(now - touchState.startTs) < 100) {
+    keydownMap["Shoot"] = keydownMap["Shoot"] || now;
+    touchState.clear = true;
+  }
+}
 
 function handleKeyDown(e) {
   const now = win.performance.now();
@@ -824,6 +925,9 @@ function start() {
     game.overlayState.flag |= OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
     doc.body.addEventListener("keydown", handleKeyDown, false);
     doc.body.addEventListener("keyup", handleKeyUp, false);
+    doc.body.addEventListener("touchstart", handleTouchStart, false);
+    doc.body.addEventListener("touchmove", handleTouchMove, false);
+    doc.body.addEventListener("touchend", handleTouchEnd, false);
     game.startTs = global.performance.now();
     game.running = true;
     preStart(game, game.startTs);
@@ -861,6 +965,9 @@ function stop() {
   Console.log(`Stopping game (state=${LevelState.map(game.levelState)})`);
   doc.body.removeEventListener("keydown", handleKeyDown, false);
   doc.body.removeEventListener("keyup", handleKeyUp, false);
+  doc.body.removeEventListener("touchstart", handleTouchStart, false);
+  doc.body.removeEventListener("touchmove", handleTouchMove, false);
+  doc.body.removeEventListener("touchend", handleTouchEnd, false);
   game.pauseTs = global.performance.now();
   game.running = false;
   global.cancelAnimationFrame(game.animFrame);
@@ -1069,8 +1176,18 @@ function update(game, ts, dt) {
 
   updateLevel(game, ts, enemies);
 
-  if (game.keydownMap["Shoot"]) {
+  const keydownMap = game.keydownMap;
+  if (keydownMap["Shoot"]) {
     fireWeapon(game, ts, dt);
+  }
+
+  if (touchState.clear) {
+    keydownMap["Shoot"] = 0;
+    keydownMap["ArrowRight"] = 0;
+    keydownMap["ArrowLeft"] = 0;
+    keydownMap["ArrowDown"] = 0;
+    keydownMap["ArrowUp"] = 0;
+    touchState.clear = false;
   }
 
   game.starMap.update(dt);
