@@ -125,27 +125,30 @@ function Player(game) {
     const sin = Math.sin;
     const aspect = game.aspect;
     const rAspect = game.recipAspect;
+    const winAspect = game.windowAspect;
     const arrowLeft = game.keydownMap["ArrowLeft"];
     const arrowUp = game.keydownMap["ArrowUp"];
     const arrowRight = game.keydownMap["ArrowRight"];
     const arrowDown = game.keydownMap["ArrowDown"];
     const dive = game.keydownMap["Dive"];
     const rot = rotations;
+    const vx = velocity * rAspect;
+    const vy = vx * winAspect * rAspect;
     var isMoving = false;
 
     if (arrowLeft && !arrowRight) {
-      state.velocity[0] = -velocity;
+      state.velocity[0] = -vx;
       isMoving = true;
     } else if (arrowRight && !arrowLeft) {
-      state.velocity[0] = velocity;
+      state.velocity[0] = vx;
       isMoving = true;
     }
 
     if (arrowUp && !arrowDown) {
-      state.velocity[1] = velocity * aspect;
+      state.velocity[1] = vy;
       isMoving = true;
     } else if (arrowDown && !arrowUp) {
-      state.velocity[1] = -velocity * aspect;
+      state.velocity[1] = -vy;
       isMoving = true;
     }
 
