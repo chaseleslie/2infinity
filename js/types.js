@@ -8,7 +8,9 @@ function StarMap(game, numStars) {
   numStars = numStars || 256;
 
   for (let k = 0; k < numStars; k += 1) {
-    stars.push(new Star(game));
+    const numTypes = game.gameData.stars.depths.length;
+    const typeIndex = Utils.getRandomInt(0, numTypes - 1);
+    stars.push(new Star(game, typeIndex));
   }
 
   this.game = game;
@@ -27,6 +29,7 @@ StarMap.prototype.draw = function(gl) {
 };
 
 StarMap.prototype.update = function(dt) {
+  const stepFn = () => Utils.getRandomInt(0, 1);
   const stars = this.stars;
   const numStars = this.numStars;
 
@@ -34,15 +37,20 @@ StarMap.prototype.update = function(dt) {
     const star = stars[k];
     star.update(dt);
     if (star.offScreen) {
-      star.reset();
+      const scaleBounds = star.scaleBounds;
+      const scale = star.scale;
+      const scales = star.scales;
+      const x = 1 + (scale / 4) + (Utils.random() * scales.x);
+      const y = (stepFn() ? 1 : -1) * Utils.random() * (scaleBounds - scales.y);
+      star.reset(x, y);
     }
   }
 };
 
-function Star(game) {
+function Star(game, typeIndex) {
+  const stepFn = () => Utils.getRandomInt(0, 1);
   const depths = game.gameData.stars.depths;
   const velocities = game.gameData.stars.velocities;
-  const typeIndex = Utils.getRandomInt(0, depths.length - 1);
   const scale = 12;
   const scaleBounds = scale / 4;
   const depth = depths[typeIndex];
@@ -77,28 +85,26 @@ function Star(game) {
   this.scales = scales;
   this.mvUniformMatrix = mvUniformMatrix;
 
-  this.reset();
+  this.reset(
+    0,
+    (stepFn() ? 1 : -1) * Utils.random() * (scaleBounds - scales.y)
+  );
   translations.x = -4 + 8 * Utils.random();
   state.position[0] = translations.x;
   mvUniformMatrix[12] = translations.x;
 }
 
-Star.prototype.reset = function() {
-  const stepFn = () => Utils.getRandomInt(0, 1);
-  const scaleBounds = this.scaleBounds;
+Star.prototype.reset = function(x, y) {
   const scales = this.scales;
   const translations = this.translations;
   const rotations = this.rotations;
-  const scale = this.scale;
-  const vertPos = (stepFn() ? 1 : -1) * Utils.random() * (scaleBounds - scales.y);
-  const horizPos = 1 + (scale / 4) + (Utils.random() * scales.x);
   const state = this.state;
   const mvUniformMatrix = this.mvUniformMatrix;
 
-  state.position[0] = horizPos;
-  state.position[1] = vertPos;
-  translations.x = horizPos;
-  translations.y = vertPos;
+  state.position[0] = x;
+  state.position[1] = y;
+  translations.x = x;
+  translations.y = y;
 
   Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
 };
@@ -107,10 +113,11 @@ Star.prototype.draw = function(gl) {
   const game = this.game;
   const texCoordsBufferIndex = this.texCoordsBufferIndex;
   const mvUniformMatrix = this.mvUniformMatrix;
+  const coordBuffers = game.textures.star.coordBuffers[texCoordsBufferIndex];
 
   gl.activeTexture(game.textures.star.texId);
   gl.bindTexture(gl.TEXTURE_2D, game.textures.star.tex);
-  gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.star.coordBuffers[texCoordsBufferIndex]);
+  gl.bindBuffer(gl.ARRAY_BUFFER, coordBuffers);
   gl.vertexAttribPointer(game.textures.texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
   gl.uniform1i(game.textureUniform, game.textures.star.texIdIndex);
 
