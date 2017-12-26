@@ -40,21 +40,19 @@ StarMap.prototype.update = function(dt) {
 };
 
 function Star(game) {
-  const depths = [0.8, 0.9, 1.0];
-  const speedAndDepth = Utils.getRandomInt(0, depths.length - 1);
+  const depths = game.gameData.stars.depths;
+  const velocities = game.gameData.stars.velocities;
+  const typeIndex = Utils.getRandomInt(0, depths.length - 1);
   const scale = 12;
   const scaleBounds = scale / 4;
-  const depthPos = depths[speedAndDepth];
-  const speeds = [
-    0.0001, 0.00005, 0.00002
-  ];
-  const speed = speeds[speedAndDepth];
+  const depth = depths[typeIndex];
+  const velocity = velocities[typeIndex];
   const state = new Physics.State(
-    [0, 0, depthPos],
-    [-speed, 0, 0]
+    [0, 0, depth],
+    [-velocity, 0, 0]
   );
 
-  const translations = Object.seal({"x": 0, "y": 0, "z": depthPos});
+  const translations = Object.seal({"x": 0, "y": 0, "z": depth});
   const rotations = Object.freeze({"x": 0, "y": 0, "z": 0});
   const scales = Object.freeze({
     "x": game.modelScale / (scale * game.aspect),
@@ -70,10 +68,9 @@ function Star(game) {
 
   this.game = game;
   this.texCoordsBufferIndex = 0;
+  this.typeIndex = typeIndex;
   this.scale = scale;
   this.scaleBounds = scaleBounds;
-  this.depthPos = depthPos;
-  this.speed = speed;
   this.state = state;
   this.translations = translations;
   this.rotations = rotations;
