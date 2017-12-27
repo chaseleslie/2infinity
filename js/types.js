@@ -4,39 +4,68 @@
 "use strict";
 
 function StarMap(game, numStars) {
+  const stepFn = this.stepFn;
   const stars = [];
   numStars = numStars || 256;
+  const constellations = [];
+  const numStarTypes = game.gameData.stars.depths.length;
 
   for (let k = 0; k < numStars; k += 1) {
-    const numTypes = game.gameData.stars.depths.length;
-    const typeIndex = Utils.getRandomInt(0, numTypes - 1);
-    stars.push(new Star(game, typeIndex));
+    const typeIndex = Utils.getRandomInt(0, numStarTypes - 1);
+    const star = new Star(game, typeIndex);
+    const scaleBounds = star.scaleBounds;
+    const scales = star.scales;
+    const translations = star.translations;
+    const state = star.state;
+    const mvUniformMatrix = star.mvUniformMatrix;
+    const posY = (stepFn() ? 1 : -1) * Utils.random() * (scaleBounds - scales.y);
+    star.reset(0, posY);
+    // TODO calc initial x pos based on transform matrices
+    translations.x = -4 + 8 * Utils.random();
+    state.position[0] = translations.x;
+    mvUniformMatrix[12] = translations.x;
+    stars.push(star);
+  }
+
+  const stellas = game.gameData.stars.constellations;
+  for (let k = 0, n = stellas.length; k < n; k += 1) {
+    const stell = stellas[k];
+    constellations.push(new Constellation(game, stell));
   }
 
   this.game = game;
   this.stars = stars;
-  this.numStars = numStars;
+  this.constellations = constellations;
 }
+
+StarMap.prototype.stepFn = function() {
+  return Utils.getRandomInt(0, 1);
+};
 
 StarMap.prototype.draw = function(gl) {
   const stars = this.stars;
-  const numStars = this.numStars;
+  const constellations = this.constellations;
 
-  for (let k = 0; k < numStars; k += 1) {
+  for (let k = 0; k < stars.length; k += 1) {
     const star = stars[k];
     star.draw(gl);
+  }
+
+  for (let k = 0, n = constellations.length; k < n; k += 1) {
+    constellations[k].draw(gl);
   }
 };
 
 StarMap.prototype.update = function(dt) {
-  const stepFn = () => Utils.getRandomInt(0, 1);
+  const stepFn = this.stepFn;
   const stars = this.stars;
-  const numStars = this.numStars;
+  const constellations = this.constellations;
 
-  for (let k = 0; k < numStars; k += 1) {
+  for (let k = 0; k < stars.length; k += 1) {
     const star = stars[k];
     star.update(dt);
     if (star.offScreen) {
+      // TODO calc x/y pos based on transform matrices
       const scaleBounds = star.scaleBounds;
       const scale = star.scale;
       const scales = star.scales;
@@ -45,14 +74,85 @@ StarMap.prototype.update = function(dt) {
       star.reset(x, y);
     }
   }
+
+  for (let k = 0, n = constellations.length; k < n; k += 1) {
+    constellations[k].update(dt);
+  }
+};
+
+function Constellation(game, {name, coords, scale}) {
+  const stars = [];
+  const numStars = Math.trunc(coords.length / 2);
+  const typeIndex = 1;
+
+  for (let k = 0; k < numStars; k += 1) {
+    const star = new Star(game, typeIndex);
+    star.reset(-100, 0);
+    stars.push(star);
+  }
+
+  const stellaCoords = [];
+  for (let k = 0; k < coords.length; k += 2) {
+    stellaCoords.push([coords[k], coords[k + 1]]);
+  }
+
+  this.game = game;
+  this.name = name;
+  this.coords = stellaCoords;
+  this.scale = scale;
+  this.stars = stars;
+}
+
+Constellation.prototype.draw = function(gl) {
+  const stars = this.stars;
+
+  for (let k = 0; k < stars.length; k += 1) {
+    const star = stars[k];
+    star.draw(gl);
+  }
+};
+
+Constellation.prototype.update = function(dt) {
+  const stepFn = StarMap.prototype.stepFn;
+  const stars = this.stars;
+  let allOffscreen = true;
+
+  for (let k = 0; k < stars.length; k += 1) {
+    const star = stars[k];
+    star.update(dt);
+    if (!star.offScreen) {
+      allOffscreen = false;
+    }
+  }
+
+  if (!allOffscreen) {
+    return;
+  }
+
+  // TODO calc x/y pos based on transform matrices
+  const game = this.game;
+  const starData = game.gameData.stars;
+  const scaleBounds = starData.scaleBounds;
+  const scale = this.scale;
+  const stellaCoords = this.coords;
+  const starScale = stars[0].scale;
+  const centerX = 1 + (0.25 * starScale) + scale;
+  const centerY = (stepFn() ? 1 : -1) * Utils.random() * scaleBounds;
+  for (let k = 0, n = stars.length; k < n; k += 1) {
+    const coords = stellaCoords[k];
+    const star = stars[k];
+    const x = centerX - (0.5 * scale) + (coords[0] * scale);
+    const y = centerY - (0.5 * scale) + (coords[1] * scale);
+    star.reset(x, y);
+  }
 };
 
 function Star(game, typeIndex) {
-  const stepFn = () => Utils.getRandomInt(0, 1);
-  const depths = game.gameData.stars.depths;
-  const velocities = game.gameData.stars.velocities;
-  const scale = 12;
-  const scaleBounds = scale / 4;
+  const starData = game.gameData.stars;
+  const depths = starData.depths;
+  const velocities = starData.velocities;
+  const scale = starData.scale;
+  const scaleBounds = starData.scaleBounds;
   const depth = depths[typeIndex];
   const velocity = velocities[typeIndex];
   const state = new Physics.State(
@@ -84,14 +184,6 @@ function Star(game, typeIndex) {
   this.rotations = rotations;
   this.scales = scales;
   this.mvUniformMatrix = mvUniformMatrix;
-
-  this.reset(
-    0,
-    (stepFn() ? 1 : -1) * Utils.random() * (scaleBounds - scales.y)
-  );
-  translations.x = -4 + 8 * Utils.random();
-  state.position[0] = translations.x;
-  mvUniformMatrix[12] = translations.x;
 }
 
 Star.prototype.reset = function(x, y) {
