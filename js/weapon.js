@@ -367,7 +367,7 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
   }
 
   function getPositionLeft() {
-    const tri = game.verticesTriangle;
+    const tri = game.verticesRectangle;
     const x = tri[0], y = tri[1], z = tri[2], w = 1;
     const mvm = mvUniformMatrix;
     const c1r1 = mvm[0], c1r2 = mvm[4], c1r3 = mvm[8], c1r4 = mvm[12];
@@ -376,7 +376,7 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
   }
 
   function getPositionRight() {
-    const tri = game.verticesTriangle;
+    const tri = game.verticesRectangle;
     const x = tri[3], y = tri[4], z = tri[5], w = 1;
     const mvm = mvUniformMatrix;
     const c1r1 = mvm[0], c1r2 = mvm[4], c1r3 = mvm[8], c1r4 = mvm[12];
@@ -385,7 +385,7 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
   }
 
   function getPositionTop() {
-    const tri = game.verticesTriangle;
+    const tri = game.verticesRectangle;
     const x = tri[0], y = tri[1], z = tri[2], w = 1;
     const mvm = mvUniformMatrix;
     const c2r1 = mvm[1], c2r2 = mvm[5], c2r3 = mvm[9], c2r4 = mvm[13];
@@ -394,8 +394,8 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
   }
 
   function getPositionBottom() {
-    const tri = game.verticesTriangle;
-    const x = tri[6], y = tri[7], z = tri[8], w = 1;
+    const tri = game.verticesRectangle;
+    const x = tri[15], y = tri[16], z = tri[17], w = 1;
     const mvm = mvUniformMatrix;
     const c2r1 = mvm[1], c2r2 = mvm[5], c2r3 = mvm[9], c2r4 = mvm[13];
 
