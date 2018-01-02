@@ -207,26 +207,26 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
   var texCoordsBufferIndexProj = pTexType;
   var texCoordsBufferIndexExpl = 0;
 
-  const translateVec = {"x": x, "y": y, "z": 0};
-  const rotations = {"x": 0, "y": 0, "z": -dir};
-  const scales = {
+  const translations = Object.seal({"x": x, "y": y, "z": 0});
+  const rotations = Object.seal({"x": 0, "y": 0, "z": -dir});
+  const scales = Object.seal({
     "x": game.modelScale / projType.modelScales[0],
     "y": game.modelScale / projType.modelScales[1],
     "z": game.modelScale / projType.modelScales[2]
-  };
+  });
   const mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
-    translateVec,
+    translations,
     rotations,
     scales
   );
-  const hitbox = {
+  const hitbox = Object.seal({
     "left": 0,
     "right": 0,
     "top": 0,
     "bottom": 0,
     "depth": 0
-  };
+  });
 
   this.reset = function(pType, x1, y1, isActive, direc, texType) {
     projType = game.gameData.projectiles[pType];
@@ -245,10 +245,10 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
     state.velocity[0] = velocity * Math.cos(dir);
     state.velocity[1] = velocity * Math.sin(dir);
 
-    translateVec.x = x1;
-    translateVec.y = y1;
+    translations.x = x1;
+    translations.y = y1;
     rotations.z = -direc;
-    Utils.modelViewMatrix(mvUniformMatrix, translateVec, rotations, scales);
+    Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
     prune = 0;
   };
 
@@ -294,11 +294,11 @@ function Projectile(game, type, x, y, isActive, dir, pTexType) {
 
   this.setExploded = function() {
     prune += 1;
-    mvUniformMatrix[0] = scales.x;
-    mvUniformMatrix[5] = scales.y * 3;
-    mvUniformMatrix[10] = scales.z;
-    mvUniformMatrix[14] = 0.0;
-    mvUniformMatrix[15] = 1;
+    translations.x = state.position[0];
+    translations.y = state.position[1];
+    rotations.z = Utils.random() * Utils.TWOPI;
+    scales.y *= 3;
+    Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
   };
 
   function getPosition() {
