@@ -1,4 +1,19 @@
 {
+  "player": {
+    "startPos": {"x": -0.5, "y": 0.0, "z": 0.0},
+    "maxHp": 1000,
+    "maxShield": 1000,
+    "velocity": 0.0006,
+    "anim": {
+      "rollingMax": 10,
+      "rollingAngle": 0.2617993877991494,
+      "pitchingMax": 96,
+      "pitchingDepth": 0.6,
+      "pitchingAngleMax": 0.6283185307179586,
+      "movementMax": 10
+    }
+  },
+
   "enemies": [
     {
       "velocity": 0.00015,
