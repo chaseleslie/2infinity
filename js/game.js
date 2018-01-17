@@ -1,4 +1,4 @@
-/* global Console Utils Splash Weapon Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
+/* global Console Utils Splash Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
 
 "use strict";
 
@@ -763,7 +763,7 @@ function hideConsole(args) {
     switch (game.levelState) {
       case LevelState.BOSS_INTRO:
       case LevelState.BOSS:
-        game.bosses[game.level].reset(game.level, true);
+        game.bosses[game.level].reset(true);
       break;
     }
   }
@@ -1214,7 +1214,7 @@ function updateLevel(game, ts, enemies) {
     if (!enemiesActive) {
       game.levelState = LevelState.BOSS_INTRO;
       game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.INCREMENT;
-      game.bosses[game.level].reset(game.level, true);
+      game.bosses[game.level].reset(true);
     }
   } else if (game.levelState === LevelState.BOSS) {
     let bossActive = false;
