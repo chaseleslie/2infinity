@@ -1,4 +1,4 @@
-/* global Physics Utils Weapon HealthPowerup ShieldPowerup */
+/* global Physics Utils HealthPowerup ShieldPowerup */
 /* exported Player */
 
 "use strict";
@@ -31,8 +31,6 @@ function Player(game) {
 
   const weapons = [];
   var weaponSelected = 0;
-  const projCount = 50;
-  const projDir = 0;
   const startPos = playerData.startPos;
   const vertices = [
     new Float32Array(3),
@@ -43,11 +41,6 @@ function Player(game) {
     [startPos.x, startPos.y, startPos.z],
     [0, 0, 0]
   );
-
-  for (let k = 0; k < game.gameData.weapons.length; k += 1) {
-    const weapon = game.gameData.weapons[k];
-    weapons.push(new Weapon(game, k, projCount, projDir, null, weapon.texType));
-  }
 
   const translations = Object.seal({"x": startPos.x, "y": startPos.y, "z": startPos.z});
   const rotations = Object.seal({"x": 0, "y": 0, "z": 0});
@@ -100,6 +93,17 @@ function Player(game) {
     rotations.z = 0;
 
     Utils.modelViewMatrix(mvUniformMatrix, startPos, rotations, scales);
+  };
+
+  this.resetLevel = function(level) {
+    const levelData = game.gameData.levels[level];
+    const playerWeapons = levelData.playerWeapons;
+    weapons.splice(0, weapons.length);
+    for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
+      const weapon = playerWeapons[k];
+      weapons.push(new window[weapon.type](game, weapon));
+    }
+    weaponSelected = 0;
   };
 
   this.draw = function(gl) {
@@ -302,7 +306,7 @@ function Player(game) {
     const weapon = weapons[weaponSelected];
     var fired = false;
     if (!pitching) {
-      fired = weapon.fireWeapon(ts, dt, projDir, getHitbox());
+      fired = weapon.fireWeapon(ts, dt, getHitbox());
     }
     return fired;
   };
