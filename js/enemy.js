@@ -7,14 +7,12 @@ function Enemy(game, type, isActive) {
   const global = window;
   const stepFn = () => Utils.getRandomInt(0, 1);
   const aspect = game.aspect;
-  var enemyData = game.gameData.enemies[type];
-  var velocity = enemyData.velocity;
+  const enemyData = game.gameData.enemies[type];
+  const velocity = enemyData.velocity;
   var hp = enemyData.hitpoints;
   var points = hp;
-  var weaponType = enemyData.weapon;
-  var coolDownMult = enemyData.coolDownMult;
-  var weapon = (weaponType === null) ? null : game.findEnemyWeapon(game);
-  var projDir = Math.PI;
+  const weaponData = enemyData.weapon;
+  const weapon = weaponData ? new global[weaponData.type](game, weaponData): null;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
   var prune = 0;
   const showDestroyedFrames = 8;
@@ -34,64 +32,52 @@ function Enemy(game, type, isActive) {
   var texCoordsBufferIndexShip = enemyData.texType;
   var texCoordsBufferIndexExpl = 0;
 
-  const translateVec = {"x": horizontalPos, "y": verticalPos, "z": depthPos};
-  const rotations = {"x": 0, "y": Math.PI, "z": 0};
-  const scales = {
+  const translations = Object.seal({
+    "x": horizontalPos,
+    "y": verticalPos,
+    "z": depthPos
+  });
+  const rotations = Object.seal({
+    "x": 0,
+    "y": Math.PI,
+    "z": 0
+  });
+  const scales = Object.seal({
     "x": enemyData.modelScales[0] * game.modelScale / aspect,
     "y": enemyData.modelScales[1] * game.modelScale,
     "z": enemyData.modelScales[2] * game.modelScale
-  };
+  });
   const mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
-    translateVec,
+    translations,
     rotations,
     scales
   );
-  const hitbox = {
+  const hitbox = Object.seal({
     "left": 0,
     "right": 0,
     "top": 0,
     "bottom": 0,
     "depth": 0
-  };
+  });
 
-  if (weapon) {
-    const weaponData = game.gameData.weapons[weaponType];
-    const projData = game.gameData.projectiles[weaponData.projectileType];
-    weapon.reset(weaponType, 50, projDir, coolDownMult * projData.coolDown, weaponData.texType, true);
-  }
+  this.weaponData = weaponData;
 
-  this.reset = function(eType, isActive) {
-    const modelScale = game.modelScale;
-    type = eType;
-    enemyData = game.gameData.enemies[type];
-    velocity = enemyData.velocity;
-    scales.x = enemyData.modelScales[0] * modelScale / aspect;
-    scales.y = enemyData.modelScales[1] * modelScale;
-    scales.z = enemyData.modelScales[2] * modelScale;
+  this.reset = function(isActive) {
     hp = enemyData.hitpoints;
     points = hp;
-    weaponType = enemyData.weapon;
-    coolDownMult = enemyData.coolDownMult;
-    weapon = (weaponType === null) ? null : game.findEnemyWeapon(game);
     dmgRate = game.difficultyMap.prediv[game.difficulty];
     prune = 0;
     active = isActive || false;
     texCoordsBufferIndexShip = enemyData.texType
-    translateVec.x = horizontalPos;
-    translateVec.y = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
+    translations.x = horizontalPos;
+    translations.y = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
 
-    if (weapon) {
-      const weaponData = game.gameData.weapons[weaponType];
-      const projData = game.gameData.projectiles[weaponData.projectileType];
-      weapon.reset(weaponType, 50, projDir, coolDownMult * projData.coolDown, weaponData.texType, true);
-    }
-
-    state.position[0] = translateVec.x;
-    state.position[1] = translateVec.y;
+    state.position[0] = translations.x;
+    state.position[1] = translations.y;
     state.velocity[0] = -velocity;
 
-    Utils.modelViewMatrix(mvUniformMatrix, translateVec, rotations, scales);
+    Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
   };
 
   this.draw = function(gl) {
@@ -144,7 +130,7 @@ function Enemy(game, type, isActive) {
     let score = 0;
     if (weapon) {
       score += weapon.update(dt, game.players);
-      weapon.fireWeapon(now, dt, Math.PI, getHitbox());
+      weapon.fireWeapon(now, dt, getHitbox());
     }
 
     return score;
@@ -286,14 +272,12 @@ function Enemy(game, type, isActive) {
 function Boss(game, type, isActive) {
   const global = window;
   const aspect = game.aspect;
-  var enemyData = game.gameData.bosses[type];
-  var velocity = enemyData.velocity;
+  const enemyData = game.gameData.bosses[type];
+  const velocity = enemyData.velocity;
   var hp = enemyData.hitpoints;
   var points = hp;
-  var weaponType = enemyData.weapon;
-  var coolDownMult = enemyData.coolDownMult;
-  var weapon = (weaponType === null) ? null : game.findEnemyWeapon(game);
-  var projDir = Math.PI;
+  const weaponData = enemyData.weapon;
+  const weapon = weaponData ? new global[weaponData.type](game, weaponData) : null;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
   var prune = 0;
   const showDestroyedFrames = 8;
@@ -313,16 +297,24 @@ function Boss(game, type, isActive) {
   var texCoordsBufferIndexShip = enemyData.texType;
   var texCoordsBufferIndexExpl = 0;
 
-  const translateVec = {"x": horizontalPos, "y": verticalPos, "z": depthPos};
-  const rotations = {"x": 0, "y": Math.PI, "z": 0};
-  const scales = {
+  const translations = Object.seal({
+    "x": horizontalPos,
+    "y": verticalPos,
+    "z": depthPos
+  });
+  const rotations = Object.seal({
+    "x": 0,
+    "y": Math.PI,
+    "z": 0
+  });
+  const scales = Object.seal({
     "x": enemyData.modelScales[0] * game.modelScale / aspect,
     "y": enemyData.modelScales[1] * game.modelScale,
     "z": enemyData.modelScales[2] * game.modelScale
-  };
+  });
   const mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
-    translateVec,
+    translations,
     rotations,
     scales
   );
@@ -333,12 +325,6 @@ function Boss(game, type, isActive) {
     "bottom": 0,
     "depth": 0
   };
-
-  if (weapon) {
-    const weaponData = game.gameData.weapons[weaponType];
-    const projData = game.gameData.projectiles[weaponData.projectileType];
-    weapon.reset(weaponType, 50, projDir, coolDownMult * projData.coolDown, weaponData.texType, true);
-  }
 
   const Action = Object.freeze({
     "EVADE":  0,
@@ -356,36 +342,24 @@ function Boss(game, type, isActive) {
   var bossActionState = Action.TRACK;
   var bossActionFrame = ActionFrame[bossActionState];
 
-  this.reset = function(eType, isActive) {
+  this.reset = function(isActive) {
     const modelScale = game.modelScale;
-    type = eType;
-    enemyData = game.gameData.bosses[type];
-    velocity = enemyData.velocity;
     scales.x = enemyData.modelScales[0] * modelScale / aspect;
     scales.y = enemyData.modelScales[1] * modelScale;
     scales.z = enemyData.modelScales[2] * modelScale;
     hp = enemyData.hitpoints;
     points = hp;
-    weaponType = enemyData.weapon;
-    coolDownMult = enemyData.coolDownMult;
-    weapon = (weaponType === null) ? null : game.findEnemyWeapon(game);
     dmgRate = game.difficultyMap.prediv[game.difficulty];
     prune = 0;
     active = isActive || false;
     texCoordsBufferIndexShip = enemyData.texType
-    translateVec.x = enemyData.spawnPos[0];
-    translateVec.y = enemyData.spawnPos[1];
+    translations.x = enemyData.spawnPos[0];
+    translations.y = enemyData.spawnPos[1];
 
-    if (weapon) {
-      const weaponData = game.gameData.weapons[weaponType];
-      const projData = game.gameData.projectiles[weaponData.projectileType];
-      weapon.reset(weaponType, 50, projDir, coolDownMult * projData.coolDown, weaponData.texType, true);
-    }
-
-    state.position[0] = translateVec.x;
-    state.position[1] = translateVec.y;
-
-    Utils.modelViewMatrix(mvUniformMatrix, translateVec, rotations, scales);
+    state.position[0] = translations.x;
+    state.position[1] = translations.y;
+console.log(active);
+    Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
   };
 
   this.draw = function(gl) {
@@ -489,7 +463,7 @@ function Boss(game, type, isActive) {
       if (bossActionFrame === frameMax) {
         state.velocity[0] = 0;
         state.velocity[1] = 0;
-        weapon.fireWeapon(global.performance.now(), dt, projDir, getHitbox());
+        weapon.fireWeapon(global.performance.now(), dt, getHitbox());
       }
     }
 

@@ -1,37 +1,37 @@
-/* global Physics Utils Weapon HealthPowerup ShieldPowerup */
+/* global Physics Utils HealthPowerup ShieldPowerup */
 /* exported Player */
 
 "use strict";
 
 function Player(game) {
-  const maxHp = 1000;
+  const playerData = game.gameData.player;
+  const maxHp = playerData.maxHp;
   var hp = maxHp;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
   var shield = 0;
-  const maxShield = 1000;
-  const velocityDefault = 0.0006;
-  var velocity = velocityDefault;
+  const maxShield = playerData.maxShield;
+  var velocity = playerData.velocity;
 
   /* Rolling animation props */
+  const rollingMax = playerData.anim.rollingMax;
+  const rollingAngle = playerData.anim.rollingAngle;
   var rollingUp = 0;
   var rollingDown = 0;
-  const rollingMax = 10;
-  var rollingAngle = 15;
+
   /* Pitching animation props */
+  const pitchingMax = playerData.anim.pitchingMax;
+  const pitchingDepth = playerData.anim.pitchingDepth;
+  const pitchAngleMax = playerData.anim.pitchingAngleMax;
   var pitching = 0;
-  const pitchingMax = 96;
-  var pitchingDepth = 0.6;
-  var pitchAngleMax = Math.PI/5;
+
   /* Movement animation props */
+  const animMovementMax = playerData.anim.movementMax;
   var texCoordsBufferIndex = game.textures.ship.SHIP_IDLE;
-  const animMovementMax = rollingMax;
   var animMovementCount = 0;
 
   const weapons = [];
   var weaponSelected = 0;
-  const projCount = 50;
-  const projDir = 0;
-  const startPos = {x: -0.5, y: 0.0, z: 0.0};
+  const startPos = playerData.startPos;
   const vertices = [
     new Float32Array(3),
     new Float32Array(3),
@@ -42,32 +42,27 @@ function Player(game) {
     [0, 0, 0]
   );
 
-  for (let k = 0; k < game.gameData.weapons.length; k += 1) {
-    const weapon = game.gameData.weapons[k];
-    weapons.push(new Weapon(game, k, projCount, projDir, null, weapon.texType));
-  }
-
-  const translateVec = {"x": startPos.x, "y": startPos.y, "z": startPos.z};
-  const rotations = {"x": 0, "y": 0, "z": 0};
-  const scales = {
+  const translations = Object.seal({"x": startPos.x, "y": startPos.y, "z": startPos.z});
+  const rotations = Object.seal({"x": 0, "y": 0, "z": 0});
+  const scales = Object.seal({
     "x": game.modelScale * game.recipAspect,
     "y": game.modelScale,
     "z": game.modelScale * game.recipAspect
-  };
+  });
   const mvUniformMatrix = Utils.modelViewMatrix(
     new Float32Array(16),
-    translateVec,
+    translations,
     rotations,
     scales
   );
 
-  const hitbox = {
+  const hitbox = Object.seal({
     "left": 0,
     "right": 0,
     "top": 0,
     "bottom": 0,
     "depth": 0
-  };
+  });
 
   this.reset = function(dt) {
     Physics.integrateState(state, game.time, dt);
@@ -75,7 +70,7 @@ function Player(game) {
     state.velocity[1] = 0;
     state.velocity[2] = 0;
 
-    const trans = translateVec;
+    const trans = translations;
 
     trans.x = state.position[0];
     trans.y = state.position[1];
@@ -98,6 +93,17 @@ function Player(game) {
     rotations.z = 0;
 
     Utils.modelViewMatrix(mvUniformMatrix, startPos, rotations, scales);
+  };
+
+  this.resetLevel = function(level) {
+    const levelData = game.gameData.levels[level];
+    const playerWeapons = levelData.playerWeapons;
+    weapons.splice(0, weapons.length);
+    for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
+      const weapon = playerWeapons[k];
+      weapons.push(new window[weapon.type](game, weapon));
+    }
+    weaponSelected = 0;
   };
 
   this.draw = function(gl) {
@@ -171,7 +177,7 @@ function Player(game) {
         iter = rollingDown;
       }
 
-      angleX = (iter / rollingMax) * (rollingAngle * Utils.DEG2RAD);
+      angleX = (iter / rollingMax) * rollingAngle;
 
       if (pitching) {
         isMoving = true;
@@ -300,7 +306,7 @@ function Player(game) {
     const weapon = weapons[weaponSelected];
     var fired = false;
     if (!pitching) {
-      fired = weapon.fireWeapon(ts, dt, projDir, getHitbox());
+      fired = weapon.fireWeapon(ts, dt, getHitbox());
     }
     return fired;
   };

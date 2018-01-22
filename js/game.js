@@ -1,4 +1,4 @@
-/* global Console Utils Splash Weapon Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
+/* global Console Utils Splash Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
 
 "use strict";
 
@@ -367,14 +367,10 @@ const Game = Object.seal({
   "players": [],
   "levelEnemies": [],
   "enemies": [],
-  "enemyWeapons": [],
-  "findEnemyWeapon": findEnemyWeapon,
   "bosses": [],
   "stars": [],
   "starMap": null,
   "numStars": 256,
-  "projectiles": [],
-  "projectileLastTs": 0,
   "powerups": Object.seal({
     "Health": Object.seal({
       "lastTs": 0,
@@ -767,7 +763,7 @@ function hideConsole(args) {
     switch (game.levelState) {
       case LevelState.BOSS_INTRO:
       case LevelState.BOSS:
-        game.bosses[game.level].reset(game.level, true);
+        game.bosses[game.level].reset(true);
       break;
     }
   }
@@ -993,6 +989,7 @@ function main(ts) {
 
   if (game.levelState === LevelState.INTRO) {
     stop();
+    game.player.resetLevel(game.level);
     game.levelState = LevelState.PLAYING;
     global.cancelAnimationFrame(game.animFrame);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -1217,7 +1214,7 @@ function updateLevel(game, ts, enemies) {
     if (!enemiesActive) {
       game.levelState = LevelState.BOSS_INTRO;
       game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.INCREMENT;
-      game.bosses[game.level].reset(game.level, true);
+      game.bosses[game.level].reset(true);
     }
   } else if (game.levelState === LevelState.BOSS) {
     let bossActive = false;
@@ -1248,7 +1245,7 @@ function updateWeapon(game) {
   const weapons = level.playerWeapons;
   for (let k = weapons.length; k; k -= 1) {
     if (game.score >= level.playerWeaponsScoreThreshold[k]) {
-      game.player.selectWeapon(weapons[k]);
+      game.player.selectWeapon(k);
       break;
     }
   }
@@ -1306,7 +1303,6 @@ function spawnPowerups(game, ts) {
 
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
-  game.projectileLastTs = ts;
   if (!game.muted && fired) {
     gameAudio.currentTime = 0;
     gameAudio.play();
@@ -1332,9 +1328,9 @@ function spawnEnemies(game, ts) {
       let foundEnemy = false;
       for (let iK = 0; iK < game.enemies.length; iK += 1) {
         const enemy = game.enemies[iK];
-        if (!enemy.active) {
+        if (!enemy.active && enemyType === enemy.type) {
           foundEnemy = true;
-          enemy.reset(type, true);
+          enemy.reset(true);
           break;
         }
       }
@@ -1548,18 +1544,6 @@ function draw(game) {
   }
 }
 
-function findEnemyWeapon(game) {
-  const enemyWeapons = game.enemyWeapons;
-  for (let k = 0, n = enemyWeapons.length; k < n; k += 1) {
-    let weapon = enemyWeapons[k];
-    if (!weapon.active) {
-      return weapon;
-    }
-  }
-
-  return new Weapon(game, 0, 50, 0, 0, 0, false);
-}
-
 function setup(game, gl) {
   var err = 0;
   gl.clearColor(0.0, 0.0, 0.3, 1.0);
@@ -1699,11 +1683,6 @@ function setup(game, gl) {
       lastTs.push(0);
     }
     levelEnemies.push({"lastTs": lastTs});
-  }
-
-  /* Create cache of weapons for enemies to reuse */
-  for (let k = 0; k < 50; k += 1) {
-    game.enemyWeapons.push(new Weapon(game, 0, 50, 0, 0, 0, false));
   }
 
   /* Create bosses */
