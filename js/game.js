@@ -21,6 +21,7 @@ const gameConsoleInputEnter = doc.getElementById("console_input_enter");
 const menu = doc.getElementById("menu");
 const menuResume = doc.getElementById("menu_resume");
 const menuRestart = doc.getElementById("menu_restart");
+const menuConsole = doc.getElementById("menu_console");
 const menuDisplayFPS = doc.getElementById("menu_display_fps");
 const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 const point = Object.seal({"x": 0, "y": 0, "z": 0});
@@ -412,6 +413,7 @@ global.addEventListener("beforeunload", saveSettings, false, Game);
 global.addEventListener("resize", handleWindowResize, false, Game);
 menuResume.addEventListener("click", onMenuResume, false);
 menuRestart.addEventListener("click", onMenuRestart, false);
+menuConsole.addEventListener("click", onMenuConsole, false);
 menuDisplayFPS.addEventListener("click", onMenuDisplayFPS, false);
 menuResume.addEventListener("mousedown", onMenuMousedown, false);
 menuResume.addEventListener("mouseup", onMenuMouseup, false);
@@ -419,6 +421,9 @@ menuResume.addEventListener("mouseleave", onMenuMouseleave, false);
 menuRestart.addEventListener("mousedown", onMenuMousedown, false);
 menuRestart.addEventListener("mouseup", onMenuMouseup, false);
 menuRestart.addEventListener("mouseleave", onMenuMouseleave, false);
+menuConsole.addEventListener("mousedown", onMenuMousedown, false);
+menuConsole.addEventListener("mouseup", onMenuMouseup, false);
+menuConsole.addEventListener("mouseleave", onMenuMouseleave, false);
 menuDisplayFPS.addEventListener("mousedown", onMenuMousedown, false);
 menuDisplayFPS.addEventListener("mouseup", onMenuMouseup, false);
 menuDisplayFPS.addEventListener("mouseleave", onMenuMouseleave, false);
@@ -891,6 +896,11 @@ function onMenuRestart() {
   stop();
   start();
   restart();
+}
+
+function onMenuConsole() {
+  hideMenu();
+  Console.show({"callback": start});
 }
 
 function onMenuDisplayFPS(e) {
