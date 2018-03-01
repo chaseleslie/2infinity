@@ -1,4 +1,4 @@
-/* global Console Utils Splash Weapon Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
+/* global Console Utils Splash Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
 
 "use strict";
 
@@ -21,7 +21,10 @@ const gameConsoleInputEnter = doc.getElementById("console_input_enter");
 const menu = doc.getElementById("menu");
 const menuResume = doc.getElementById("menu_resume");
 const menuRestart = doc.getElementById("menu_restart");
+const menuConsole = doc.getElementById("menu_console");
 const menuDisplayFPS = doc.getElementById("menu_display_fps");
+const menuMute = doc.getElementById("menu_muted");
+const menuIcon = doc.getElementById("img_menu_icon");
 const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 const point = Object.seal({"x": 0, "y": 0, "z": 0});
 const zProjection = 1;
@@ -132,6 +135,7 @@ const difficultyMap = Object.freeze({
 
 const Game = Object.seal({
   "name": "2Infinity",
+  "version": "0.0.1",
   "devMode": devMode,
   "difficulty": Difficulty.EASY,
   "difficultyMap": difficultyMap,
@@ -367,14 +371,10 @@ const Game = Object.seal({
   "players": [],
   "levelEnemies": [],
   "enemies": [],
-  "enemyWeapons": [],
-  "findEnemyWeapon": findEnemyWeapon,
   "bosses": [],
   "stars": [],
   "starMap": null,
   "numStars": 256,
-  "projectiles": [],
-  "projectileLastTs": 0,
   "powerups": Object.seal({
     "Health": Object.seal({
       "lastTs": 0,
@@ -416,16 +416,24 @@ global.addEventListener("beforeunload", saveSettings, false, Game);
 global.addEventListener("resize", handleWindowResize, false, Game);
 menuResume.addEventListener("click", onMenuResume, false);
 menuRestart.addEventListener("click", onMenuRestart, false);
+menuConsole.addEventListener("click", onMenuConsole, false);
 menuDisplayFPS.addEventListener("click", onMenuDisplayFPS, false);
+menuMute.addEventListener("click", onMenuMute, false);
 menuResume.addEventListener("mousedown", onMenuMousedown, false);
 menuResume.addEventListener("mouseup", onMenuMouseup, false);
 menuResume.addEventListener("mouseleave", onMenuMouseleave, false);
 menuRestart.addEventListener("mousedown", onMenuMousedown, false);
 menuRestart.addEventListener("mouseup", onMenuMouseup, false);
 menuRestart.addEventListener("mouseleave", onMenuMouseleave, false);
+menuConsole.addEventListener("mousedown", onMenuMousedown, false);
+menuConsole.addEventListener("mouseup", onMenuMouseup, false);
+menuConsole.addEventListener("mouseleave", onMenuMouseleave, false);
 menuDisplayFPS.addEventListener("mousedown", onMenuMousedown, false);
 menuDisplayFPS.addEventListener("mouseup", onMenuMouseup, false);
 menuDisplayFPS.addEventListener("mouseleave", onMenuMouseleave, false);
+menuMute.addEventListener("mousedown", onMenuMousedown, false);
+menuMute.addEventListener("mouseup", onMenuMouseup, false);
+menuMute.addEventListener("mouseleave", onMenuMouseleave, false);
 
 const circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
 Game.verticesCircle = circleCoords.vertices;
@@ -541,6 +549,13 @@ function handleTouchEnd(e) {
   }
 }
 
+function handleMenuIconClick(e) {
+  stop();
+  showMenu();
+  e.preventDefault();
+  e.stopPropagation();
+}
+
 function handleKeyDown(e) {
   const now = win.performance.now();
   const keydownMap = Game.keydownMap;
@@ -592,7 +607,7 @@ function handleKeyDown(e) {
     break;
     // m
     case 109:
-      Game.muted = !Game.muted;
+      onMenuMute();
       e.preventDefault();
     break;
     // Backtick
@@ -655,6 +670,13 @@ function loadSettings(game) {
     Console.debug(`Loading settings: ${JSON.stringify(settings)}`);
     if ("muted" in settings) {
       game.muted = settings.muted;
+      if (game.muted) {
+        menuMute.classList.add("checked");
+        menuMute.classList.remove("unchecked");
+      } else {
+        menuMute.classList.remove("checked");
+        menuMute.classList.add("unchecked");
+      }
     }
     if ("displayFPS" in settings) {
       game.displayFPS = settings.displayFPS;
@@ -767,7 +789,7 @@ function hideConsole(args) {
     switch (game.levelState) {
       case LevelState.BOSS_INTRO:
       case LevelState.BOSS:
-        game.bosses[game.level].reset(game.level, true);
+        game.bosses[game.level].reset(true);
       break;
     }
   }
@@ -897,11 +919,30 @@ function onMenuRestart() {
   restart();
 }
 
+function onMenuConsole() {
+  hideMenu();
+  Console.show({"callback": start});
+}
+
 function onMenuDisplayFPS(e) {
   e.target.classList.toggle("checked");
   e.target.classList.toggle("unchecked");
   Game.displayFPS = !Game.displayFPS;
   Game.overlayState.flag |= OverlayFlags.FPS_DIRTY;
+  hideMenu();
+  start();
+}
+
+function onMenuMute() {
+  const game = Game;
+  game.muted = !game.muted;
+  if (game.muted) {
+    menuMute.classList.add("checked");
+    menuMute.classList.remove("unchecked");
+  } else {
+    menuMute.classList.remove("checked");
+    menuMute.classList.add("unchecked");
+  }
   hideMenu();
   start();
 }
@@ -928,6 +969,7 @@ function start() {
     doc.body.addEventListener("touchstart", handleTouchStart, false);
     doc.body.addEventListener("touchmove", handleTouchMove, false);
     doc.body.addEventListener("touchend", handleTouchEnd, false);
+    menuIcon.addEventListener("click", handleMenuIconClick, false);
     game.startTs = global.performance.now();
     game.running = true;
     preStart(game, game.startTs);
@@ -968,6 +1010,7 @@ function stop() {
   doc.body.removeEventListener("touchstart", handleTouchStart, false);
   doc.body.removeEventListener("touchmove", handleTouchMove, false);
   doc.body.removeEventListener("touchend", handleTouchEnd, false);
+  menuIcon.removeEventListener("click", handleMenuIconClick, false);
   game.pauseTs = global.performance.now();
   game.running = false;
   global.cancelAnimationFrame(game.animFrame);
@@ -993,6 +1036,7 @@ function main(ts) {
 
   if (game.levelState === LevelState.INTRO) {
     stop();
+    game.player.resetLevel(game.level);
     game.levelState = LevelState.PLAYING;
     global.cancelAnimationFrame(game.animFrame);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -1217,7 +1261,7 @@ function updateLevel(game, ts, enemies) {
     if (!enemiesActive) {
       game.levelState = LevelState.BOSS_INTRO;
       game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.INCREMENT;
-      game.bosses[game.level].reset(game.level, true);
+      game.bosses[game.level].reset(true);
     }
   } else if (game.levelState === LevelState.BOSS) {
     let bossActive = false;
@@ -1248,7 +1292,7 @@ function updateWeapon(game) {
   const weapons = level.playerWeapons;
   for (let k = weapons.length; k; k -= 1) {
     if (game.score >= level.playerWeaponsScoreThreshold[k]) {
-      game.player.selectWeapon(weapons[k]);
+      game.player.selectWeapon(k);
       break;
     }
   }
@@ -1306,7 +1350,6 @@ function spawnPowerups(game, ts) {
 
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
-  game.projectileLastTs = ts;
   if (!game.muted && fired) {
     gameAudio.currentTime = 0;
     gameAudio.play();
@@ -1332,9 +1375,9 @@ function spawnEnemies(game, ts) {
       let foundEnemy = false;
       for (let iK = 0; iK < game.enemies.length; iK += 1) {
         const enemy = game.enemies[iK];
-        if (!enemy.active) {
+        if (!enemy.active && enemyType === enemy.type) {
           foundEnemy = true;
-          enemy.reset(type, true);
+          enemy.reset(true);
           break;
         }
       }
@@ -1548,18 +1591,6 @@ function draw(game) {
   }
 }
 
-function findEnemyWeapon(game) {
-  const enemyWeapons = game.enemyWeapons;
-  for (let k = 0, n = enemyWeapons.length; k < n; k += 1) {
-    let weapon = enemyWeapons[k];
-    if (!weapon.active) {
-      return weapon;
-    }
-  }
-
-  return new Weapon(game, 0, 50, 0, 0, 0, false);
-}
-
 function setup(game, gl) {
   var err = 0;
   gl.clearColor(0.0, 0.0, 0.3, 1.0);
@@ -1699,11 +1730,6 @@ function setup(game, gl) {
       lastTs.push(0);
     }
     levelEnemies.push({"lastTs": lastTs});
-  }
-
-  /* Create cache of weapons for enemies to reuse */
-  for (let k = 0; k < 50; k += 1) {
-    game.enemyWeapons.push(new Weapon(game, 0, 50, 0, 0, 0, false));
   }
 
   /* Create bosses */
