@@ -23,6 +23,7 @@ const menuResume = doc.getElementById("menu_resume");
 const menuRestart = doc.getElementById("menu_restart");
 const menuConsole = doc.getElementById("menu_console");
 const menuDisplayFPS = doc.getElementById("menu_display_fps");
+const menuIcon = doc.getElementById("img_menu_icon");
 const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 const point = Object.seal({"x": 0, "y": 0, "z": 0});
 const zProjection = 1;
@@ -542,6 +543,13 @@ function handleTouchEnd(e) {
   }
 }
 
+function handleMenuIconClick(e) {
+  stop();
+  showMenu();
+  e.preventDefault();
+  e.stopPropagation();
+}
+
 function handleKeyDown(e) {
   const now = win.performance.now();
   const keydownMap = Game.keydownMap;
@@ -934,6 +942,7 @@ function start() {
     doc.body.addEventListener("touchstart", handleTouchStart, false);
     doc.body.addEventListener("touchmove", handleTouchMove, false);
     doc.body.addEventListener("touchend", handleTouchEnd, false);
+    menuIcon.addEventListener("click", handleMenuIconClick, false);
     game.startTs = global.performance.now();
     game.running = true;
     preStart(game, game.startTs);
@@ -974,6 +983,7 @@ function stop() {
   doc.body.removeEventListener("touchstart", handleTouchStart, false);
   doc.body.removeEventListener("touchmove", handleTouchMove, false);
   doc.body.removeEventListener("touchend", handleTouchEnd, false);
+  menuIcon.removeEventListener("click", handleMenuIconClick, false);
   game.pauseTs = global.performance.now();
   game.running = false;
   global.cancelAnimationFrame(game.animFrame);

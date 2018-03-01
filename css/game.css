@@ -39,6 +39,7 @@ input, textarea, select, button {
   background-color: #667;
   font-family: "sans-serif";
 }
+
 #menu menuitem {
   display: block;
   margin: 0px;
@@ -47,15 +48,18 @@ input, textarea, select, button {
   border-radius: 10px;
   cursor:default;
 }
+
 #menu menuitem.selectable:hover {
   background-color: #889;
 
 }
+
 .selected {
   background-color: #889;
   cursor:default;
   border: 2px outset #222 !important;
 }
+
 .unselected {
   background-color: inherit;
   cursor:default;
@@ -71,11 +75,19 @@ input, textarea, select, button {
   background-size: 16px 16px;
   background-position: right;
 }
+
 .checked {
   background-image: url("../img/icon/checked.svg");
   background-repeat: no-repeat;
   background-size: 16px 16px;
   background-position: right;
+}
+
+#img_menu_icon {
+  position: absolute;
+  z-index: 200;
+  right: 0px;
+  bottom: 0px;
 }
 
 .hidden {
