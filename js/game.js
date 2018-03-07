@@ -135,7 +135,7 @@ const difficultyMap = Object.freeze({
 
 const Game = Object.seal({
   "name": "2Infinity",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "devMode": devMode,
   "difficulty": Difficulty.EASY,
   "difficultyMap": difficultyMap,
@@ -1350,7 +1350,7 @@ function spawnPowerups(game, ts) {
 
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
-  if (!game.muted && fired) {
+  if (!game.muted && !gameAudio.error && fired) {
     gameAudio.currentTime = 0;
     gameAudio.play();
   }
