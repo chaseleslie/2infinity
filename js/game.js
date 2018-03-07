@@ -1350,7 +1350,7 @@ function spawnPowerups(game, ts) {
 
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
-  if (!game.muted && fired) {
+  if (!game.muted && !gameAudio.error && fired) {
     gameAudio.currentTime = 0;
     gameAudio.play();
   }
