@@ -56,23 +56,30 @@
 
   "bosses": [
     {
-      "velocity": 0.00025,
+      "velocity": 0.00030,
       "modelScales": [2, 2, 2],
-      "hitpoints": 2000,
+      "hitpoints": 7500,
       "spawnIntervalMult": 1,
       "weapon": {
         "type": "PhaserWeapon",
         "projectileData": [
           {
             "texType": 0,
-            "damage": 100,
+            "damage": 200,
             "dir": 2.945243112740431,
             "velocity": 0.0008,
             "modelScales": [4, 16, 1]
           },
           {
+            "texType": 1,
+            "damage": 250,
+            "dir": 3.141592653589793,
+            "velocity": 0.0008,
+            "modelScales": [4, 16, 1]
+          },
+          {
             "texType": 0,
-            "damage": 100,
+            "damage": 200,
             "dir": 3.3379421944391554,
             "velocity": 0.0008,
             "modelScales": [4, 16, 1]
@@ -86,32 +93,46 @@
       "spritePos": [0, 0]
     },
     {
-      "velocity": 0.00030,
+      "velocity": 0.00035,
       "modelScales": [2, 2, 2],
-      "hitpoints": 2500,
+      "hitpoints": 12500,
       "spawnIntervalMult": 1,
       "weapon": {
         "type": "PhaserWeapon",
         "projectileData": [
           {
             "texType": 0,
-            "damage": 100,
-            "dir": 2.945243112740431,
-            "velocity": 0.0009,
-            "modelScales": [4, 16, 1]
-          },
-          {
-            "texType": 1,
-            "damage": 200,
-            "dir": 3.141592653589793,
-            "velocity": 0.0009,
+            "damage": 300,
+            "dir": 2.7488935718910685,
+            "velocity": 0.001,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 0,
-            "damage": 100,
+            "damage": 300,
+            "dir": 2.945243112740431,
+            "velocity": 0.001,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 1,
+            "damage": 400,
+            "dir": 3.141592653589793,
+            "velocity": 0.001,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 0,
+            "damage": 300,
             "dir": 3.3379421944391554,
-            "velocity": 0.0009,
+            "velocity": 0.001,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 0,
+            "damage": 300,
+            "dir": 3.5342917352885177,
+            "velocity": 0.001,
             "modelScales": [4, 16, 1]
           }
         ],
