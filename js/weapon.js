@@ -409,7 +409,6 @@ Projectile.prototype.getHitbox = function() {
 };
 
 Projectile.prototype.isOffScreen = function() {
-  console.log("isOffScreen()");
   const hitbox = this.getHitbox();
   const centerX = 0.5 * (hitbox.left + hitbox.right);
   const centerY = 0.5 * (hitbox.top + hitbox.bottom);
