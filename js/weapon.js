@@ -50,7 +50,7 @@ PhaserWeapon.prototype.update = function(dt, enemies) {
       }
 
       if (proj.offScreen) {
-        proj.reset(0, 0, false, 0);
+        proj.reset(0, 0, false);
         continue;
       }
       proj.update(dt);
@@ -60,12 +60,12 @@ PhaserWeapon.prototype.update = function(dt, enemies) {
       }
 
       const hitbox = proj.hitbox;
+      const projPos = proj.position;
       for (let n = 0; n < enemies.length; n += 1) {
         const enemy = enemies[n];
         const enemyActive = enemy.active && enemy.hitpoints > 0;
         const hasEqualDepth = enemy.positionDepth === hitbox.depth;
         if (enemyActive && hasEqualDepth && enemy.intersectsWith(hitbox)) {
-          const projPos = proj.position;
           for (let m = 0; m < projPos.length; m += 1) {
             const vert = projPos[m];
             point.x = vert[0];
@@ -409,6 +409,7 @@ Projectile.prototype.getHitbox = function() {
 };
 
 Projectile.prototype.isOffScreen = function() {
+  console.log("isOffScreen()");
   const hitbox = this.getHitbox();
   const centerX = 0.5 * (hitbox.left + hitbox.right);
   const centerY = 0.5 * (hitbox.top + hitbox.bottom);
@@ -422,7 +423,7 @@ Object.defineProperty(Projectile.prototype, "position", {"get": Projectile.proto
 Object.defineProperty(Projectile.prototype, "hitbox", {"get": Projectile.prototype.getHitbox});
 Object.defineProperty(Projectile.prototype, "exploded", {"get": function() {return this.prune > 0;}});
 Object.defineProperty(Projectile.prototype, "active", {"get": function() {return this.isActive;}});
-Object.defineProperty(Projectile.prototype, "offScreen", Projectile.prototype.isOffScreen);
+Object.defineProperty(Projectile.prototype, "offScreen", {"get": Projectile.prototype.isOffScreen});
 Object.defineProperty(Projectile.prototype, "constructor", {
   "value": Projectile,
   "writable": false

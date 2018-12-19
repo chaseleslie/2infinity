@@ -358,7 +358,7 @@ function Boss(game, type, isActive) {
 
     state.position[0] = translations.x;
     state.position[1] = translations.y;
-console.log(active);
+
     Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
   };
 
