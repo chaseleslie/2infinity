@@ -62,27 +62,27 @@
         "projectileData": [
           {
             "texType": 0,
-            "damage": 200,
+            "damage": 150,
             "dir": 2.945243112740431,
             "velocity": 0.0008,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 1,
-            "damage": 250,
+            "damage": 200,
             "dir": 3.141592653589793,
             "velocity": 0.0008,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 0,
-            "damage": 200,
+            "damage": 150,
             "dir": 3.3379421944391554,
             "velocity": 0.0008,
             "modelScales": [4, 16, 1]
           }
         ],
-        "coolDown": 2000
+        "coolDown": 180
       },
       "texType": 0,
       "spawnPos": [0.5, 0, 0],
@@ -98,41 +98,41 @@
         "projectileData": [
           {
             "texType": 0,
-            "damage": 300,
+            "damage": 200,
             "dir": 2.7488935718910685,
-            "velocity": 0.001,
+            "velocity": 0.0009,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 0,
-            "damage": 300,
+            "damage": 200,
             "dir": 2.945243112740431,
-            "velocity": 0.001,
+            "velocity": 0.0009,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 1,
-            "damage": 400,
+            "damage": 300,
             "dir": 3.141592653589793,
-            "velocity": 0.001,
+            "velocity": 0.0009,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 0,
-            "damage": 300,
+            "damage": 200,
             "dir": 3.3379421944391554,
-            "velocity": 0.001,
+            "velocity": 0.0009,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 0,
-            "damage": 300,
+            "damage": 200,
             "dir": 3.5342917352885177,
-            "velocity": 0.001,
+            "velocity": 0.0009,
             "modelScales": [4, 16, 1]
           }
         ],
-        "coolDown": 2000
+        "coolDown": 150
       },
       "texType": 1,
       "spawnPos": [0.5, 0, 0],
@@ -431,7 +431,7 @@
 
     {
       "enemies": [0, 1, 2],
-      "scoreGoal": 15000,
+      "scoreGoal": 20000,
       "playerWeapons": [
         {
           "type": "PhaserWeapon",
@@ -501,7 +501,7 @@
           "coolDown": 300
         }
       ],
-      "playerWeaponsScoreThreshold": [7500, 10000, 12500],
+      "playerWeaponsScoreThreshold": [12500, 15000, 17500],
       "baseSpawnInterval": 2000,
       "introText": "Level 2",
       "bossText": "Kalt Draussen"
