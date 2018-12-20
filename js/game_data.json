@@ -20,8 +20,18 @@
       "modelScales": [1, 1, 1],
       "hitpoints": 100,
       "spawnIntervalMult": 1,
-      "weapon": null,
-      "texType": 0
+      "weapon": {
+        "type": "PhaserWeapon",
+        "projectileData": [{
+          "texType": 0,
+          "damage": 50,
+          "dir": 3.141592653589793,
+          "velocity": 0.0005,
+          "modelScales": [4, 16, 1]
+        }],
+        "coolDown": 1500
+      },
+      "texType": 1
     },
     {
       "velocity": 0.0001,
@@ -39,10 +49,10 @@
       "weapon": {
         "type": "PhaserWeapon",
         "projectileData": [{
-          "texType": 0,
-          "damage": 50,
+          "texType": 1,
+          "damage": 100,
           "dir": 3.141592653589793,
-          "velocity": 0.0005,
+          "velocity": 0.0006,
           "modelScales": [4, 16, 1]
         }],
         "coolDown": 2000
