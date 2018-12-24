@@ -1397,6 +1397,7 @@ function spawnEnemies(game, ts) {
 function drawOverlay(game) {
   const floor = Math.floor;
   const max = Math.max;
+  const min = Math.min;
   const round = Math.round;
   const sin = Math.sin;
   const trunc = Math.trunc;
@@ -1514,8 +1515,8 @@ function drawOverlay(game) {
         ctx.strokeStyle = "#FFF";
       }
 
-      const percentage = max(0, player.hitpoints / player.maxHitpoints);
-      const shieldPercentage = max(0, (player.shield / player.maxShield) || 0);
+      const percentage = min(1, max(0, player.hitpoints / player.maxHitpoints));
+      const shieldPercentage = min(1, max(0, (player.shield / player.maxShield) || 0));
 
       // Keep width/height multiples of 8
       const w = (hpWidth + 8 - 1) & -8;
