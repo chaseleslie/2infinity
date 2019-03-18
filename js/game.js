@@ -1,4 +1,4 @@
-/* global Console Utils Splash Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
+/* global Console Utils Splash SoundFX Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
 
 "use strict";
 
@@ -9,7 +9,6 @@ const docElem = document.documentElement;
 const canvas = doc.getElementById("glcanvas");
 const canvasOverlay = doc.getElementById("glcanvas_overlay");
 const canvasOverlayCtx = canvasOverlay.getContext("2d");
-const gameAudio = doc.getElementById("game_audio");
 const gameConsole = doc.getElementById("console");
 const gameConsoleEntries = doc.getElementById("console_entries");
 const gameConsoleEntriesFilterDebug = doc.getElementById("console_entries_filter_debug");
@@ -30,6 +29,7 @@ const point = Object.seal({"x": 0, "y": 0, "z": 0});
 const zProjection = 1;
 const aspect = canvas.width / canvas.height;
 const devMode = global.location.hash.indexOf("#dev") === 0;
+const soundFX = new SoundFX();
 
 const KEY_MAP = Object.freeze({
   "ArrowLeft":  37,
@@ -1355,9 +1355,9 @@ function spawnPowerups(game, ts) {
 
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
-  if (!game.muted && !gameAudio.error && fired) {
-    gameAudio.currentTime = 0;
-    gameAudio.play();
+
+  if (fired && !game.muted) {
+    soundFX.blaster();
   }
 }
 
