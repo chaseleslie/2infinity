@@ -136,8 +136,8 @@ Constellation.prototype.update = function(dt) {
   const scale = this.scale;
   const stellaCoords = this.coords;
   const starScale = stars[0].scale;
-  const centerX = 1 + (0.25 * starScale) + scale;
-  const centerY = (stepFn() ? 1 : -1) * Utils.random() * scaleBounds;
+  const centerX = Utils.getRandomInt(1, 6) + (0.25 * starScale) + scale;
+  const centerY = (stepFn() ? 0.75 : -0.75) * Utils.random() * scaleBounds;
   for (let k = 0, n = stars.length; k < n; k += 1) {
     const coords = stellaCoords[k];
     const star = stars[k];

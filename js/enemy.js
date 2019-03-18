@@ -330,13 +330,15 @@ function Boss(game, type, isActive) {
     "EVADE":  0,
     "TRACK":  1,
     "ATTACK": 2,
-    "NUM_STATES": 3
+    "MULTI_ATTACK": 3,
+    "NUM_STATES": 4
   });
 
   const ActionFrame = Object.freeze({
     [Action.EVADE]: 80,
     [Action.TRACK]: 80,
-    [Action.ATTACK]: 20
+    [Action.ATTACK]: 20,
+    [Action.MULTI_ATTACK]: 40
   });
 
   var bossActionState = Action.TRACK;
@@ -358,7 +360,7 @@ function Boss(game, type, isActive) {
 
     state.position[0] = translations.x;
     state.position[1] = translations.y;
-console.log(active);
+
     Utils.modelViewMatrix(mvUniformMatrix, translations, rotations, scales);
   };
 
@@ -461,6 +463,12 @@ console.log(active);
       }
     } else if (bossActionState === Action.ATTACK) {
       if (bossActionFrame === frameMax) {
+        state.velocity[0] = 0;
+        state.velocity[1] = 0;
+        weapon.fireWeapon(global.performance.now(), dt, getHitbox());
+      }
+    } else if (bossActionState === Action.MULTI_ATTACK) {
+      if (bossActionFrame % 5 === 0) {
         state.velocity[0] = 0;
         state.velocity[1] = 0;
         weapon.fireWeapon(global.performance.now(), dt, getHitbox());

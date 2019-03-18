@@ -20,9 +20,18 @@
       "modelScales": [1, 1, 1],
       "hitpoints": 100,
       "spawnIntervalMult": 1,
-      "weapon": null,
-      "coolDownMult": null,
-      "texType": 0
+      "weapon": {
+        "type": "PhaserWeapon",
+        "projectileData": [{
+          "texType": 0,
+          "damage": 50,
+          "dir": 3.141592653589793,
+          "velocity": 0.0005,
+          "modelScales": [4, 16, 1]
+        }],
+        "coolDown": 1500
+      },
+      "texType": 1
     },
     {
       "velocity": 0.0001,
@@ -30,7 +39,6 @@
       "hitpoints": 200,
       "spawnIntervalMult": 1.5,
       "weapon": null,
-      "coolDownMult": null,
       "texType": 0
     },
     {
@@ -41,86 +49,172 @@
       "weapon": {
         "type": "PhaserWeapon",
         "projectileData": [{
-          "texType": 0,
-          "damage": 50,
+          "texType": 1,
+          "damage": 100,
           "dir": 3.141592653589793,
-          "velocity": 0.0005,
+          "velocity": 0.0006,
           "modelScales": [4, 16, 1]
         }],
         "coolDown": 2000
       },
-      "coolDownMult": 7.5,
       "texType": 1
+    },
+    {
+      "velocity": 0.000128,
+      "modelScales": [1.5, 1.5, 1.5],
+      "hitpoints": 200,
+      "spawnIntervalMult": 1.25,
+      "weapon": {
+        "type": "PhaserWeapon",
+        "projectileData": [{
+          "texType": 2,
+          "damage": 200,
+          "dir": 3.141592653589793,
+          "velocity": 0.00065,
+          "modelScales": [4, 16, 1]
+        }],
+        "coolDown": 2000
+      },
+      "texType": 2
     }
   ],
 
   "bosses": [
     {
-      "velocity": 0.00025,
-      "modelScales": [2, 2, 2],
-      "hitpoints": 2000,
-      "spawnIntervalMult": 1,
-      "weapon": {
-        "type": "PhaserWeapon",
-        "projectileData": [
-          {
-            "texType": 0,
-            "damage": 100,
-            "dir": 2.945243112740431,
-            "velocity": 0.0008,
-            "modelScales": [4, 16, 1]
-          },
-          {
-            "texType": 0,
-            "damage": 100,
-            "dir": 3.3379421944391554,
-            "velocity": 0.0008,
-            "modelScales": [4, 16, 1]
-          }
-        ],
-        "coolDown": 2000
-      },
-      "coolDownMult": 1,
-      "texType": 0,
-      "spawnPos": [0.5, 0, 0],
-      "spritePos": [0, 0]
-    },
-    {
       "velocity": 0.00030,
       "modelScales": [2, 2, 2],
-      "hitpoints": 2500,
+      "hitpoints": 7500,
       "spawnIntervalMult": 1,
       "weapon": {
         "type": "PhaserWeapon",
         "projectileData": [
           {
             "texType": 0,
-            "damage": 100,
+            "damage": 150,
             "dir": 2.945243112740431,
-            "velocity": 0.0009,
+            "velocity": 0.0008,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 1,
             "damage": 200,
             "dir": 3.141592653589793,
+            "velocity": 0.0008,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 0,
+            "damage": 150,
+            "dir": 3.3379421944391554,
+            "velocity": 0.0008,
+            "modelScales": [4, 16, 1]
+          }
+        ],
+        "coolDown": 180
+      },
+      "texType": 0,
+      "spawnPos": [0.5, 0, 0],
+      "spritePos": [0, 0]
+    },
+    {
+      "velocity": 0.00035,
+      "modelScales": [2, 2, 2],
+      "hitpoints": 12500,
+      "spawnIntervalMult": 1,
+      "weapon": {
+        "type": "PhaserWeapon",
+        "projectileData": [
+          {
+            "texType": 0,
+            "damage": 200,
+            "dir": 2.7488935718910685,
             "velocity": 0.0009,
             "modelScales": [4, 16, 1]
           },
           {
             "texType": 0,
-            "damage": 100,
+            "damage": 200,
+            "dir": 2.945243112740431,
+            "velocity": 0.0009,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 1,
+            "damage": 300,
+            "dir": 3.141592653589793,
+            "velocity": 0.0009,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 0,
+            "damage": 200,
             "dir": 3.3379421944391554,
+            "velocity": 0.0009,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 0,
+            "damage": 200,
+            "dir": 3.5342917352885177,
             "velocity": 0.0009,
             "modelScales": [4, 16, 1]
           }
         ],
-        "coolDown": 2000
+        "coolDown": 150
       },
-      "coolDownMult": 0.1,
       "texType": 1,
       "spawnPos": [0.5, 0, 0],
       "spritePos": [1, 0]
+    },
+    {
+      "velocity": 0.00036,
+      "modelScales": [2, 2, 2],
+      "hitpoints": 17500,
+      "spawnIntervalMult": 1,
+      "weapon": {
+        "type": "PhaserWeapon",
+        "projectileData": [
+          {
+            "texType": 1,
+            "damage": 200,
+            "dir": 2.7488935718910685,
+            "velocity": 0.00095,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 1,
+            "damage": 200,
+            "dir": 2.945243112740431,
+            "velocity": 0.00095,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 2,
+            "damage": 300,
+            "dir": 3.141592653589793,
+            "velocity": 0.00095,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 1,
+            "damage": 200,
+            "dir": 3.3379421944391554,
+            "velocity": 0.00095,
+            "modelScales": [4, 16, 1]
+          },
+          {
+            "texType": 1,
+            "damage": 200,
+            "dir": 3.5342917352885177,
+            "velocity": 0.00095,
+            "modelScales": [4, 16, 1]
+          }
+        ],
+        "coolDown": 150
+      },
+      "texType": 0,
+      "spawnPos": [0.5, 0, 0],
+      "spritePos": [0, 0]
     }
   ],
 
@@ -415,7 +509,7 @@
 
     {
       "enemies": [0, 1, 2],
-      "scoreGoal": 15000,
+      "scoreGoal": 20000,
       "playerWeapons": [
         {
           "type": "PhaserWeapon",
@@ -485,10 +579,102 @@
           "coolDown": 300
         }
       ],
-      "playerWeaponsScoreThreshold": [7500, 10000, 12500],
+      "playerWeaponsScoreThreshold": [12500, 15000, 17500],
       "baseSpawnInterval": 2000,
       "introText": "Level 2",
       "bossText": "Kalt Draussen"
+    },
+
+    {
+      "enemies": [0, 1, 2, 3],
+      "scoreGoal": 45000,
+      "playerWeapons": [
+        {
+          "type": "PhaserWeapon",
+          "projectileData": [
+            {
+              "texType": 2,
+              "damage": 100,
+              "dir": 0.06544984694978735,
+              "velocity": 0.0007,
+              "modelScales": [4, 16, 1]
+            },
+            {
+              "texType": 0,
+              "damage": 100,
+              "dir": 0,
+              "velocity": 0.0007,
+              "modelScales": [4, 16, 1]
+            },
+            {
+              "texType": 2,
+              "damage": 100,
+              "dir": -0.06544984694978735,
+              "velocity": 0.0007,
+              "modelScales": [4, 16, 1]
+            }
+          ],
+          "coolDown": 300
+        },
+        {
+          "type": "PhaserWeapon",
+          "projectileData": [
+            {
+              "texType": 1,
+              "damage": 100,
+              "dir": 0.06544984694978735,
+              "velocity": 0.00071,
+              "modelScales": [4, 16, 1]
+            },
+            {
+              "texType": 2,
+              "damage": 100,
+              "dir": 0,
+              "velocity": 0.00071,
+              "modelScales": [4, 16, 1]
+            },
+            {
+              "texType": 1,
+              "damage": 100,
+              "dir": -0.06544984694978735,
+              "velocity": 0.00071,
+              "modelScales": [4, 16, 1]
+            }
+          ],
+          "coolDown": 300
+        },
+        {
+          "type": "PhaserWeapon",
+          "projectileData": [
+            {
+              "texType": 2,
+              "damage": 150,
+              "dir": 0.06544984694978735,
+              "velocity": 0.00072,
+              "modelScales": [4, 16, 1]
+            },
+            {
+              "texType": 0,
+              "damage": 200,
+              "dir": 0,
+              "velocity": 0.00072,
+              "modelScales": [4, 16, 1]
+            },
+            {
+              "texType": 2,
+              "damage": 150,
+              "dir": -0.06544984694978735,
+              "velocity": 0.00072,
+              "modelScales": [4, 16, 1]
+            }
+          ],
+          "coolDown": 300
+        }
+      ],
+      "playerWeaponsScoreThreshold": [35000, 40000, 42500],
+      "baseSpawnInterval": 2000,
+      "introText": "Level 3",
+      "bossText": "Osten Drache"
     }
   ]
 }

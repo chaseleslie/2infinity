@@ -1,4 +1,4 @@
-/* global Console Utils Splash Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
+/* global Console Utils Splash SoundFX Player Enemy Boss StarMap HealthPowerup ShieldPowerup */
 
 "use strict";
 
@@ -9,7 +9,6 @@ const docElem = document.documentElement;
 const canvas = doc.getElementById("glcanvas");
 const canvasOverlay = doc.getElementById("glcanvas_overlay");
 const canvasOverlayCtx = canvasOverlay.getContext("2d");
-const gameAudio = doc.getElementById("game_audio");
 const gameConsole = doc.getElementById("console");
 const gameConsoleEntries = doc.getElementById("console_entries");
 const gameConsoleEntriesFilterDebug = doc.getElementById("console_entries_filter_debug");
@@ -30,6 +29,7 @@ const point = Object.seal({"x": 0, "y": 0, "z": 0});
 const zProjection = 1;
 const aspect = canvas.width / canvas.height;
 const devMode = global.location.hash.indexOf("#dev") === 0;
+const soundFX = new SoundFX();
 
 const KEY_MAP = Object.freeze({
   "ArrowLeft":  37,
@@ -135,7 +135,7 @@ const difficultyMap = Object.freeze({
 
 const Game = Object.seal({
   "name": "2Infinity",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "devMode": devMode,
   "difficulty": Difficulty.EASY,
   "difficultyMap": difficultyMap,
@@ -214,6 +214,11 @@ const Game = Object.seal({
           0.5, 0.0,
           0.875, 0.25,
           0.5, 0.5
+        ]),
+        new Float32Array([
+          0.0, 0.5,
+          0.375, 0.75,
+          0.0, 1.0
         ])
       ],
       "coordBuffers": [],
@@ -1350,9 +1355,9 @@ function spawnPowerups(game, ts) {
 
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
-  if (!game.muted && !gameAudio.error && fired) {
-    gameAudio.currentTime = 0;
-    gameAudio.play();
+
+  if (fired && !game.muted) {
+    soundFX.blaster();
   }
 }
 
@@ -1392,6 +1397,7 @@ function spawnEnemies(game, ts) {
 function drawOverlay(game) {
   const floor = Math.floor;
   const max = Math.max;
+  const min = Math.min;
   const round = Math.round;
   const sin = Math.sin;
   const trunc = Math.trunc;
@@ -1509,8 +1515,8 @@ function drawOverlay(game) {
         ctx.strokeStyle = "#FFF";
       }
 
-      const percentage = max(0, player.hitpoints / player.maxHitpoints);
-      const shieldPercentage = max(0, (player.shield / player.maxShield) || 0);
+      const percentage = min(1, max(0, player.hitpoints / player.maxHitpoints));
+      const shieldPercentage = min(1, max(0, (player.shield / player.maxShield) || 0));
 
       // Keep width/height multiples of 8
       const w = (hpWidth + 8 - 1) & -8;
