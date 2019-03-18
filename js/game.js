@@ -135,7 +135,7 @@ const difficultyMap = Object.freeze({
 
 const Game = Object.seal({
   "name": "2Infinity",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "devMode": devMode,
   "difficulty": Difficulty.EASY,
   "difficultyMap": difficultyMap,
