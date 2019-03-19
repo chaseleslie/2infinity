@@ -446,22 +446,23 @@ Game.textures.circle.coords = [circleCoords.tex];
 
 Console.debug("Fetching game data");
 Game.gameData = null;
-var gameDataURL = "js/game_data.json";
-gameDataURL += (win.location.hash === "#dev") ? `?ts=${Date.now()}` : "" ;
-Utils.fetchURL({
-  "method": "GET",
-  "url": gameDataURL,
-  "responseType": "json",
-  "callback": function(xhr) {
-    if (xhr.status === 200) {
-      Game.gameData = xhr.response;
-      setup(Game, gl);
-    } else {
-      Console.error(`Error: fetching game data failed with status ${xhr.status}`);
-      Console.show();
-      console.error(xhr);
-    }
+const gameDataURL = (win.location.hash.indexOf("#dev") === 0)
+  ? `js/game_data.json?ts=${Date.now()}`
+  : "js/game_data.json";
+
+fetch(gameDataURL).then(function(response) {
+  if (response.ok) {
+    return response.json();
   }
+
+  throw Error(`Error: fetching game data failed with status ${response.status}`);
+}).then(function(json) {
+  Game.gameData = json;
+  setup(Game, gl);
+}).catch(function(err) {
+  console.error(err);
+  Console.error(err);
+  Console.show();
 });
 
 function handleWindowResize() {

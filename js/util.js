@@ -142,35 +142,6 @@ function createCircleVertices(centerVertex, numPoints, radius) {
   };
 }
 
-function fetchURL(opts) {
-  opts = opts || {};
-  const method = opts.method || "GET";
-  const url = opts.url || opts.uri || "";
-  const callback = opts.callback || opts.cb || null;
-  const msg = opts.message || opts.msg || opts.payload || null;
-
-  const xhr = new global.XMLHttpRequest();
-  xhr.open(method, url);
-  xhr.responseType = opts.responseType || "";
-  if (opts.headers && typeof opts.headers === "object") {
-    const headers = opts.headers;
-    for (let prop in headers) {
-      if (Object.prototype.hasOwnProperty.call(headers, prop)) {
-        xhr.setRequestHeader(prop, headers[prop]);
-      }
-    }
-  }
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4) {
-      callback(xhr); //eslint-disable-line callback-return
-    }
-  };
-  if (opts.preSend && typeof opts.preSend === "function") {
-    opts.preSend(xhr);
-  }
-  xhr.send(msg);
-}
-
 function isArrayLike(arr) {
   var ret = false;
   if (!arr) {
@@ -342,7 +313,6 @@ return {
   "random": random,
   "mapValue": mapValue,
   "createCircleVertices": createCircleVertices,
-  "fetchURL": fetchURL,
   "isArrayLike": isArrayLike,
   "modelViewMatrix": modelViewMatrix,
   "matrixMultiplyPoint": matrixMultiplyPoint,
