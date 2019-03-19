@@ -1099,6 +1099,7 @@ function main(ts) {
     });
     return;
   } else if (game.levelState === LevelState.GAME_OVER) {
+    stop();
     console.log("Game Over");
     Console.log("Game Over");
     Console.show();
