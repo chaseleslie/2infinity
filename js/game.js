@@ -23,6 +23,7 @@ const menuRestart = doc.getElementById("menu_restart");
 const menuConsole = doc.getElementById("menu_console");
 const menuDisplayFPS = doc.getElementById("menu_display_fps");
 const menuMute = doc.getElementById("menu_muted");
+const menuVolume = doc.getElementById("menu_volume");
 const menuIcon = doc.getElementById("img_menu_icon");
 const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 const point = Object.seal({"x": 0, "y": 0, "z": 0});
@@ -425,21 +426,10 @@ menuRestart.addEventListener("click", onMenuRestart, false);
 menuConsole.addEventListener("click", onMenuConsole, false);
 menuDisplayFPS.addEventListener("click", onMenuDisplayFPS, false);
 menuMute.addEventListener("click", onMenuMute, false);
-menuResume.addEventListener("mousedown", onMenuMousedown, false);
-menuResume.addEventListener("mouseup", onMenuMouseup, false);
-menuResume.addEventListener("mouseleave", onMenuMouseleave, false);
-menuRestart.addEventListener("mousedown", onMenuMousedown, false);
-menuRestart.addEventListener("mouseup", onMenuMouseup, false);
-menuRestart.addEventListener("mouseleave", onMenuMouseleave, false);
-menuConsole.addEventListener("mousedown", onMenuMousedown, false);
-menuConsole.addEventListener("mouseup", onMenuMouseup, false);
-menuConsole.addEventListener("mouseleave", onMenuMouseleave, false);
-menuDisplayFPS.addEventListener("mousedown", onMenuMousedown, false);
-menuDisplayFPS.addEventListener("mouseup", onMenuMouseup, false);
-menuDisplayFPS.addEventListener("mouseleave", onMenuMouseleave, false);
-menuMute.addEventListener("mousedown", onMenuMousedown, false);
-menuMute.addEventListener("mouseup", onMenuMouseup, false);
-menuMute.addEventListener("mouseleave", onMenuMouseleave, false);
+menuVolume.addEventListener("mousedown", onMenuVolumeMousedown, false);
+menuVolume.addEventListener("mousemove", onMenuVolumeMousemove, false);
+menuVolume.addEventListener("mouseup", onMenuVolumeMouseup, false);
+menuVolume.addEventListener("mouseleave", onMenuVolumeMouseleave, false);
 
 const circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
 Game.verticesCircle = circleCoords.vertices;
@@ -810,8 +800,10 @@ function onMenuScroll(e) {
   var selectedIndex = -1;
 
   switch (key || e.which || e.keyCode) {
-    // ArrowUp / ArrowDown / Enter
+    // ArrowLeft / ArrowUp / ArrowRight / ArrowDown / Enter
+    case 37:
     case 38:
+    case 39:
     case 40:
     case 13:
       e.preventDefault();
@@ -833,9 +825,11 @@ function onMenuScroll(e) {
       break;
     }
   }
+
   if (selectedIndex === -1 && menuItems.length) {
     selectedIndex = 0;
   }
+
   for (let k = 0; k < menuItems.length; k += 1) {
     menuItems[k].classList.remove("selected");
   }
@@ -848,7 +842,6 @@ function onMenuScroll(e) {
       } else {
         selectedIndex = menuItems.length - 1;
       }
-      menuItems[selectedIndex].classList.add("selected");
     break;
     // ArrowDown
     case 40:
@@ -857,13 +850,34 @@ function onMenuScroll(e) {
       } else {
         selectedIndex = 0;
       }
-      menuItems[selectedIndex].classList.add("selected");
     break;
     // Enter
     case 13:
       menuItems[selectedIndex].click();
     break;
   }
+
+  /* Adjust volume */
+  if (menuItems[selectedIndex] === menuVolume) {
+    switch (key || e.which || e.keyCode) {
+      // ArrowLeft
+      case 37: {
+        const vol = Math.max(parseFloat(menuVolume.dataset.mouseFrac) - 0.05, 0);
+        menuVolume.dataset.mouseFrac = vol;
+        setVolume(vol);
+      }
+      break;
+      // ArrowRight
+      case 39: {
+        const vol = Math.min(parseFloat(menuVolume.dataset.mouseFrac) + 0.05, 1);
+        menuVolume.dataset.mouseFrac = vol;
+        setVolume(vol);
+      }
+      break;
+    }
+  }
+
+  menuItems[selectedIndex].classList.add("selected");
 }
 
 function onMenuScrollWheel(e) {
@@ -957,16 +971,39 @@ function onMenuMute() {
   start();
 }
 
-function onMenuMousedown(e) {
-  e.target.classList.add("clicked");
+function setVolume(vol) {
+  const perc = Utils.roundTo5(vol * 100);
+  Game.soundFX.gain = vol;
+  menuVolume.style.background = `linear-gradient(to right, #77D ${perc}%, ${perc + 5}%, #AAF)`;
 }
 
-function onMenuMouseup(e) {
-  e.target.classList.remove("clicked");
+function onMenuVolumeMousedown(e) {
+  const rect = menuVolume.getBoundingClientRect();
+  menuVolume.dataset.mouseDown = "1";
+  menuVolume.dataset.mouseFrac = e.offsetX / rect.width;
 }
 
-function onMenuMouseleave(e) {
-  e.target.classList.remove("clicked");
+function onMenuVolumeMousemove(e) {
+  if (menuVolume.dataset.mouseDown) {
+    const rect = menuVolume.getBoundingClientRect();
+    menuVolume.dataset.mouseFrac = e.offsetX / rect.width;
+  }
+}
+
+function onMenuVolumeMouseup(e) {
+  const rect = menuVolume.getBoundingClientRect();
+  menuVolume.dataset.mouseFrac = e.offsetX / rect.width;
+  menuVolume.dataset.mouseDown = "";
+  setVolume(parseFloat(menuVolume.dataset.mouseFrac));
+}
+
+function onMenuVolumeMouseleave(e) {
+  if (menuVolume.dataset.mouseDown) {
+    const rect = menuVolume.getBoundingClientRect();
+    menuVolume.dataset.mouseFrac = e.offsetX / rect.width;
+    menuVolume.dataset.mouseDown = "";
+    setVolume(parseFloat(menuVolume.dataset.mouseFrac));
+  }
 }
 
 function start() {

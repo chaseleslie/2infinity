@@ -99,6 +99,10 @@ function mapValue(val, x1, y1, x2, y2) {
   return (val - x1) * (y2 - x2) / (y1 - x1) + x2;
 }
 
+function roundTo5(n) {
+  return Math.round(n / 5) * 5;
+}
+
 function createCircleVertices(centerVertex, numPoints, radius) {
   radius = (typeof radius === "number") ? radius : 1;
   const vertices = [];
@@ -312,6 +316,7 @@ return {
   "getRandomInt": getRandomInt,
   "random": random,
   "mapValue": mapValue,
+  "roundTo5": roundTo5,
   "createCircleVertices": createCircleVertices,
   "isArrayLike": isArrayLike,
   "modelViewMatrix": modelViewMatrix,
