@@ -84,6 +84,7 @@
       "velocity": 0.00030,
       "modelScales": [2, 2, 2],
       "hitpoints": 7500,
+      "hpReplenishRate": 2,
       "spawnIntervalMult": 1,
       "weapon": {
         "type": "PhaserWeapon",
@@ -120,6 +121,7 @@
       "velocity": 0.00035,
       "modelScales": [2, 2, 2],
       "hitpoints": 12500,
+      "hpReplenishRate": 10,
       "spawnIntervalMult": 1,
       "weapon": {
         "type": "PhaserWeapon",
@@ -170,6 +172,7 @@
       "velocity": 0.00036,
       "modelScales": [2, 2, 2],
       "hitpoints": 17500,
+      "hpReplenishRate": 20,
       "spawnIntervalMult": 1,
       "weapon": {
         "type": "PhaserWeapon",

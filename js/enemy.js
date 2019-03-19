@@ -276,6 +276,8 @@ function Boss(game, type, isActive) {
   const velocity = enemyData.velocity;
   var hp = enemyData.hitpoints;
   var points = hp;
+  const maxHP = hp;
+  const hpReplenishRate = enemyData.hpReplenishRate;
   const weaponData = enemyData.weapon;
   const weapon = weaponData ? new global[weaponData.type](game, weaponData) : null;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
@@ -327,18 +329,20 @@ function Boss(game, type, isActive) {
   };
 
   const Action = Object.freeze({
-    "EVADE":  0,
-    "TRACK":  1,
-    "ATTACK": 2,
+    "EVADE":        0,
+    "TRACK":        1,
+    "ATTACK":       2,
     "MULTI_ATTACK": 3,
-    "NUM_STATES": 4
+    "REPLENISH_HP": 4,
+    "NUM_STATES":   5
   });
 
   const ActionFrame = Object.freeze({
-    [Action.EVADE]: 80,
-    [Action.TRACK]: 80,
-    [Action.ATTACK]: 20,
-    [Action.MULTI_ATTACK]: 40
+    [Action.EVADE]:         80,
+    [Action.TRACK]:         80,
+    [Action.ATTACK]:        20,
+    [Action.MULTI_ATTACK]:  40,
+    [Action.REPLENISH_HP]:  40
   });
 
   var bossActionState = Action.TRACK;
@@ -473,6 +477,9 @@ function Boss(game, type, isActive) {
         state.velocity[1] = 0;
         weapon.fireWeapon(global.performance.now(), dt, getHitbox());
       }
+    } else if (bossActionState === Action.REPLENISH_HP) {
+      hp = Utils.clamp(hp + hpReplenishRate, 0, maxHP);
+      game.overlayState.flag |= game.OverlayFlags.INCREMENT | game.OverlayFlags.BOSS_HP_DIRTY;
     }
 
     Physics.integrateState(state, game.time, dt);
@@ -602,7 +609,7 @@ function Boss(game, type, isActive) {
   }
 
   Object.defineProperty(this, "hitpoints", {get: function () {return hp;}});
-  Object.defineProperty(this, "maxHitpoints", {get: function () {return enemyData.hitpoints;}});
+  Object.defineProperty(this, "maxHitpoints", {get: function () {return maxHP;}});
   Object.defineProperty(this, "points", {get: function () {return points;}});
   Object.defineProperty(this, "prune", {get: function () {return prune >= showDestroyedFrames;}});
   Object.defineProperty(this, "position", {get: getPosition});
