@@ -1206,6 +1206,7 @@ function update(game, ts, dt) {
     }
   }
   if (score) {
+    game.soundFX.strike();
     updateScore(game, score);
   }
   const playerHitbox = player.hitbox;
@@ -1219,6 +1220,7 @@ function update(game, ts, dt) {
     }
     const hitScore = -enemy.update(dt);
     if (hitScore) {
+      game.soundFX.strike();
       game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
       score += hitScore;
     }
