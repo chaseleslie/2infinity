@@ -99,6 +99,10 @@ function mapValue(val, x1, y1, x2, y2) {
   return (val - x1) * (y2 - x2) / (y1 - x1) + x2;
 }
 
+function roundTo5(n) {
+  return Math.round(n / 5) * 5;
+}
+
 function createCircleVertices(centerVertex, numPoints, radius) {
   radius = (typeof radius === "number") ? radius : 1;
   const vertices = [];
@@ -140,35 +144,6 @@ function createCircleVertices(centerVertex, numPoints, radius) {
     "vertices": new Float32Array(vertices),
     "tex": new Float32Array(tex)
   };
-}
-
-function fetchURL(opts) {
-  opts = opts || {};
-  const method = opts.method || "GET";
-  const url = opts.url || opts.uri || "";
-  const callback = opts.callback || opts.cb || null;
-  const msg = opts.message || opts.msg || opts.payload || null;
-
-  const xhr = new global.XMLHttpRequest();
-  xhr.open(method, url);
-  xhr.responseType = opts.responseType || "";
-  if (opts.headers && typeof opts.headers === "object") {
-    const headers = opts.headers;
-    for (let prop in headers) {
-      if (Object.prototype.hasOwnProperty.call(headers, prop)) {
-        xhr.setRequestHeader(prop, headers[prop]);
-      }
-    }
-  }
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4) {
-      callback(xhr); //eslint-disable-line callback-return
-    }
-  };
-  if (opts.preSend && typeof opts.preSend === "function") {
-    opts.preSend(xhr);
-  }
-  xhr.send(msg);
 }
 
 function isArrayLike(arr) {
@@ -341,8 +316,8 @@ return {
   "getRandomInt": getRandomInt,
   "random": random,
   "mapValue": mapValue,
+  "roundTo5": roundTo5,
   "createCircleVertices": createCircleVertices,
-  "fetchURL": fetchURL,
   "isArrayLike": isArrayLike,
   "modelViewMatrix": modelViewMatrix,
   "matrixMultiplyPoint": matrixMultiplyPoint,
