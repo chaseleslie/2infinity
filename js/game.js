@@ -1431,7 +1431,8 @@ function drawOverlay(game) {
   }
 
   /* Update fps display */
-  if (game.displayFPS && game.overlayState.flag & OverlayFlags.FPS_DIRTY) {
+  const fpsDirty = game.overlayState.flag & OverlayFlags.FPS_DIRTY;
+  if (game.displayFPS && fpsDirty) {
     const fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
     const fpsNumDigits = canvasOverlayProps.fpsTemplateNumDigits;
     ctx.save();
@@ -1448,6 +1449,12 @@ function drawOverlay(game) {
     );
     ctx.fillText(fpsStr, width, height);
     ctx.restore();
+  } else if (!game.displayFPS && fpsDirty) {
+    const fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
+    ctx.clearRect(
+      width - fpsTemplateStrProps.width, height - defaultFontSize,
+      width, height
+    );
   }
 
   /* Update hitpoints indicator */
