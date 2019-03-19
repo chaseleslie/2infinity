@@ -1,10 +1,15 @@
 /* exported SoundFX */
+/* global Utils */
 
 class SoundFX {
-  constructor() {
+  constructor(vol = 0.4) {
+    if (typeof vol !== "number") {
+      throw new TypeError(`Volume argument must be a number`);
+    }
+
     this.ctx = new AudioContext();
-    this.gainNode = new GainNode(this.ctx);
-    this.gainNode.gain.value = 0.4;
+    this._gainNode = new GainNode(this.ctx);
+    this._gainNode.gain.value = Utils.clamp(vol, 0, 1) || 0.4;
     this._generateSounds();
   }
 
@@ -15,13 +20,13 @@ class SoundFX {
       newGain = 0;
     }
 
-    const gainNode = this.gainNode;
+    const gainNode = this._gainNode;
     gainNode.gain.value = newGain;
     return newGain;
   }
 
   get gain() {
-    return this.gainNode.gain.value;
+    return this._gainNode.gain.value;
   }
 
   _generateSounds() {
@@ -37,7 +42,7 @@ class SoundFX {
     const numChannels = 1;
     const floatArray = new Float32Array(numSamples * numChannels);
     const arrayBuffer = ctx.createBuffer(numChannels, numSamples, sampleRate);
-    this.blasterProps = Object.freeze(Object.assign(Object.create(null), {
+    this._blasterProps = Object.freeze(Object.assign(Object.create(null), {
       "floatArray":   floatArray,
       "duration":     duration,
       "numSamples":   numSamples,
@@ -82,7 +87,7 @@ class SoundFX {
     const numChannels = 1;
     const floatArray = new Float32Array(numSamples * numChannels);
     const arrayBuffer = ctx.createBuffer(numChannels, numSamples, sampleRate);
-    this.strikeProps = Object.freeze(Object.assign(Object.create(null), {
+    this._strikeProps = Object.freeze(Object.assign(Object.create(null), {
       "floatArray":   floatArray,
       "duration":     duration,
       "numSamples":   numSamples,
@@ -122,16 +127,16 @@ class SoundFX {
   blaster() {
     const ctx = this.ctx;
     const source = ctx.createBufferSource();
-    source.buffer = this.blasterProps.arrayBuffer;
-    source.connect(this.gainNode).connect(ctx.destination);
+    source.buffer = this._blasterProps.arrayBuffer;
+    source.connect(this._gainNode).connect(ctx.destination);
     source.start();
   }
 
   strike() {
     const ctx = this.ctx;
     const source = ctx.createBufferSource();
-    source.buffer = this.strikeProps.arrayBuffer;
-    source.connect(this.gainNode).connect(ctx.destination);
+    source.buffer = this._strikeProps.arrayBuffer;
+    source.connect(this._gainNode).connect(ctx.destination);
     source.start();
   }
 }

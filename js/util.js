@@ -103,6 +103,10 @@ function roundTo5(n) {
   return Math.round(n / 5) * 5;
 }
 
+function clamp(n, min, max) {
+  return Math.max(Math.min(n, max), min);
+}
+
 function createCircleVertices(centerVertex, numPoints, radius) {
   radius = (typeof radius === "number") ? radius : 1;
   const vertices = [];
@@ -317,6 +321,7 @@ return {
   "random": random,
   "mapValue": mapValue,
   "roundTo5": roundTo5,
+  "clamp": clamp,
   "createCircleVertices": createCircleVertices,
   "isArrayLike": isArrayLike,
   "modelViewMatrix": modelViewMatrix,

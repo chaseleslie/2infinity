@@ -665,6 +665,7 @@ function loadSettings(game) {
 
   if (settings) {
     Console.debug(`Loading settings: ${JSON.stringify(settings)}`);
+
     if ("muted" in settings) {
       game.muted = settings.muted;
       if (game.muted) {
@@ -675,6 +676,7 @@ function loadSettings(game) {
         menuMute.classList.add("unchecked");
       }
     }
+
     if ("displayFPS" in settings) {
       game.displayFPS = settings.displayFPS;
       if (settings.displayFPS) {
@@ -682,6 +684,11 @@ function loadSettings(game) {
         menuDisplayFPS.classList.remove("unchecked");
       }
     }
+
+    if ("volume" in settings) {
+      setVolume(settings.volume);
+    }
+
     Console.log("Loaded saved game settings");
   } else {
     Console.log("Unable to load saved game settings");
@@ -690,9 +697,11 @@ function loadSettings(game) {
 
 function saveSettings() {
   const settings = {
-    "muted": Game.muted,
-    "displayFPS": Game.displayFPS
+    "muted":      Game.muted,
+    "displayFPS": Game.displayFPS,
+    "volume":     Game.soundFX.gain
   };
+
   try {
     global.localStorage.setItem(
       "settings",
@@ -861,18 +870,12 @@ function onMenuScroll(e) {
   if (menuItems[selectedIndex] === menuVolume) {
     switch (key || e.which || e.keyCode) {
       // ArrowLeft
-      case 37: {
-        const vol = Math.max(parseFloat(menuVolume.dataset.mouseFrac) - 0.05, 0);
-        menuVolume.dataset.mouseFrac = vol;
-        setVolume(vol);
-      }
+      case 37:
+        setVolume(getVolume() - 0.05);
       break;
       // ArrowRight
-      case 39: {
-        const vol = Math.min(parseFloat(menuVolume.dataset.mouseFrac) + 0.05, 1);
-        menuVolume.dataset.mouseFrac = vol;
-        setVolume(vol);
-      }
+      case 39:
+        setVolume(getVolume() + 0.05);
       break;
     }
   }
@@ -972,37 +975,40 @@ function onMenuMute() {
 }
 
 function setVolume(vol) {
+  vol = Utils.clamp(vol, 0, 1);
   const perc = Utils.roundTo5(vol * 100);
   Game.soundFX.gain = vol;
   menuVolume.style.background = `linear-gradient(to right, #77D ${perc}%, ${perc + 5}%, #AAF)`;
 }
 
+function getVolume() {
+  return Game.soundFX.gain;
+}
+
 function onMenuVolumeMousedown(e) {
   const rect = menuVolume.getBoundingClientRect();
   menuVolume.dataset.mouseDown = "1";
-  menuVolume.dataset.mouseFrac = e.offsetX / rect.width;
+  setVolume(Utils.clamp(e.offsetX / rect.width, 0, 1));
 }
 
 function onMenuVolumeMousemove(e) {
   if (menuVolume.dataset.mouseDown) {
     const rect = menuVolume.getBoundingClientRect();
-    menuVolume.dataset.mouseFrac = e.offsetX / rect.width;
+    setVolume(Utils.clamp(e.offsetX / rect.width, 0, 1));
   }
 }
 
 function onMenuVolumeMouseup(e) {
   const rect = menuVolume.getBoundingClientRect();
-  menuVolume.dataset.mouseFrac = e.offsetX / rect.width;
+  setVolume(Utils.clamp(e.offsetX / rect.width, 0, 1));
   menuVolume.dataset.mouseDown = "";
-  setVolume(parseFloat(menuVolume.dataset.mouseFrac));
 }
 
 function onMenuVolumeMouseleave(e) {
   if (menuVolume.dataset.mouseDown) {
     const rect = menuVolume.getBoundingClientRect();
-    menuVolume.dataset.mouseFrac = e.offsetX / rect.width;
+    setVolume(Utils.clamp(e.offsetX / rect.width, 0, 1));
     menuVolume.dataset.mouseDown = "";
-    setVolume(parseFloat(menuVolume.dataset.mouseFrac));
   }
 }
 
@@ -1206,6 +1212,7 @@ function update(game, ts, dt) {
     }
   }
   if (score) {
+    game.soundFX.strike();
     updateScore(game, score);
   }
   const playerHitbox = player.hitbox;
@@ -1219,6 +1226,7 @@ function update(game, ts, dt) {
     }
     const hitScore = -enemy.update(dt);
     if (hitScore) {
+      game.soundFX.strike();
       game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
       score += hitScore;
     }
