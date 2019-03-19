@@ -76,13 +76,14 @@ canvasOverlayProps.fpsTemplateStrProps = canvasOverlayCtx.measureText(canvasOver
 canvasOverlayCtx.restore();
 
 const OverlayFlags = Object.freeze({
-  "INCREMENT":       0b00000001,
-  "DECREMENT":       0b00000010,
-  "SCORE_DIRTY":     0b00000100,
-  "HP_DIRTY":        0b00001000,
-  "FPS_DIRTY":       0b00010000,
-  "BOSS_NAME_DIRTY": 0b00100000,
-  "BOSS_HP_DIRTY":   0b01000000
+  "INCREMENT":        0b00000001,
+  "DECREMENT":        0b00000010,
+  "SCORE_DIRTY":      0b00000100,
+  "HP_DIRTY":         0b00001000,
+  "FPS_DIRTY":        0b00010000,
+  "BOSS_NAME_DIRTY":  0b00100000,
+  "BOSS_HP_DIRTY":    0b01000000,
+  "MUTED_DIRTY":      0b10000000
 });
 
 const LevelState = Object.freeze({
@@ -942,6 +943,8 @@ function onMenuDisplayFPS(e) {
 function onMenuMute() {
   const game = Game;
   game.muted = !game.muted;
+  game.overlayState.flag |= OverlayFlags.MUTED_DIRTY;
+
   if (game.muted) {
     menuMute.classList.add("checked");
     menuMute.classList.remove("unchecked");
@@ -949,6 +952,7 @@ function onMenuMute() {
     menuMute.classList.remove("checked");
     menuMute.classList.add("unchecked");
   }
+
   hideMenu();
   start();
 }
@@ -969,7 +973,11 @@ function start() {
   const game = Game;
   if (!game.running) {
     Console.log(`Starting game (state=${LevelState.map(game.levelState)})`);
-    game.overlayState.flag |= OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
+    game.overlayState.flag |= (
+      OverlayFlags.SCORE_DIRTY |
+      OverlayFlags.HP_DIRTY |
+      OverlayFlags.MUTED_DIRTY
+    );
     doc.body.addEventListener("keydown", handleKeyDown, false);
     doc.body.addEventListener("keyup", handleKeyUp, false);
     doc.body.addEventListener("touchstart", handleTouchStart, false);
@@ -1414,6 +1422,24 @@ function drawOverlay(game) {
 
   ctx.save();
   ctx.font = canvasOverlayFont;
+
+  /* Display muted icon */
+  const mutedDirty = game.overlayState.flag & OverlayFlags.MUTED_DIRTY;
+  if (mutedDirty) {
+    const mutedStr = "\ud83d\udd07";
+    const x = 0;
+    const y = height;
+    ctx.save();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    ctx.clearRect(x, y - defaultFontSize, defaultFontSize, defaultFontSize);
+
+    if (game.muted) {
+      ctx.fillText(mutedStr, x, y);
+    }
+
+    ctx.restore();
+  }
 
   /* Update score display */
   if (game.overlayState.flag & OverlayFlags.SCORE_DIRTY) {
