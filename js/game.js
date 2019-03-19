@@ -29,7 +29,6 @@ const point = Object.seal({"x": 0, "y": 0, "z": 0});
 const zProjection = 1;
 const aspect = canvas.width / canvas.height;
 const devMode = global.location.hash.indexOf("#dev") === 0;
-const soundFX = new SoundFX();
 
 const KEY_MAP = Object.freeze({
   "ArrowLeft":  37,
@@ -168,6 +167,7 @@ const Game = Object.seal({
   "overlayLastTs": 0,
   "displayFPS": false,
   "muted": false,
+  "soundFX": null,
   "keydownMap": Object.seal({
     "ArrowLeft": 0,
     "ArrowUp": 0,
@@ -1356,8 +1356,8 @@ function spawnPowerups(game, ts) {
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
 
-  if (fired && !game.muted) {
-    soundFX.blaster();
+  if (fired && game.soundFX && !game.muted) {
+    game.soundFX.blaster();
   }
 }
 
@@ -1717,6 +1717,14 @@ function setup(game, gl) {
     Console.error(`Error: ${err}: Initializing textures`);
     Console.show();
     return;
+  }
+
+  Console.debug("Initializing sound effects");
+  try {
+    game.soundFX = new SoundFX();
+  } catch (e) {
+    Console.error(`Error: Initializing sound effects: '${e}'`);
+    game.soundFX = null;
   }
 
   Console.debug("Initializing game assets");
