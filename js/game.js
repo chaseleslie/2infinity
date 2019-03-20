@@ -1206,13 +1206,16 @@ function update(game, ts, dt) {
   let score = 0;
   const playerWeapons = player.weapons;
   for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
-    score += playerWeapons[k].update(dt, enemies);
+    score += playerWeapons[k].update(dt, enemies, false);
     if (score && game.levelState === LevelState.BOSS) {
       game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.DECREMENT;
     }
   }
   if (score) {
-    game.soundFX.strike();
+    if (!game.muted) {
+      game.soundFX.strike();
+    }
+
     updateScore(game, score);
   }
   const playerHitbox = player.hitbox;
@@ -1226,7 +1229,10 @@ function update(game, ts, dt) {
     }
     const hitScore = -enemy.update(dt);
     if (hitScore) {
-      game.soundFX.strike();
+      if (!game.muted) {
+        game.soundFX.strike();
+      }
+
       game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
       score += hitScore;
     }

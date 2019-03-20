@@ -36,7 +36,7 @@ PhaserWeapon.prototype.draw = function(gl) {
   }
 };
 
-PhaserWeapon.prototype.update = function(dt, enemies) {
+PhaserWeapon.prototype.update = function(dt, enemies, needDepthCheck = true) {
   const projectiles = this.projectiles;
   const point = this.point;
   let score = 0;
@@ -64,7 +64,9 @@ PhaserWeapon.prototype.update = function(dt, enemies) {
       for (let n = 0; n < enemies.length; n += 1) {
         const enemy = enemies[n];
         const enemyActive = enemy.active && enemy.hitpoints > 0;
-        const hasEqualDepth = enemy.positionDepth === hitbox.depth;
+        const hasEqualDepth = (needDepthCheck)
+          ? enemy.positionDepth === hitbox.depth
+          : true;
         if (enemyActive && hasEqualDepth && enemy.intersectsWith(hitbox)) {
           for (let m = 0; m < projPos.length; m += 1) {
             const vert = projPos[m];

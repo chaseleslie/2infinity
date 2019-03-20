@@ -19,7 +19,7 @@ function Enemy(game, type, isActive) {
   var active = isActive || false;
   const verticalPos = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
   const horizontalPos = 1.10 * game.aspect;
-  const depthPos = 0.0;
+  const depthPos = -Utils.random() * 0.05;
   const vertices = [
     new Float32Array(3),
     new Float32Array(3),
