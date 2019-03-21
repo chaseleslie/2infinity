@@ -442,6 +442,7 @@ function Player(game) {
   Object.defineProperty(this, "positionDepth", {get: function() {return mvUniformMatrix[14];}});
   Object.defineProperty(this, "hitbox", {get: getHitbox});
   Object.defineProperty(this, "active", {get: function() {return true;}});
+  Object.defineProperty(this, "linger", {get: function() {return true;}});
 
   this.resetGame();
 }

@@ -1233,7 +1233,7 @@ function update(game, ts, dt) {
   score = 0;
   for (let k = enemies.length - 1; k >= 0; k -= 1) {
     const enemy = enemies[k];
-    if (!enemy.active) {
+    if (!enemy.active && !enemy.linger) {
       continue;
     }
 
@@ -1667,7 +1667,7 @@ function draw(game) {
   if (levelState === LevelState.PLAYING || levelState === LevelState.END) {
     for (let k = 0, n = game.enemies.length; k < n; k += 1) {
       const enemy = game.enemies[k];
-      if (enemy.active) {
+      if (enemy.active || enemy.linger) {
         enemy.draw(gl);
       }
     }

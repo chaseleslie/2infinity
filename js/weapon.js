@@ -140,6 +140,24 @@ PhaserWeapon.prototype.fireWeapon = function(ts, dt, hitbox) {
   return true;
 };
 
+PhaserWeapon.prototype.hasActiveProjectiles = function() {
+  const projectiles = this.projectiles;
+  let count = 0;
+
+  for (let k = 0, n = projectiles.length; k < n; k += 1) {
+    const projGroup = projectiles[k];
+    for (let iK = 0, iN = projGroup.length; iK < iN; iK += 1) {
+      const proj = projGroup[iK];
+
+      if (proj.active) {
+        count += 1;
+      }
+    }
+  }
+
+  return count;
+};
+
 Object.defineProperty(PhaserWeapon.prototype, "constructor", {
   "value": PhaserWeapon,
   "writable": false
