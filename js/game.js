@@ -1260,6 +1260,11 @@ function update(game, ts, dt) {
     updateScore(game, score);
   }
 
+  if (!game.devMode && player.hitpoints <= 0) {
+    game.levelState = LevelState.GAME_OVER;
+    return;
+  }
+
   /* Check for player collisions with enemies */
   if (!playerHitbox.depth && game.levelState === LevelState.PLAYING) {
     for (let k = 0; k < enemies.length; k += 1) {
