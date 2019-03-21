@@ -155,6 +155,9 @@ const Game = Object.seal({
   "startTs": 0,
   "lastTs": 0,
   "pauseTs": 0,
+  "realTime": 0,
+  "enemyCount": 0,
+  "enemyDestroyedCount": 0,
   "averageFrameInterval": new Utils.ExponentialAverage(0.7, 0),
   "running": false,
   "isMenuShown": false,
@@ -1070,6 +1073,7 @@ function stop() {
   menuIcon.removeEventListener("click", handleMenuIconClick, false);
   game.pauseTs = global.performance.now();
   game.running = false;
+  game.realTime += game.pauseTs - game.startTs;
   global.cancelAnimationFrame(game.animFrame);
   const keydownMap = game.keydownMap;
   for (const key of Object.keys(keydownMap)) {
@@ -1153,6 +1157,9 @@ function main(ts) {
     stop();
     console.log("Game Over");
     Console.log("Game Over");
+    Console.log(`  time:       ${Utils.secondsToHMS(Math.trunc(game.realTime / 1000))}`);
+    Console.log(`  score:      ${game.score}`);
+    Console.log(`  kill ratio: ${(game.enemyDestroyedCount / game.enemyCount).toFixed(2)}`);
     Console.show();
     return;
   }
@@ -1193,6 +1200,7 @@ function main(ts) {
 function update(game, ts, dt) {
   const player = game.player;
   var enemies = null;
+
   if (game.levelState === LevelState.PLAYING || game.levelState === LevelState.END) {
     enemies = game.enemies;
   } else if (game.levelState === LevelState.BOSS) {
@@ -1211,6 +1219,7 @@ function update(game, ts, dt) {
       game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.DECREMENT;
     }
   }
+
   if (score) {
     if (!game.muted) {
       game.soundFX.strike();
@@ -1227,6 +1236,7 @@ function update(game, ts, dt) {
     if (!enemy.active) {
       continue;
     }
+
     const hitScore = -enemy.update(dt);
     if (hitScore) {
       if (!game.muted) {
@@ -1236,6 +1246,7 @@ function update(game, ts, dt) {
       game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
       score += hitScore;
     }
+
     const hitbox = enemy.hitbox;
     const enemyOffscreen = hitbox.right < -1.0;
     if (enemyOffscreen) {
@@ -1244,6 +1255,7 @@ function update(game, ts, dt) {
       enemy.reset(enemyType, false);
     }
   }
+
   if (score) {
     updateScore(game, score);
   }
@@ -1251,32 +1263,29 @@ function update(game, ts, dt) {
   /* Check for player collisions with enemies */
   if (!playerHitbox.depth && game.levelState === LevelState.PLAYING) {
     for (let k = 0; k < enemies.length; k += 1) {
-      let keepLooping = true;
       const enemy = enemies[k];
       if (enemy.active && enemy.hitpoints > 0 && enemy.intersectsWith(playerHitbox)) {
         const playerPos = player.position;
+
         for (let iK = 0; iK < playerPos.length; iK += 1) {
           const vert = playerPos[iK];
           point.x = vert[0];
           point.y = vert[1];
           point.z = vert[2];
           const directHit = enemy.containsPoint(point);
+
           if (directHit ) {
             enemy.takeHit(enemy.hitpoints);
-            const hp = player.takeHit(enemy.points);
-            if (hp <= 0) {
-              restart();
-              keepLooping = false;
-              game.overlayState.flag = OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY | OverlayFlags.FPS_DIRTY;
-              break;
-            } else {
-              game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
+            player.takeHit(enemy.points);
+
+            if (!game.devMode && player.hitpoints <= 0) {
+              game.levelState = LevelState.GAME_OVER;
+              return;
             }
+
+            game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
             updateScore(game, -enemy.points);
           }
-        }
-        if (!keepLooping) {
-          break;
         }
       }
     }
@@ -1447,10 +1456,13 @@ function spawnEnemies(game, ts) {
           break;
         }
       }
+
       if (!foundEnemy) {
         game.enemies.push(new Enemy(game, type, true));
       }
       levelEnemies.lastTs[k] = ts;
+
+      game.enemyCount += 1;
     }
   }
 }

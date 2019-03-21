@@ -117,6 +117,7 @@ function Enemy(game, type, isActive) {
     const now = global.performance.now();
     if (hp <= 0) {
       if (prune >= showDestroyedFrames) {
+        game.enemyDestroyedCount += 1;
         active = false;
         return 0;
       }

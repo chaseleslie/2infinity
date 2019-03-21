@@ -309,6 +309,48 @@ function translateMatrix(matrix, x, y, z) {
   return matrix;
 }
 
+class HMS {
+  constructor(hours, minutes, seconds) {
+    this.hours = hours || 0;
+    this.minutes = minutes || 0;
+    this.seconds = seconds || 0;
+  }
+
+  toString() {
+    const hours = `00${this.hours}`.substr(-2);
+    const minutes = `00${this.minutes}`.substr(-2);
+    const seconds = `00${this.seconds}`.substr(-2);
+
+    if (this.hours) {
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    return `${minutes}:${seconds}`;
+  }
+}
+
+function hmsToSeconds({hours, minutes, seconds}) {
+  return (hours * 3600) + (minutes * 60) + seconds;
+}
+
+function secondsToHMS(secs) {
+  var hours = Math.trunc(secs / 3600);
+  var minutes = Math.trunc((secs - (hours * 3600)) / 60);
+  var seconds = secs - (hours * 3600) - (minutes * 60);
+
+  if (seconds >= 60) {
+    seconds -= (seconds % 60);
+    minutes += 1;
+  }
+
+  if (minutes >= 60) {
+    minutes -= (minutes % 60);
+    hours += 1;
+  }
+
+  return new HMS(hours, minutes, seconds);
+}
+
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 const ROOT_TWO_OVER_TWO = Math.sqrt(2) / 2;
@@ -333,6 +375,8 @@ return {
   "rotateZMatrix": rotateZMatrix,
   "scaleMatrix": scaleMatrix,
   "translateMatrix": translateMatrix,
+  "hmsToSeconds": hmsToSeconds,
+  "secondsToHMS": secondsToHMS,
   "DEG2RAD": DEG2RAD,
   "RAD2DEG": RAD2DEG,
   "ROOT_TWO_OVER_TWO": ROOT_TWO_OVER_TWO,
