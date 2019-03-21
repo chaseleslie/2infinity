@@ -36,7 +36,7 @@ PhaserWeapon.prototype.draw = function(gl) {
   }
 };
 
-PhaserWeapon.prototype.update = function(dt, enemies) {
+PhaserWeapon.prototype.update = function(dt, enemies, needDepthCheck = true) {
   const projectiles = this.projectiles;
   const point = this.point;
   let score = 0;
@@ -64,7 +64,9 @@ PhaserWeapon.prototype.update = function(dt, enemies) {
       for (let n = 0; n < enemies.length; n += 1) {
         const enemy = enemies[n];
         const enemyActive = enemy.active && enemy.hitpoints > 0;
-        const hasEqualDepth = enemy.positionDepth === hitbox.depth;
+        const hasEqualDepth = (needDepthCheck)
+          ? enemy.positionDepth === hitbox.depth
+          : true;
         if (enemyActive && hasEqualDepth && enemy.intersectsWith(hitbox)) {
           for (let m = 0; m < projPos.length; m += 1) {
             const vert = projPos[m];
@@ -136,6 +138,24 @@ PhaserWeapon.prototype.fireWeapon = function(ts, dt, hitbox) {
 
   this.lastFireTs = ts;
   return true;
+};
+
+PhaserWeapon.prototype.hasActiveProjectiles = function() {
+  const projectiles = this.projectiles;
+  let count = 0;
+
+  for (let k = 0, n = projectiles.length; k < n; k += 1) {
+    const projGroup = projectiles[k];
+    for (let iK = 0, iN = projGroup.length; iK < iN; iK += 1) {
+      const proj = projGroup[iK];
+
+      if (proj.active) {
+        count += 1;
+      }
+    }
+  }
+
+  return count;
 };
 
 Object.defineProperty(PhaserWeapon.prototype, "constructor", {

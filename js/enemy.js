@@ -17,9 +17,10 @@ function Enemy(game, type, isActive) {
   var prune = 0;
   const showDestroyedFrames = 8;
   var active = isActive || false;
+  var linger = false;
   const verticalPos = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
   const horizontalPos = 1.10 * game.aspect;
-  const depthPos = 0.0;
+  const depthPos = -Utils.random() * 0.05;
   const vertices = [
     new Float32Array(3),
     new Float32Array(3),
@@ -69,6 +70,7 @@ function Enemy(game, type, isActive) {
     dmgRate = game.difficultyMap.prediv[game.difficulty];
     prune = 0;
     active = isActive || false;
+    linger = false;
     texCoordsBufferIndexShip = enemyData.texType
     translations.x = horizontalPos;
     translations.y = (stepFn() ? 1 : -1) * Utils.random() * (1 - game.modelScale);
@@ -83,7 +85,10 @@ function Enemy(game, type, isActive) {
   this.draw = function(gl) {
     var numTri = 0;
     gl.uniformMatrix4fv(game.mvUniform, false, mvUniformMatrix);
-    if (prune) {
+
+    if (linger) {
+      // skip drawing ship
+    } else if (prune) {
       gl.activeTexture(game.textures.explosion.texId);
       gl.bindTexture(gl.TEXTURE_2D, game.textures.explosion.tex);
       gl.bindBuffer(gl.ARRAY_BUFFER, game.textures.explosion.coordBuffers[texCoordsBufferIndexExpl]);
@@ -115,13 +120,24 @@ function Enemy(game, type, isActive) {
 
   this.update = function(dt) {
     const now = global.performance.now();
-    if (hp <= 0) {
+
+    if (hp <= 0 && !linger) {
       if (prune >= showDestroyedFrames) {
+        if (weapon && weapon.hasActiveProjectiles()) {
+          linger = true;
+        }
+
+        game.enemyDestroyedCount += 1;
         active = false;
         return 0;
       }
       prune += 1;
       return 0;
+    } else if (hp <= 0 && linger) {
+      if (!weapon.hasActiveProjectiles()) {
+        linger = false;
+        return 0;
+      }
     }
 
     Physics.integrateState(state, game.time, dt);
@@ -130,7 +146,10 @@ function Enemy(game, type, isActive) {
     let score = 0;
     if (weapon) {
       score += weapon.update(dt, game.players);
-      weapon.fireWeapon(now, dt, getHitbox());
+
+      if (!linger) {
+        weapon.fireWeapon(now, dt, getHitbox());
+      }
     }
 
     return score;
@@ -266,6 +285,7 @@ function Enemy(game, type, isActive) {
   Object.defineProperty(this, "positionDepth", {get: function() {return mvUniformMatrix[14];}});
   Object.defineProperty(this, "hitbox", {get: getHitbox});
   Object.defineProperty(this, "active", {get: function() {return active;}});
+  Object.defineProperty(this, "linger", {get: function() {return linger;}});
   Object.defineProperty(this, "enemyType", {get: function() {return type;}});
 }
 
@@ -276,6 +296,8 @@ function Boss(game, type, isActive) {
   const velocity = enemyData.velocity;
   var hp = enemyData.hitpoints;
   var points = hp;
+  const maxHP = hp;
+  const hpReplenishRate = enemyData.hpReplenishRate;
   const weaponData = enemyData.weapon;
   const weapon = weaponData ? new global[weaponData.type](game, weaponData) : null;
   var dmgRate = game.difficultyMap.prediv[game.difficulty];
@@ -327,18 +349,20 @@ function Boss(game, type, isActive) {
   };
 
   const Action = Object.freeze({
-    "EVADE":  0,
-    "TRACK":  1,
-    "ATTACK": 2,
+    "EVADE":        0,
+    "TRACK":        1,
+    "ATTACK":       2,
     "MULTI_ATTACK": 3,
-    "NUM_STATES": 4
+    "REPLENISH_HP": 4,
+    "NUM_STATES":   5
   });
 
   const ActionFrame = Object.freeze({
-    [Action.EVADE]: 80,
-    [Action.TRACK]: 80,
-    [Action.ATTACK]: 20,
-    [Action.MULTI_ATTACK]: 40
+    [Action.EVADE]:         80,
+    [Action.TRACK]:         80,
+    [Action.ATTACK]:        20,
+    [Action.MULTI_ATTACK]:  40,
+    [Action.REPLENISH_HP]:  40
   });
 
   var bossActionState = Action.TRACK;
@@ -473,6 +497,9 @@ function Boss(game, type, isActive) {
         state.velocity[1] = 0;
         weapon.fireWeapon(global.performance.now(), dt, getHitbox());
       }
+    } else if (bossActionState === Action.REPLENISH_HP) {
+      hp = Utils.clamp(hp + hpReplenishRate, 0, maxHP);
+      game.overlayState.flag |= game.OverlayFlags.INCREMENT | game.OverlayFlags.BOSS_HP_DIRTY;
     }
 
     Physics.integrateState(state, game.time, dt);
@@ -602,7 +629,7 @@ function Boss(game, type, isActive) {
   }
 
   Object.defineProperty(this, "hitpoints", {get: function () {return hp;}});
-  Object.defineProperty(this, "maxHitpoints", {get: function () {return enemyData.hitpoints;}});
+  Object.defineProperty(this, "maxHitpoints", {get: function () {return maxHP;}});
   Object.defineProperty(this, "points", {get: function () {return points;}});
   Object.defineProperty(this, "prune", {get: function () {return prune >= showDestroyedFrames;}});
   Object.defineProperty(this, "position", {get: getPosition});

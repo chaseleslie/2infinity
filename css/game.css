@@ -46,12 +46,21 @@ input, textarea, select, button {
   padding: 5px;
   border: 2px solid rgba(1,1,1,0);
   border-radius: 10px;
-  cursor:default;
+  cursor: pointer;
 }
 
 #menu menuitem.selectable:hover {
-  background-color: #889;
+  background-color: #99A;
 
+}
+
+#menu_volume {
+  background: linear-gradient(to right, #77D 40%, 45%, #AAF);
+  border: none !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .selected {

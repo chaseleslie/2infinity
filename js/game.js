@@ -23,13 +23,13 @@ const menuRestart = doc.getElementById("menu_restart");
 const menuConsole = doc.getElementById("menu_console");
 const menuDisplayFPS = doc.getElementById("menu_display_fps");
 const menuMute = doc.getElementById("menu_muted");
+const menuVolume = doc.getElementById("menu_volume");
 const menuIcon = doc.getElementById("img_menu_icon");
 const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 const point = Object.seal({"x": 0, "y": 0, "z": 0});
 const zProjection = 1;
 const aspect = canvas.width / canvas.height;
 const devMode = global.location.hash.indexOf("#dev") === 0;
-const soundFX = new SoundFX();
 
 const KEY_MAP = Object.freeze({
   "ArrowLeft":  37,
@@ -77,13 +77,14 @@ canvasOverlayProps.fpsTemplateStrProps = canvasOverlayCtx.measureText(canvasOver
 canvasOverlayCtx.restore();
 
 const OverlayFlags = Object.freeze({
-  "INCREMENT":       0b00000001,
-  "DECREMENT":       0b00000010,
-  "SCORE_DIRTY":     0b00000100,
-  "HP_DIRTY":        0b00001000,
-  "FPS_DIRTY":       0b00010000,
-  "BOSS_NAME_DIRTY": 0b00100000,
-  "BOSS_HP_DIRTY":   0b01000000
+  "INCREMENT":        0b00000001,
+  "DECREMENT":        0b00000010,
+  "SCORE_DIRTY":      0b00000100,
+  "HP_DIRTY":         0b00001000,
+  "FPS_DIRTY":        0b00010000,
+  "BOSS_NAME_DIRTY":  0b00100000,
+  "BOSS_HP_DIRTY":    0b01000000,
+  "MUTED_DIRTY":      0b10000000
 });
 
 const LevelState = Object.freeze({
@@ -135,7 +136,7 @@ const difficultyMap = Object.freeze({
 
 const Game = Object.seal({
   "name": "2Infinity",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "devMode": devMode,
   "difficulty": Difficulty.EASY,
   "difficultyMap": difficultyMap,
@@ -154,6 +155,9 @@ const Game = Object.seal({
   "startTs": 0,
   "lastTs": 0,
   "pauseTs": 0,
+  "realTime": 0,
+  "enemyCount": 0,
+  "enemyDestroyedCount": 0,
   "averageFrameInterval": new Utils.ExponentialAverage(0.7, 0),
   "running": false,
   "isMenuShown": false,
@@ -168,6 +172,7 @@ const Game = Object.seal({
   "overlayLastTs": 0,
   "displayFPS": false,
   "muted": false,
+  "soundFX": null,
   "keydownMap": Object.seal({
     "ArrowLeft": 0,
     "ArrowUp": 0,
@@ -424,21 +429,10 @@ menuRestart.addEventListener("click", onMenuRestart, false);
 menuConsole.addEventListener("click", onMenuConsole, false);
 menuDisplayFPS.addEventListener("click", onMenuDisplayFPS, false);
 menuMute.addEventListener("click", onMenuMute, false);
-menuResume.addEventListener("mousedown", onMenuMousedown, false);
-menuResume.addEventListener("mouseup", onMenuMouseup, false);
-menuResume.addEventListener("mouseleave", onMenuMouseleave, false);
-menuRestart.addEventListener("mousedown", onMenuMousedown, false);
-menuRestart.addEventListener("mouseup", onMenuMouseup, false);
-menuRestart.addEventListener("mouseleave", onMenuMouseleave, false);
-menuConsole.addEventListener("mousedown", onMenuMousedown, false);
-menuConsole.addEventListener("mouseup", onMenuMouseup, false);
-menuConsole.addEventListener("mouseleave", onMenuMouseleave, false);
-menuDisplayFPS.addEventListener("mousedown", onMenuMousedown, false);
-menuDisplayFPS.addEventListener("mouseup", onMenuMouseup, false);
-menuDisplayFPS.addEventListener("mouseleave", onMenuMouseleave, false);
-menuMute.addEventListener("mousedown", onMenuMousedown, false);
-menuMute.addEventListener("mouseup", onMenuMouseup, false);
-menuMute.addEventListener("mouseleave", onMenuMouseleave, false);
+menuVolume.addEventListener("mousedown", onMenuVolumeMousedown, false);
+menuVolume.addEventListener("mousemove", onMenuVolumeMousemove, false);
+menuVolume.addEventListener("mouseup", onMenuVolumeMouseup, false);
+menuVolume.addEventListener("mouseleave", onMenuVolumeMouseleave, false);
 
 const circleCoords = Utils.createCircleVertices({x: 0, y: 0, z: 0}, 360, 1);
 Game.verticesCircle = circleCoords.vertices;
@@ -446,22 +440,23 @@ Game.textures.circle.coords = [circleCoords.tex];
 
 Console.debug("Fetching game data");
 Game.gameData = null;
-var gameDataURL = "js/game_data.json";
-gameDataURL += (win.location.hash === "#dev") ? `?ts=${Date.now()}` : "" ;
-Utils.fetchURL({
-  "method": "GET",
-  "url": gameDataURL,
-  "responseType": "json",
-  "callback": function(xhr) {
-    if (xhr.status === 200) {
-      Game.gameData = xhr.response;
-      setup(Game, gl);
-    } else {
-      Console.error(`Error: fetching game data failed with status ${xhr.status}`);
-      Console.show();
-      console.error(xhr);
-    }
+const gameDataURL = (win.location.hash.indexOf("#dev") === 0)
+  ? `js/game_data.json?ts=${Date.now()}`
+  : "js/game_data.json";
+
+fetch(gameDataURL).then(function(response) {
+  if (response.ok) {
+    return response.json();
   }
+
+  throw Error(`Error: fetching game data failed with status ${response.status}`);
+}).then(function(json) {
+  Game.gameData = json;
+  setup(Game, gl);
+}).catch(function(err) {
+  console.error(err);
+  Console.error(err);
+  Console.show();
 });
 
 function handleWindowResize() {
@@ -673,6 +668,7 @@ function loadSettings(game) {
 
   if (settings) {
     Console.debug(`Loading settings: ${JSON.stringify(settings)}`);
+
     if ("muted" in settings) {
       game.muted = settings.muted;
       if (game.muted) {
@@ -683,6 +679,7 @@ function loadSettings(game) {
         menuMute.classList.add("unchecked");
       }
     }
+
     if ("displayFPS" in settings) {
       game.displayFPS = settings.displayFPS;
       if (settings.displayFPS) {
@@ -690,6 +687,11 @@ function loadSettings(game) {
         menuDisplayFPS.classList.remove("unchecked");
       }
     }
+
+    if ("volume" in settings) {
+      setVolume(settings.volume);
+    }
+
     Console.log("Loaded saved game settings");
   } else {
     Console.log("Unable to load saved game settings");
@@ -698,9 +700,11 @@ function loadSettings(game) {
 
 function saveSettings() {
   const settings = {
-    "muted": Game.muted,
-    "displayFPS": Game.displayFPS
+    "muted":      Game.muted,
+    "displayFPS": Game.displayFPS,
+    "volume":     Game.soundFX.gain
   };
+
   try {
     global.localStorage.setItem(
       "settings",
@@ -808,8 +812,10 @@ function onMenuScroll(e) {
   var selectedIndex = -1;
 
   switch (key || e.which || e.keyCode) {
-    // ArrowUp / ArrowDown / Enter
+    // ArrowLeft / ArrowUp / ArrowRight / ArrowDown / Enter
+    case 37:
     case 38:
+    case 39:
     case 40:
     case 13:
       e.preventDefault();
@@ -831,9 +837,11 @@ function onMenuScroll(e) {
       break;
     }
   }
+
   if (selectedIndex === -1 && menuItems.length) {
     selectedIndex = 0;
   }
+
   for (let k = 0; k < menuItems.length; k += 1) {
     menuItems[k].classList.remove("selected");
   }
@@ -846,7 +854,6 @@ function onMenuScroll(e) {
       } else {
         selectedIndex = menuItems.length - 1;
       }
-      menuItems[selectedIndex].classList.add("selected");
     break;
     // ArrowDown
     case 40:
@@ -855,13 +862,28 @@ function onMenuScroll(e) {
       } else {
         selectedIndex = 0;
       }
-      menuItems[selectedIndex].classList.add("selected");
     break;
     // Enter
     case 13:
       menuItems[selectedIndex].click();
     break;
   }
+
+  /* Adjust volume */
+  if (menuItems[selectedIndex] === menuVolume) {
+    switch (key || e.which || e.keyCode) {
+      // ArrowLeft
+      case 37:
+        setVolume(getVolume() - 0.05);
+      break;
+      // ArrowRight
+      case 39:
+        setVolume(getVolume() + 0.05);
+      break;
+    }
+  }
+
+  menuItems[selectedIndex].classList.add("selected");
 }
 
 function onMenuScrollWheel(e) {
@@ -941,6 +963,8 @@ function onMenuDisplayFPS(e) {
 function onMenuMute() {
   const game = Game;
   game.muted = !game.muted;
+  game.overlayState.flag |= OverlayFlags.MUTED_DIRTY;
+
   if (game.muted) {
     menuMute.classList.add("checked");
     menuMute.classList.remove("unchecked");
@@ -948,27 +972,58 @@ function onMenuMute() {
     menuMute.classList.remove("checked");
     menuMute.classList.add("unchecked");
   }
+
   hideMenu();
   start();
 }
 
-function onMenuMousedown(e) {
-  e.target.classList.add("clicked");
+function setVolume(vol) {
+  vol = Utils.clamp(vol, 0, 1);
+  const perc = Utils.roundTo5(vol * 100);
+  Game.soundFX.gain = vol;
+  menuVolume.style.background = `linear-gradient(to right, #77D ${perc}%, ${perc + 5}%, #AAF)`;
 }
 
-function onMenuMouseup(e) {
-  e.target.classList.remove("clicked");
+function getVolume() {
+  return Game.soundFX.gain;
 }
 
-function onMenuMouseleave(e) {
-  e.target.classList.remove("clicked");
+function onMenuVolumeMousedown(e) {
+  const rect = menuVolume.getBoundingClientRect();
+  menuVolume.dataset.mouseDown = "1";
+  setVolume(Utils.clamp(e.offsetX / rect.width, 0, 1));
+}
+
+function onMenuVolumeMousemove(e) {
+  if (menuVolume.dataset.mouseDown) {
+    const rect = menuVolume.getBoundingClientRect();
+    setVolume(Utils.clamp(e.offsetX / rect.width, 0, 1));
+  }
+}
+
+function onMenuVolumeMouseup(e) {
+  const rect = menuVolume.getBoundingClientRect();
+  setVolume(Utils.clamp(e.offsetX / rect.width, 0, 1));
+  menuVolume.dataset.mouseDown = "";
+}
+
+function onMenuVolumeMouseleave(e) {
+  if (menuVolume.dataset.mouseDown) {
+    const rect = menuVolume.getBoundingClientRect();
+    setVolume(Utils.clamp(e.offsetX / rect.width, 0, 1));
+    menuVolume.dataset.mouseDown = "";
+  }
 }
 
 function start() {
   const game = Game;
   if (!game.running) {
     Console.log(`Starting game (state=${LevelState.map(game.levelState)})`);
-    game.overlayState.flag |= OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY;
+    game.overlayState.flag |= (
+      OverlayFlags.SCORE_DIRTY |
+      OverlayFlags.HP_DIRTY |
+      OverlayFlags.MUTED_DIRTY
+    );
     doc.body.addEventListener("keydown", handleKeyDown, false);
     doc.body.addEventListener("keyup", handleKeyUp, false);
     doc.body.addEventListener("touchstart", handleTouchStart, false);
@@ -1018,6 +1073,7 @@ function stop() {
   menuIcon.removeEventListener("click", handleMenuIconClick, false);
   game.pauseTs = global.performance.now();
   game.running = false;
+  game.realTime += game.pauseTs - game.startTs;
   global.cancelAnimationFrame(game.animFrame);
   const keydownMap = game.keydownMap;
   for (const key of Object.keys(keydownMap)) {
@@ -1098,8 +1154,12 @@ function main(ts) {
     });
     return;
   } else if (game.levelState === LevelState.GAME_OVER) {
+    stop();
     console.log("Game Over");
     Console.log("Game Over");
+    Console.log(`  time:       ${Utils.secondsToHMS(Math.trunc(game.realTime / 1000))}`);
+    Console.log(`  score:      ${game.score}`);
+    Console.log(`  kill ratio: ${(game.enemyDestroyedCount / game.enemyCount).toFixed(2)}`);
     Console.show();
     return;
   }
@@ -1140,6 +1200,7 @@ function main(ts) {
 function update(game, ts, dt) {
   const player = game.player;
   var enemies = null;
+
   if (game.levelState === LevelState.PLAYING || game.levelState === LevelState.END) {
     enemies = game.enemies;
   } else if (game.levelState === LevelState.BOSS) {
@@ -1153,12 +1214,17 @@ function update(game, ts, dt) {
   let score = 0;
   const playerWeapons = player.weapons;
   for (let k = 0, n = playerWeapons.length; k < n; k += 1) {
-    score += playerWeapons[k].update(dt, enemies);
+    score += playerWeapons[k].update(dt, enemies, false);
     if (score && game.levelState === LevelState.BOSS) {
       game.overlayState.flag |= OverlayFlags.BOSS_HP_DIRTY | OverlayFlags.DECREMENT;
     }
   }
+
   if (score) {
+    if (!game.muted) {
+      game.soundFX.strike();
+    }
+
     updateScore(game, score);
   }
   const playerHitbox = player.hitbox;
@@ -1167,14 +1233,20 @@ function update(game, ts, dt) {
   score = 0;
   for (let k = enemies.length - 1; k >= 0; k -= 1) {
     const enemy = enemies[k];
-    if (!enemy.active) {
+    if (!enemy.active && !enemy.linger) {
       continue;
     }
+
     const hitScore = -enemy.update(dt);
     if (hitScore) {
+      if (!game.muted) {
+        game.soundFX.strike();
+      }
+
       game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
       score += hitScore;
     }
+
     const hitbox = enemy.hitbox;
     const enemyOffscreen = hitbox.right < -1.0;
     if (enemyOffscreen) {
@@ -1183,39 +1255,42 @@ function update(game, ts, dt) {
       enemy.reset(enemyType, false);
     }
   }
+
   if (score) {
     updateScore(game, score);
+  }
+
+  if (!game.devMode && player.hitpoints <= 0) {
+    game.levelState = LevelState.GAME_OVER;
+    return;
   }
 
   /* Check for player collisions with enemies */
   if (!playerHitbox.depth && game.levelState === LevelState.PLAYING) {
     for (let k = 0; k < enemies.length; k += 1) {
-      let keepLooping = true;
       const enemy = enemies[k];
       if (enemy.active && enemy.hitpoints > 0 && enemy.intersectsWith(playerHitbox)) {
         const playerPos = player.position;
+
         for (let iK = 0; iK < playerPos.length; iK += 1) {
           const vert = playerPos[iK];
           point.x = vert[0];
           point.y = vert[1];
           point.z = vert[2];
           const directHit = enemy.containsPoint(point);
+
           if (directHit ) {
             enemy.takeHit(enemy.hitpoints);
-            const hp = player.takeHit(enemy.points);
-            if (hp <= 0) {
-              restart();
-              keepLooping = false;
-              game.overlayState.flag = OverlayFlags.SCORE_DIRTY | OverlayFlags.HP_DIRTY | OverlayFlags.FPS_DIRTY;
-              break;
-            } else {
-              game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
+            player.takeHit(enemy.points);
+
+            if (!game.devMode && player.hitpoints <= 0) {
+              game.levelState = LevelState.GAME_OVER;
+              return;
             }
+
+            game.overlayState.flag |= OverlayFlags.HP_DIRTY | OverlayFlags.DECREMENT;
             updateScore(game, -enemy.points);
           }
-        }
-        if (!keepLooping) {
-          break;
         }
       }
     }
@@ -1356,8 +1431,8 @@ function spawnPowerups(game, ts) {
 function fireWeapon(game, ts, dt) {
   const fired = game.player.fireWeapon(ts, dt);
 
-  if (fired && !game.muted) {
-    soundFX.blaster();
+  if (fired && game.soundFX && !game.muted) {
+    game.soundFX.blaster();
   }
 }
 
@@ -1386,10 +1461,13 @@ function spawnEnemies(game, ts) {
           break;
         }
       }
+
       if (!foundEnemy) {
         game.enemies.push(new Enemy(game, type, true));
       }
       levelEnemies.lastTs[k] = ts;
+
+      game.enemyCount += 1;
     }
   }
 }
@@ -1413,6 +1491,24 @@ function drawOverlay(game) {
   ctx.save();
   ctx.font = canvasOverlayFont;
 
+  /* Display muted icon */
+  const mutedDirty = game.overlayState.flag & OverlayFlags.MUTED_DIRTY;
+  if (mutedDirty) {
+    const mutedStr = "\ud83d\udd07";
+    const x = 0;
+    const y = height;
+    ctx.save();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    ctx.clearRect(x, y - defaultFontSize, defaultFontSize, defaultFontSize);
+
+    if (game.muted) {
+      ctx.fillText(mutedStr, x, y);
+    }
+
+    ctx.restore();
+  }
+
   /* Update score display */
   if (game.overlayState.flag & OverlayFlags.SCORE_DIRTY) {
     const scoreTemplateStrProps = canvasOverlayProps.scoreTemplateStrProps;
@@ -1430,7 +1526,8 @@ function drawOverlay(game) {
   }
 
   /* Update fps display */
-  if (game.displayFPS && game.overlayState.flag & OverlayFlags.FPS_DIRTY) {
+  const fpsDirty = game.overlayState.flag & OverlayFlags.FPS_DIRTY;
+  if (game.displayFPS && fpsDirty) {
     const fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
     const fpsNumDigits = canvasOverlayProps.fpsTemplateNumDigits;
     ctx.save();
@@ -1447,6 +1544,12 @@ function drawOverlay(game) {
     );
     ctx.fillText(fpsStr, width, height);
     ctx.restore();
+  } else if (!game.displayFPS && fpsDirty) {
+    const fpsTemplateStrProps = canvasOverlayProps.fpsTemplateStrProps;
+    ctx.clearRect(
+      width - fpsTemplateStrProps.width, height - defaultFontSize,
+      width, height
+    );
   }
 
   /* Update hitpoints indicator */
@@ -1569,7 +1672,7 @@ function draw(game) {
   if (levelState === LevelState.PLAYING || levelState === LevelState.END) {
     for (let k = 0, n = game.enemies.length; k < n; k += 1) {
       const enemy = game.enemies[k];
-      if (enemy.active) {
+      if (enemy.active || enemy.linger) {
         enemy.draw(gl);
       }
     }
@@ -1717,6 +1820,14 @@ function setup(game, gl) {
     Console.error(`Error: ${err}: Initializing textures`);
     Console.show();
     return;
+  }
+
+  Console.debug("Initializing sound effects");
+  try {
+    game.soundFX = new SoundFX();
+  } catch (e) {
+    Console.error(`Error: Initializing sound effects: '${e}'`);
+    game.soundFX = null;
   }
 
   Console.debug("Initializing game assets");
