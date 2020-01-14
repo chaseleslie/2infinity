@@ -11,6 +11,7 @@ class SoundFX {
     this._gainNode = new GainNode(this.ctx);
     this._gainNode.gain.value = Utils.clamp(vol, 0, 1) || 0.4;
     this._generateSounds();
+    this._coolDown = 150;
   }
 
   set gain(newGain) {
@@ -42,12 +43,14 @@ class SoundFX {
     const numChannels = 1;
     const floatArray = new Float32Array(numSamples * numChannels);
     const arrayBuffer = ctx.createBuffer(numChannels, numSamples, sampleRate);
-    this._blasterProps = Object.freeze(Object.assign(Object.create(null), {
+    this._blasterProps = Object.seal(Object.assign(Object.create(null), {
       "floatArray":   floatArray,
       "duration":     duration,
       "numSamples":   numSamples,
       "numChannels":  numChannels,
-      "arrayBuffer":  arrayBuffer
+      "arrayBuffer":  arrayBuffer,
+      "lastBuffSrc":  null,
+      "lastStartTS":  0
     }));
 
     const freqs = [
@@ -87,12 +90,14 @@ class SoundFX {
     const numChannels = 1;
     const floatArray = new Float32Array(numSamples * numChannels);
     const arrayBuffer = ctx.createBuffer(numChannels, numSamples, sampleRate);
-    this._strikeProps = Object.freeze(Object.assign(Object.create(null), {
+    this._strikeProps = Object.seal(Object.assign(Object.create(null), {
       "floatArray":   floatArray,
       "duration":     duration,
       "numSamples":   numSamples,
       "numChannels":  numChannels,
-      "arrayBuffer":  arrayBuffer
+      "arrayBuffer":  arrayBuffer,
+      "lastBuffSrc":  null,
+      "lastStartTS":  0
     }));
     const freqs = [64, 94, 101, 129, 261, 287, 444];
     const max = Math.max;
@@ -126,17 +131,47 @@ class SoundFX {
 
   blaster() {
     const ctx = this.ctx;
+    const blasterProps = this._blasterProps;
+    const coolDown = this._coolDown;
+
+    if (performance.now() <= blasterProps.lastStartTS + coolDown) {
+      return;
+    }
+
+    const lastBuffSrc = blasterProps.lastBuffSrc;
     const source = ctx.createBufferSource();
-    source.buffer = this._blasterProps.arrayBuffer;
+    source.buffer = blasterProps.arrayBuffer;
     source.connect(this._gainNode).connect(ctx.destination);
+    
+    try {
+      lastBuffSrc.stop();
+    } catch (e) {}
+    
     source.start();
+    blasterProps.lastBuffSrc = source;
+    blasterProps.lastStartTS = performance.now();
   }
 
   strike() {
     const ctx = this.ctx;
+    const strikeProps = this._strikeProps;
+    const coolDown = this._coolDown;
+
+    if (performance.now() <= strikeProps.lastStartTS + coolDown) {
+      return;
+    }
+
+    const lastBuffSrc = strikeProps.lastBuffSrc;
     const source = ctx.createBufferSource();
-    source.buffer = this._strikeProps.arrayBuffer;
+    source.buffer = strikeProps.arrayBuffer;
     source.connect(this._gainNode).connect(ctx.destination);
+    
+    try {
+      lastBuffSrc.stop();
+    } catch(e) {}
+    
     source.start();
+    strikeProps.lastBuffSrc = source;
+    strikeProps.lastStartTS = performance.now();
   }
 }
